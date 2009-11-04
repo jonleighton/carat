@@ -1,0 +1,6 @@
+Carat
+-----
+
+Carat is a Ruby interpreter written in Ruby. I'm writing it as a project which is part of the 3rd year of my Computer Science degree at Oxford University. Currently its design goal is simple, beautiful code; it's not intended for real world use, but I hope the code will eventually be interesting to read and digest.
+
+Currently not much works, but as of writing there are only 99 lines of code.
