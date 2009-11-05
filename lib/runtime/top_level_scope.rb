@@ -14,29 +14,14 @@ class Carat::Runtime
     end
     
     def [](symbol)
-      symbols[symbol] || raise(CaratError, "local variable '#{symbol}' is undefined")
+      symbols[symbol] || raise(Carat::CaratError, "local variable '#{symbol}' is undefined")
     end
     
-    # TODO: Make this work
-    # For now:
+    def merge!(items)
+      symbols.merge!(items)
+    end
+    
     alias_method :constants, :globals
     alias_method :global_variables, :globals
-=begin
-    def constants[]=(symbol, value)
-      globals[symbol] = value
-    end
-    
-    def constants[](symbol)
-      globals[symbol] || raise(CaratError, "constant '#{symbol}' is undefined")
-    end
-    
-    def global_variables[]=(symbol, value)
-      globals[symbol] = value
-    end
-    
-    def global_variables[](symbol)
-      globals[symbol] || raise(CaratError, "global variable '#{symbol}' is undefined")
-    end
-=end
   end
 end

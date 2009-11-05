@@ -34,7 +34,7 @@ class Carat::Runtime
       if receiver.nil? && stack_eval(args).nil?
         value = scope[method_name]
         if false # should be "if value is a method"
-          raise CaratError, "not implemented"
+          raise Carat::CaratError, "not implemented"
         else
           value
         end
@@ -45,13 +45,31 @@ class Carat::Runtime
           # Temporary special case
           Object.new(object)
         else
-          stack_eval(object.lookup_method(method_name).contents, Scope.new(object, scope))
+          apply(object, object.lookup_method(method_name), stack_eval(args))
         end
       end
     end
     
-    eval :arglist do |*identifiers|
+    # Apply a list of arguments to a method
+    def apply(object, method, args)
+      # Create up a new scope, where the object receiving the method call is 'self'
+      scope = Scope.new(object, scope)
+      
+      # Extend the scope, assigning all the argument values to the argument names of the method
+      scope.merge! Hash[*method.args.zip(args).flatten]
+      
+      # Now evaluate the method contents in our new scope
+      stack_eval(method.contents, scope)
+    end
+    
+    # A list of identifiers for the arguments of a method when it is being defined
+    eval :args do |*identifiers|
       identifiers
+    end
+    
+    # A list of expressions being past as arguments to a method
+    eval :arglist do |*expressions|
+      expressions.map { |expression| stack_eval(expression) }
     end
     
     eval :class do |class_name, superclass, contents|
@@ -65,7 +83,7 @@ class Carat::Runtime
     end
     
     eval :defn do |method_name, args, contents|
-      scope[:self].methods[method_name] = Method.new(args, contents)
+      scope[:self].methods[method_name] = Method.new(stack_eval(args), contents)
       nil
     end
     

@@ -23,7 +23,7 @@ class Carat::Runtime
     end
     
     def error(message)
-      raise CaratError, message
+      raise Carat::CaratError, message
     end
     
     # Theoretically a frame can exist independently of a stack, but when we are evaluating the
