@@ -29,9 +29,11 @@ class Carat::Runtime
     # Theoretically a frame can exist independently of a stack, but when we are evaluating the
     # frame we need a reference to the stack so that we can add new frames to it.
     def eval(stack)
+      return nil if sexp_type.nil?
+      
       @stack = stack
       if respond_to?("eval_#{sexp_type}")
-        send("eval_#{sexp_type}", *sexp_body) unless sexp_body.empty?
+        send("eval_#{sexp_type}", *sexp_body)
       else
         error "'#{sexp_type}' not implemented"
       end

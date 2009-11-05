@@ -41,12 +41,29 @@ class Carat::Runtime
       else
         object = stack_eval(receiver)
         
-        if method_name == :new
-          # Temporary special case
-          Object.new(object)
+        if method_name == :new # Temporary special case
+          new_object(object, args)
         else
-          apply(object, object.lookup_method(method_name), stack_eval(args))
+          call_callable(object, method_name, args)
         end
+      end
+    end
+    
+    def new_object(klass, args)
+      object = Object.new(klass)
+      call_callable(object, :initialize, args)
+      object
+    end
+    
+    def call_callable(object, name, args = [])
+      callable = object.lookup_method(name)
+      args     = stack_eval(args)
+      
+      case callable
+        when Method
+          apply(object, callable, args)
+        when Primitive
+          callable.definition.call(*args)
       end
     end
     
@@ -78,8 +95,12 @@ class Carat::Runtime
       stack_eval(contents, Scope.new(klass, scope))
     end
     
-    eval :scope do |statement|
-      stack_eval(statement)
+    eval :scope do |*statement|
+      # AFAIK :scope will either have 0 or 1 arguments. But if it has 0, we will get "warning: 
+      # multiple values for a block parameter (0 for 1)" from MRI. So we use a splat to get around
+      # that.
+      statement = statement.first
+      statement && stack_eval(statement)
     end
     
     eval :defn do |method_name, args, contents|
@@ -89,6 +110,10 @@ class Carat::Runtime
     
     eval :const do |const_name|
       scope.constants[const_name]
+    end
+    
+    eval :array do |*contents|
+      new_object(scope.constants[:Array], [:arglist, *contents])
     end
   end
 end

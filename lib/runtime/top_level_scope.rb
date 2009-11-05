@@ -9,6 +9,10 @@ class Carat::Runtime
       @globals = {}
     end
     
+    def initialize_environment
+      self.constants[:Array] = Array.new(:Array, nil)
+    end
+    
     def []=(symbol, value)
       symbols[symbol] = value
     end
