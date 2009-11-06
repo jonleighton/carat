@@ -1,6 +1,6 @@
 module Carat
   class Runtime
-    %w[abstract_scope top_level_scope scope stack frame].each do |file|
+    %w[abstract_scope top_level_scope scope stack frame environment bootstrap].each do |file|
       require RUNTIME_PATH + "/" + file
     end
     
@@ -8,20 +8,16 @@ module Carat
       require RUNTIME_PATH + "/data/" + file
     end
     
-    %w[object_class class_class array fixnum].each do |file|
-      require RUNTIME_PATH + "/primitives/" + file
-    end
-    
     attr_reader :stack, :top_level_scope
     
     extend Forwardable
     def_delegators :top_level_scope, :constants
-    def_delegators :current_frame, :new_instance
+    def_delegators :current_frame, :new_instance, :symbols
     
     def initialize
       @stack = Stack.new
       @top_level_scope = TopLevelScope.new(self, nil)
-      @top_level_scope.initialize_environment
+      Environment.new(self).setup
       @initialized = true
     end
     

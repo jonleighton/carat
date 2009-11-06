@@ -44,31 +44,31 @@ class Carat::Runtime
         if method_name == :new # Temporary special case
           new_instance(object, args)
         else
-          call_callable(object, method_name, args)
+          call(object, method_name, args)
         end
       end
     end
     
     def new_instance(klass, args = [])
       object = Object.new(runtime, klass)
-      call_callable(object, :initialize, args) if object.method_defined?(:initialize)
+      call(object, :initialize, args) if object.method_defined?(:initialize)
       object
     end
     
-    def call_callable(object, name, args = [])
+    def call(object, name, args = [])
       callable = object.lookup_method(name)
       args     = stack_eval(args)
       
       case callable
         when Method
-          apply(object, callable, args)
+          call_method(object, callable, args)
         when Primitive
-          object.send(callable.name, *args)
+          call_primitive(object, callable, args)
       end
     end
     
     # Apply a list of arguments to a method
-    def apply(object, method, args)
+    def call_method(object, method, args)
       # Create up a new scope, where the object receiving the method call is 'self'
       new_scope = Scope.new(object, scope)
       
@@ -77,6 +77,10 @@ class Carat::Runtime
       
       # Now evaluate the method contents in our new scope
       stack_eval(method.contents, new_scope)
+    end
+    
+    def call_primitive(object, primitive, args)
+      object.send(primitive.name, *args)
     end
     
     # A list of identifiers for the arguments of a method when it is being defined

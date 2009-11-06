@@ -3,18 +3,45 @@ class Carat::Runtime
     attr_reader :runtime
     attr_accessor :klass
     
-    def initialize(runtime, klass)
-      # Check that the class of the object is actually given. If the runtime is still initializing
-      # we omit this check, as there are circular references which need to be set up.
-      if runtime.initialized? && klass.nil?
-        raise Carat::CaratError, "cannot create object without a class"
+    extend Forwardable
+    def_delegator :klass, :bootstrap_module
+    
+    class << self
+      def demodulized_name
+        to_s.split("::").last
       end
-      
+    end
+    
+    def initialize(runtime, klass)
+      raise Carat::CaratError, "cannot create object without a class" if klass.nil?
       @runtime, @klass = runtime, klass
       
-      if @klass && @klass.object_extension
-        (class << self; self; end).send(:include, @klass.object_extension)
+      include_extensions(extensions_module) if extensions_module
+      include_primitives(primitives_module) if primitives_module
+    end
+    
+    def extensions_module
+      if bootstrap_module && bootstrap_module.const_defined?("#{self.class.demodulized_name}Extensions")
+        bootstrap_module.const_get("#{self.class.demodulized_name}Extensions")
       end
+    end
+    
+    def primitives_module
+      if bootstrap_module && bootstrap_module.const_defined?("#{self.class.demodulized_name}Primitives")
+        bootstrap_module.const_get("#{self.class.demodulized_name}Primitives")
+      end
+    end
+    
+    def include_extensions(mod)
+      (class << self; self; end).send(:include, mod)
+    end
+    
+    def include_primitives(mod)
+      mod.instance_methods.each do |method_name|
+        klass.methods[method_name.sub(/^primitive_/, '').to_sym] = Primitive.new(method_name.to_sym)
+      end
+      
+      (class << self; self; end).send(:include, mod)
     end
     
     def instance_variables
@@ -49,7 +76,9 @@ class Carat::Runtime
     end
     
     def inspect
-      "<Carat::Runtime::Object @klass=#{real_klass} @instance_variables=#{instance_variables.inspect}>"
+      "<Carat::Runtime::Object:(#{object_id}) " +
+      "@klass=#{real_klass} " + 
+      "@instance_variables=#{instance_variables.inspect}>"
     end
   end
 end

@@ -9,16 +9,6 @@ class Carat::Runtime
       @runtime, @globals = runtime, {}
     end
     
-    def initialize_environment
-      object_klass = constants[:Object] = ObjectClass.new(runtime, :Object, nil)
-      class_klass  = constants[:Class]  = ClassClass.new(runtime, :Class,  object_klass)
-      
-      object_klass.klass = class_klass
-      
-      constants[:Fixnum] = Fixnum.new(runtime, :Fixnum, object_klass)
-      constants[:Array]  = Array.new(runtime, :Array, object_klass)
-    end
-    
     def [](symbol)
       super || raise(Carat::CaratError, "local variable '#{symbol}' is undefined")
     end
