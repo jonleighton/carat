@@ -3,7 +3,7 @@ class Carat::Runtime
     # Accept a frame onto the stack, evaluate it, then remove it and return its result
     def <<(frame)
       super(frame)
-      result = frame.eval(self)
+      result = frame.execute(self)
       pop
       result
     end

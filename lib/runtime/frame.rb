@@ -29,9 +29,9 @@ class Carat::Runtime
       raise Carat::CaratError, message
     end
     
-    # Theoretically a frame can exist independently of a stack, but when we are evaluating the
+    # Theoretically a frame can exist independently of a stack, but when we are executing the
     # frame we need a reference to the stack so that we can add new frames to it.
-    def eval(stack)
+    def execute(stack)
       return nil if sexp_type.nil?
       
       @stack = stack
@@ -46,7 +46,7 @@ class Carat::Runtime
     
     # Creates a new frame for the sexp and scope, and adds it to the current stack. If scope is
     # not given, it will default to the current scope.
-    def stack_eval(sexp, scope = nil)
+    def eval(sexp, scope = nil)
       @stack << Frame.new(sexp, scope || self.scope)
     end
     

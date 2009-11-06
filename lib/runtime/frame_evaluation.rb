@@ -14,12 +14,12 @@ class Carat::Runtime
     
     # A block of statements. Evaluate each in turn and return the result of the last one.
     eval :block do |*statements|
-      statements.reduce(nil) { |last_result, statement| stack_eval(statement) }
+      statements.reduce(nil) { |last_result, statement| eval(statement) }
     end
     
     # Make an assignment
     eval :lasgn do |identifier, value|
-      scope[identifier] = stack_eval(value)
+      scope[identifier] = eval(value)
     end
     
     # Get a variable
@@ -31,7 +31,7 @@ class Carat::Runtime
     # between "foo" and "foo()". There is a difference - the second can only be a method call, but
     # the first might be a method call or a local variable lookup.
     eval :call do |receiver, method_name, args|
-      if receiver.nil? && stack_eval(args).nil?
+      if receiver.nil? && eval(args).nil?
         value = scope[method_name]
         if false # should be "if value is a method"
           raise Carat::CaratError, "not implemented"
@@ -39,7 +39,7 @@ class Carat::Runtime
           value
         end
       else
-        object = stack_eval(receiver)
+        object = eval(receiver)
         
         if method_name == :new # Temporary special case
           new_instance(object, args)
@@ -57,7 +57,7 @@ class Carat::Runtime
     
     def call(object, name, args = [])
       callable = object.lookup_method(name)
-      args     = stack_eval(args)
+      args     = eval(args)
       
       case callable
         when Method
@@ -76,7 +76,7 @@ class Carat::Runtime
       new_scope.merge! Hash[*method.args.zip(args).flatten]
       
       # Now evaluate the method contents in our new scope
-      stack_eval(method.contents, new_scope)
+      eval(method.contents, new_scope)
     end
     
     def call_primitive(object, primitive, args)
@@ -90,13 +90,13 @@ class Carat::Runtime
     
     # A list of expressions being past as arguments to a method
     eval :arglist do |*expressions|
-      expressions.map { |expression| stack_eval(expression) }
+      expressions.map { |expression| eval(expression) }
     end
     
     eval :class do |class_name, superclass, contents|
       klass = Class.new(runtime, class_name, superclass)
       scope.constants[class_name] = klass
-      stack_eval(contents, Scope.new(klass, scope))
+      eval(contents, Scope.new(klass, scope))
     end
     
     eval :scope do |*statement|
@@ -104,12 +104,12 @@ class Carat::Runtime
       # multiple values for a block parameter (0 for 1)" from MRI. So we use a splat to get around
       # that.
       statement = statement.first
-      statement && stack_eval(statement)
+      statement && eval(statement)
     end
     
     # Define a method on a given class. +klass+ should be any instance of +Carat::Runtime::Class+.
     def define_method(klass, method_name, args, contents)
-      klass.methods[method_name] = Method.new(stack_eval(args), contents)
+      klass.methods[method_name] = Method.new(eval(args), contents)
       nil
     end
     
@@ -120,7 +120,7 @@ class Carat::Runtime
     
     # Define a singleton method (by defining a method on the object's singleton class)
     eval :defs do |object, method_name, args, contents|
-      define_method(stack_eval(object).singleton_class, method_name, args, contents)
+      define_method(eval(object).singleton_class, method_name, args, contents)
     end
     
     eval :const do |const_name|
