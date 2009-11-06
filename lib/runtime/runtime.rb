@@ -1,14 +1,14 @@
 module Carat
   class Runtime
-    %w[top_level_scope scope stack frame].each do |file|
+    %w[abstract_scope top_level_scope scope stack frame].each do |file|
       require RUNTIME_PATH + "/" + file
     end
     
-    %w[object class method primitive].each do |file|
+    %w[object class singleton_class method primitive].each do |file|
       require RUNTIME_PATH + "/data/" + file
     end
     
-    %w[object_class array fixnum].each do |file|
+    %w[object_class class_class array fixnum].each do |file|
       require RUNTIME_PATH + "/primitives/" + file
     end
     
@@ -22,10 +22,15 @@ module Carat
       @stack = Stack.new
       @top_level_scope = TopLevelScope.new(self, nil)
       @top_level_scope.initialize_environment
+      @initialized = true
     end
     
     def current_frame
       stack.peek
+    end
+    
+    def initialized?
+      @initialized == true
     end
     
     def run(code)

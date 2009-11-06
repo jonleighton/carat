@@ -70,13 +70,13 @@ class Carat::Runtime
     # Apply a list of arguments to a method
     def apply(object, method, args)
       # Create up a new scope, where the object receiving the method call is 'self'
-      scope = Scope.new(object, scope)
+      new_scope = Scope.new(object, scope)
       
       # Extend the scope, assigning all the argument values to the argument names of the method
-      scope.merge! Hash[*method.args.zip(args).flatten]
+      new_scope.merge! Hash[*method.args.zip(args).flatten]
       
       # Now evaluate the method contents in our new scope
-      stack_eval(method.contents, scope)
+      stack_eval(method.contents, new_scope)
     end
     
     # A list of identifiers for the arguments of a method when it is being defined
@@ -90,7 +90,7 @@ class Carat::Runtime
     end
     
     eval :class do |class_name, superclass, contents|
-      klass = Class.new(class_name, superclass)
+      klass = Class.new(runtime, class_name, superclass)
       scope.constants[class_name] = klass
       stack_eval(contents, Scope.new(klass, scope))
     end
@@ -103,10 +103,20 @@ class Carat::Runtime
       statement && stack_eval(statement)
     end
     
-    # Define a method
-    eval :defn do |method_name, args, contents|
-      scope[:self].methods[method_name] = Method.new(stack_eval(args), contents)
+    # Define a method on a given class. +klass+ should be any instance of +Carat::Runtime::Class+.
+    def define_method(klass, method_name, args, contents)
+      klass.methods[method_name] = Method.new(stack_eval(args), contents)
       nil
+    end
+    
+    # Define a method in the current scope
+    eval :defn do |method_name, args, contents|
+      define_method(scope[:self], method_name, args, contents)
+    end
+    
+    # Define a singleton method (by defining a method on the object's singleton class)
+    eval :defs do |object, method_name, args, contents|
+      define_method(stack_eval(object).singleton_class, method_name, args, contents)
     end
     
     eval :const do |const_name|
@@ -115,6 +125,10 @@ class Carat::Runtime
     
     eval :array do |*contents|
       new_instance(scope.constants[:Array], [:arglist, *contents])
+    end
+    
+    eval :self do
+      scope[:self]
     end
   end
 end

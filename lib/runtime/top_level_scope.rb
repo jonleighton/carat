@@ -1,31 +1,26 @@
 # The top level scope takes care of "globals". In this context "globals" can either be constants
 # (which are globally available) or actual global variables.
 class Carat::Runtime
-  class TopLevelScope
-    attr_reader :runtime, :symbols, :globals
+  class TopLevelScope < AbstractScope
+    attr_reader :runtime, :globals
     
     def initialize(runtime, self_object)
-      @runtime = runtime
-      @symbols = { :self => self_object }
-      @globals = {}
+      super(self_object)
+      @runtime, @globals = runtime, {}
     end
     
     def initialize_environment
-      object_class = constants[:Object] = ObjectClass.new(runtime, :Object, nil)
-      constants[:Fixnum] = Fixnum.new(runtime, :Fixnum, object_class)
-      constants[:Array] = Array.new(runtime, :Array, object_class)
-    end
-    
-    def []=(symbol, value)
-      symbols[symbol] = value
+      object_klass = constants[:Object] = ObjectClass.new(runtime, :Object, nil)
+      class_klass  = constants[:Class]  = ClassClass.new(runtime, :Class,  object_klass)
+      
+      object_klass.klass = class_klass
+      
+      constants[:Fixnum] = Fixnum.new(runtime, :Fixnum, object_klass)
+      constants[:Array]  = Array.new(runtime, :Array, object_klass)
     end
     
     def [](symbol)
-      symbols[symbol] || raise(Carat::CaratError, "local variable '#{symbol}' is undefined")
-    end
-    
-    def merge!(items)
-      symbols.merge!(items)
+      super || raise(Carat::CaratError, "local variable '#{symbol}' is undefined")
     end
     
     alias_method :constants, :globals
