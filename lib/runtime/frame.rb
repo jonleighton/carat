@@ -5,7 +5,7 @@ class Carat::Runtime
     attr_reader :sexp, :scope
     
     extend Forwardable
-    def_delegators :scope, :runtime, :symbols
+    def_delegators :scope, :runtime, :constants, :symbols
     
     class << self
       def eval(node_type, &block)

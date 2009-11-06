@@ -9,7 +9,7 @@ class Carat::Runtime
     
     # A literal number value. This is evaluated by the lexer, so we can just use it straight off.
     eval :lit do |value|
-      scope.constants[:Fixnum].get(value)
+      constants[:Fixnum].get(value)
     end
     
     # A block of statements. Evaluate each in turn and return the result of the last one.
@@ -95,7 +95,7 @@ class Carat::Runtime
     
     eval :class do |class_name, superclass, contents|
       klass = Class.new(runtime, class_name, superclass)
-      scope.constants[class_name] = klass
+      constants[class_name] = klass
       eval(contents, Scope.new(klass, scope))
     end
     
@@ -124,11 +124,11 @@ class Carat::Runtime
     end
     
     eval :const do |const_name|
-      scope.constants[const_name]
+      constants[const_name]
     end
     
     eval :array do |*contents|
-      new_instance(scope.constants[:Array], [:arglist, *contents])
+      new_instance(constants[:Array], [:arglist, *contents])
     end
     
     eval :self do
