@@ -9,7 +9,7 @@ class Carat::Runtime
     
     # A literal number value. This is evaluated by the lexer, so we can just use it straight off.
     eval :lit do |value|
-      value
+      scope.constants[:Fixnum].get(value)
     end
     
     # A block of statements. Evaluate each in turn and return the result of the last one.
@@ -42,16 +42,16 @@ class Carat::Runtime
         object = stack_eval(receiver)
         
         if method_name == :new # Temporary special case
-          new_object(object, args)
+          new_instance(object, args)
         else
           call_callable(object, method_name, args)
         end
       end
     end
     
-    def new_object(klass, args)
-      object = Object.new(klass)
-      call_callable(object, :initialize, args)
+    def new_instance(klass, args = [])
+      object = Object.new(runtime, klass)
+      call_callable(object, :initialize, args) if object.method_defined?(:initialize)
       object
     end
     
@@ -63,7 +63,7 @@ class Carat::Runtime
         when Method
           apply(object, callable, args)
         when Primitive
-          callable.definition.call(*args)
+          object.send(callable.name, *args)
       end
     end
     
@@ -103,6 +103,7 @@ class Carat::Runtime
       statement && stack_eval(statement)
     end
     
+    # Define a method
     eval :defn do |method_name, args, contents|
       scope[:self].methods[method_name] = Method.new(stack_eval(args), contents)
       nil
@@ -113,7 +114,7 @@ class Carat::Runtime
     end
     
     eval :array do |*contents|
-      new_object(scope.constants[:Array], [:arglist, *contents])
+      new_instance(scope.constants[:Array], [:arglist, *contents])
     end
   end
 end

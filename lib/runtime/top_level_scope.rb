@@ -2,15 +2,18 @@
 # (which are globally available) or actual global variables.
 class Carat::Runtime
   class TopLevelScope
-    attr_reader :symbols, :globals
+    attr_reader :runtime, :symbols, :globals
     
-    def initialize(self_object)
+    def initialize(runtime, self_object)
+      @runtime = runtime
       @symbols = { :self => self_object }
       @globals = {}
     end
     
     def initialize_environment
-      self.constants[:Array] = Array.new(:Array, nil)
+      object_class = constants[:Object] = ObjectClass.new(runtime, :Object, nil)
+      constants[:Fixnum] = Fixnum.new(runtime, :Fixnum, object_class)
+      constants[:Array] = Array.new(runtime, :Array, object_class)
     end
     
     def []=(symbol, value)

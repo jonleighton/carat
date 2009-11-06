@@ -4,6 +4,9 @@ class Carat::Runtime
   class Frame
     attr_reader :sexp, :scope
     
+    extend Forwardable
+    def_delegators :scope, :runtime
+    
     class << self
       def eval(node_type, &block)
         define_method("eval_#{node_type}", &block)

@@ -1,4 +1,5 @@
 require "ruby_parser"
+require "forwardable"
 
 module Carat
   ROOT_PATH    = File.expand_path(File.dirname(__FILE__))

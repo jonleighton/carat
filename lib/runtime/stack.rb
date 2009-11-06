@@ -7,5 +7,7 @@ class Carat::Runtime
       pop
       result
     end
+    
+    alias_method :peek, :last
   end
 end

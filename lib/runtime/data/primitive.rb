@@ -1,9 +1,9 @@
 class Carat::Runtime
   class Primitive
-    attr_reader :definition
+    attr_reader :name
   
-    def initialize(definition)
-      @definition = definition
+    def initialize(name)
+      @name = name
     end
   end
 end
