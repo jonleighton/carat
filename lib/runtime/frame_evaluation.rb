@@ -17,12 +17,12 @@ class Carat::Runtime
       statements.reduce(nil) { |last_result, statement| eval(statement) }
     end
     
-    # Make an assignment
+    # Make a local assignment assignment
     eval :lasgn do |identifier, value|
       scope[identifier] = eval(value)
     end
     
-    # Get a variable
+    # Get a local variable
     eval :lvar do |identifier|
       scope[identifier]
     end

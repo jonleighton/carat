@@ -11,7 +11,7 @@ class Carat::Runtime
     # "The superclass of the metaclass is the metaclass of the superclass" :)
     def initialize(runtime, name, superclass)
       @runtime, @name, @superclass = runtime, name, superclass
-      @klass = SingletonClass.new(runtime, superclass && superclass.metaclass)
+      @klass = MetaClass.new(runtime, superclass && superclass.metaclass)
       
       include_extensions(extensions_module) if extensions_module
       include_primitives(primitives_module) if primitives_module

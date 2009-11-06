@@ -1,4 +1,3 @@
-# TODO: Have a MetaClass subclass for semantic value
 class Carat::Runtime
   class SingletonClass < Class
     # For a singleton class we do not create a metaclass (this would result in infinite recursion)

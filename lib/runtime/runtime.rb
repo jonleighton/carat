@@ -4,7 +4,7 @@ module Carat
       require RUNTIME_PATH + "/" + file
     end
     
-    %w[object class singleton_class method primitive].each do |file|
+    %w[object class singleton_class meta_class method primitive].each do |file|
       require RUNTIME_PATH + "/data/" + file
     end
     

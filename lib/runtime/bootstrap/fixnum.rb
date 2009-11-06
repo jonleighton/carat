@@ -26,11 +26,11 @@ module Carat::Runtime::Bootstrap
     
     module ObjectPrimitives
       def +(other)
-        runtime.constants[:Fixnum].get(@value + other.value)
+        klass.get(@value + other.value)
       end
       
       def -(other)
-        runtime.constants[:Fixnum].get(@value - other.value)
+        klass.get(@value - other.value)
       end
       
       def to_s
