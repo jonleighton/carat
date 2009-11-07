@@ -39,31 +39,16 @@ class Carat::Runtime
           value
         end
       else
-        object = eval(receiver)
+        object   = eval(receiver)
+        callable = object.lookup_instance_method(method_name)
+        args     = eval(args)
         
-        if method_name == :new # Temporary special case
-          new_instance(object, args)
-        else
-          call(object, method_name, args)
+        case callable
+          when Method
+            call_method(object, callable, args)
+          when Primitive
+            call_primitive(object, callable, args)
         end
-      end
-    end
-    
-    def new_instance(klass, args = [])
-      object = Object.new(runtime, klass)
-      call(object, :initialize, args) if object.method_defined?(:initialize)
-      object
-    end
-    
-    def call(object, name, args = [])
-      callable = object.lookup_method(name)
-      args     = eval(args)
-      
-      case callable
-        when Method
-          call_method(object, callable, args)
-        when Primitive
-          call_primitive(object, callable, args)
       end
     end
     
@@ -94,9 +79,10 @@ class Carat::Runtime
     end
     
     eval :class do |class_name, superclass, contents|
-      klass = Class.new(runtime, class_name, superclass)
+      klass = Class.new(runtime, class_name, eval(superclass) || constants[:Object])
       constants[class_name] = klass
       eval(contents, Scope.new(klass, scope))
+      nil
     end
     
     eval :scope do |*statement|

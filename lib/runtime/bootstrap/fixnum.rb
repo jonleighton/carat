@@ -9,7 +9,7 @@ module Carat::Runtime::Bootstrap
         if instances[number]
           instances[number]
         else
-          instance = runtime.new_instance(self)
+          instance = primitive_new
           instance.value = number
           instances[number] = instance
         end
@@ -20,21 +20,21 @@ module Carat::Runtime::Bootstrap
       attr_accessor :value
       
       def to_s
-        @value.to_s
+        value.to_s
       end
     end
     
     module ObjectPrimitives
       def +(other)
-        klass.get(@value + other.value)
+        klass.get(value + other.value)
       end
       
       def -(other)
-        klass.get(@value - other.value)
+        klass.get(value - other.value)
       end
       
       def to_s
-        @value.to_s
+        value.to_s
       end
     end
   end

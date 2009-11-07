@@ -5,9 +5,11 @@ module Carat::Runtime::Bootstrap
   
   def self.rename_primitives(mod)
     mod.instance_methods.each do |method_name|
-      mod.module_eval do
-        alias_method "primitive_#{method_name}", method_name
-        remove_method method_name
+      unless method_name =~ /^primitive_/
+        mod.module_eval do
+          alias_method "primitive_#{method_name}", method_name
+          remove_method method_name
+        end
       end
     end
   end

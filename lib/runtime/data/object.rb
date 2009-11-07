@@ -3,57 +3,43 @@ class Carat::Runtime
     attr_reader :runtime
     attr_accessor :klass
     
-    extend Forwardable
-    def_delegator :klass, :bootstrap_module
-    
-    class << self
-      def demodulized_name
-        to_s.split("::").last
-      end
-    end
-    
     def initialize(runtime, klass)
       raise Carat::CaratError, "cannot create object without a class" if klass.nil?
       @runtime, @klass = runtime, klass
-      
-      include_extensions(extensions_module) if extensions_module
-      include_primitives(primitives_module) if primitives_module
+      real_klass.include_bootstrap_object_modules(self)
     end
     
-    def extensions_module
-      if bootstrap_module && bootstrap_module.const_defined?("#{self.class.demodulized_name}Extensions")
-        bootstrap_module.const_get("#{self.class.demodulized_name}Extensions")
-      end
+    # Lookup a instance method - i.e. one defined by this object's class
+    def lookup_instance_method(name)
+      klass.lookup_method(name)
     end
     
-    def primitives_module
-      if bootstrap_module && bootstrap_module.const_defined?("#{self.class.demodulized_name}Primitives")
-        bootstrap_module.const_get("#{self.class.demodulized_name}Primitives")
-      end
-    end
-    
+    # Include an extension - specific behaviour for particular instances
     def include_extensions(mod)
+      puts "Including extensions #{mod} for #{self.inspect}"
       (class << self; self; end).send(:include, mod)
     end
     
+    # Include some primitives and make them available by telling the class their names
     def include_primitives(mod)
+      puts "Including primitives #{mod} for #{self.inspect}"
+      
+      # TODO: This only needs to happen once per class, I think? We can have several instances of
+      # the same class, all using the same method table.
       mod.instance_methods.each do |method_name|
         klass.methods[method_name.sub(/^primitive_/, '').to_sym] = Primitive.new(method_name.to_sym)
       end
       
       (class << self; self; end).send(:include, mod)
+      included_primitives << mod
+    end
+    
+    def included_primitives
+      @included_primitives ||= []
     end
     
     def instance_variables
       @instance_variables ||= {}
-    end
-    
-    def lookup_method(name, raise_on_failure = true)
-      method = klass.methods[name] || raise(Carat::CaratError, "method '#{self}##{name}' not found")
-    end
-    
-    def method_defined?(name)
-      !klass.methods[name].nil?
     end
     
     # If the class is already a singleton class then return it, otherwise create one and insert it
@@ -63,7 +49,7 @@ class Carat::Runtime
       if klass.is_a?(SingletonClass)
         klass
       else
-        self.klass = SingletonClass.new(runtime, klass)
+        self.klass = SingletonClass.new(runtime, self, klass)
       end
     end
     
@@ -76,9 +62,10 @@ class Carat::Runtime
     end
     
     def inspect
-      "<Carat::Runtime::Object:(#{object_id}) " +
-      "@klass=#{real_klass} " + 
-      "@instance_variables=#{instance_variables.inspect}>"
+      "<#{self.class}:(#{object_id}) " +
+      ":klass=#{real_klass} " + 
+      ":instance_variables=#{instance_variables.inspect} " +
+      ":to_s=#{to_s}>"
     end
   end
 end

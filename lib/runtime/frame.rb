@@ -47,7 +47,7 @@ class Carat::Runtime
     # Creates a new frame for the sexp and scope, and adds it to the current stack. If scope is
     # not given, it will default to the current scope.
     def eval(sexp, scope = nil)
-      @stack << Frame.new(sexp, scope || self.scope)
+      @stack << Frame.new(sexp, scope || self.scope) unless sexp.nil?
     end
     
     require Carat::RUNTIME_PATH + "/frame_evaluation"
