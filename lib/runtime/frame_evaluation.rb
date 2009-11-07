@@ -79,7 +79,11 @@ class Carat::Runtime
     end
     
     eval :class do |class_name, superclass, contents|
-      klass = Class.new(runtime, class_name, eval(superclass) || constants[:Object])
+      if constants[class_name]
+        klass = constants[class_name]
+      else
+        klass = Class.new(runtime, class_name, eval(superclass) || constants[:Object])
+      end
       constants[class_name] = klass
       eval(contents, Scope.new(klass, scope))
       nil

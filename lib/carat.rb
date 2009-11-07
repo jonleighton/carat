@@ -1,3 +1,9 @@
+begin
+  require "rubygems"
+rescue LoadError
+  # We don't require rubygems to be present, but load it if it is
+end
+
 require "ruby_parser"
 require "forwardable"
 
@@ -19,7 +25,7 @@ module Carat
   
   # Creates a new runtime object and tells it to run some code
   def self.execute(code)
-    Runtime.new.run(code)
+    Runtime.new.run(code).to_s
   end
   
   def self.debug(message)
