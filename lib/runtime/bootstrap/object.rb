@@ -1,5 +1,8 @@
 module Carat::Runtime::Bootstrap
   module Object
+    module ClassPrimitives
+    end
+    
     module ObjectPrimitives
       # The method "initialize" has a special meaning in Ruby (obviously), so we have manually
       # prefixed it here

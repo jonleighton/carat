@@ -20,7 +20,7 @@ module Carat::Runtime::Bootstrap
       attr_accessor :value
       
       def to_s
-        value.to_s
+        value && value.to_s || super
       end
     end
     

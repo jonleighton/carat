@@ -83,8 +83,9 @@ class Carat::Runtime
         klass = constants[class_name]
       else
         klass = Class.new(runtime, class_name, eval(superclass) || constants[:Object])
+        constants[class_name] = klass
       end
-      constants[class_name] = klass
+      
       eval(contents, Scope.new(klass, scope))
       nil
     end

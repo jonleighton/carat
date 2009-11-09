@@ -7,6 +7,7 @@ class Carat::Runtime
     def initialize(runtime, parent, superclass)
       @runtime, @parent, @superclass = runtime, parent, superclass
       @klass = superclass.klass if superclass
+      include_bootstrap_modules
     end
     
     def to_s

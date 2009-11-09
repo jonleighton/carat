@@ -6,12 +6,20 @@ class Carat::Runtime
     def initialize(runtime, klass)
       raise Carat::CaratError, "cannot create object without a class" if klass.nil?
       @runtime, @klass = runtime, klass
-      real_klass.include_bootstrap_object_modules(self)
+      include_bootstrap_modules
     end
     
     # Lookup a instance method - i.e. one defined by this object's class
     def lookup_instance_method(name)
       klass.lookup_method(name)
+    end
+    
+    def include_bootstrap_modules
+      # Include extensions defined for this instances of the class
+      include_extensions(klass.object_extensions_module) if klass.object_extensions_module
+      
+      # Include the object primitives from the class
+      include_primitives(*klass.object_primitives)
     end
     
     # Include an extension - specific behaviour for particular instances
@@ -21,21 +29,18 @@ class Carat::Runtime
     end
     
     # Include some primitives and make them available by telling the class their names
-    def include_primitives(mod)
-      puts "Including primitives #{mod} for #{self.inspect}"
-      
-      # TODO: This only needs to happen once per class, I think? We can have several instances of
-      # the same class, all using the same method table.
-      mod.instance_methods.each do |method_name|
-        klass.methods[method_name.sub(/^primitive_/, '').to_sym] = Primitive.new(method_name.to_sym)
+    def include_primitives(*modules)
+      modules.each do |mod|
+        puts "Including primitives #{mod} for #{self.inspect}"
+        
+        # TODO: This only needs to happen once per class, I think? We can have several instances of
+        # the same class, all using the same method table.
+        mod.instance_methods.each do |method_name|
+          klass.methods[method_name.sub(/^primitive_/, '').to_sym] = Primitive.new(method_name.to_sym)
+        end
+        
+        (class << self; self; end).send(:include, mod)
       end
-      
-      (class << self; self; end).send(:include, mod)
-      included_primitives << mod
-    end
-    
-    def included_primitives
-      @included_primitives ||= []
     end
     
     def instance_variables

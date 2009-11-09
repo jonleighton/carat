@@ -13,9 +13,6 @@ class Carat::Runtime
       object_klass = constants[:Object] = Class.new(runtime, :Object, nil)
       class_klass  = constants[:Class]  = Class.new(runtime, :Class,  object_klass)
       
-      # The class of Object is Class
-      object_klass.klass           = class_klass
-      
       # The class of the metaclass of Object is Class (but Class didn't exist when Object was set up)
       object_klass.metaclass.klass = class_klass
       
@@ -31,6 +28,12 @@ class Carat::Runtime
       # The superclass of the metaclass of Class adheres the the standard rule - it is the
       # metaclass of the superclass.
       class_klass.metaclass.superclass = class_klass.superclass.metaclass # = object_class.metaclass
+      
+      # TODO: Automate if possible
+      object_klass.include_bootstrap_modules
+      object_klass.metaclass.include_bootstrap_modules
+      class_klass.include_bootstrap_modules
+      class_klass.metaclass.include_bootstrap_modules
       
       constants[:Fixnum] = Class.new(runtime, :Fixnum, object_klass)
       constants[:Array]  = Class.new(runtime, :Array,  object_klass)
