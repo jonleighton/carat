@@ -4,9 +4,12 @@ class Carat::Runtime
     attr_accessor :klass
     
     def initialize(runtime, klass)
-      raise Carat::CaratError, "cannot create object without a class" if klass.nil?
+      if klass.nil? && runtime.initialized?
+        raise Carat::CaratError, "cannot create object without a class"
+      end
+      
       @runtime, @klass = runtime, klass
-      include_bootstrap_modules
+      include_bootstrap_modules if runtime.initialized?
     end
     
     # Lookup a instance method - i.e. one defined by this object's class
@@ -24,15 +27,12 @@ class Carat::Runtime
     
     # Include an extension - specific behaviour for particular instances
     def include_extensions(mod)
-      puts "Including extensions #{mod} for #{self.inspect}"
       (class << self; self; end).send(:include, mod)
     end
     
     # Include some primitives and make them available by telling the class their names
     def include_primitives(*modules)
       modules.each do |mod|
-        puts "Including primitives #{mod} for #{self.inspect}"
-        
         # TODO: This only needs to happen once per class, I think? We can have several instances of
         # the same class, all using the same method table.
         mod.instance_methods.each do |method_name|

@@ -5,14 +5,16 @@ class Carat::Runtime
     
     alias_method :metaclass, :singleton_class
     
+    # TODO: Change param order to runtime, superclass, name = nil
+    def initialize(runtime, name, superclass)
+      @name, @superclass = name, superclass
+      super(runtime, get_klass(runtime))
+    end
+    
     # For a standard +Class+ (as opposed to a +SingletonClass+), we create a metaclass and use that
     # "The superclass of the metaclass is the metaclass of the superclass" :)
-    def initialize(runtime, name, superclass)
-      @runtime, @name, @superclass = runtime, name, superclass
-      @klass = MetaClass.new(runtime, self, superclass && superclass.metaclass)
-      puts "Setting up #{self}, klass: #{klass}, real_klass: #{real_klass}, superclass: #{superclass}"
-      include_bootstrap_modules
-      puts
+    def get_klass(runtime)
+      MetaClass.new(runtime, self, superclass && superclass.metaclass)
     end
     
     # The bootstrap module is the module containing specific behaviour and primitives for this class
@@ -61,25 +63,25 @@ class Carat::Runtime
     # Primitives for instances of this class are primitives for instances of the superclass,
     # plus any primitives defined for instances of this exact class
     def object_primitives
-      #unless @object_primitives
+      unless @object_primitives
         @object_primitives = []
         @object_primitives += superclass.object_primitives if superclass
         @object_primitives << object_primitives_module if object_primitives_module
         @object_primitives.uniq
-      #end
-      #@object_primitives
+      end
+      @object_primitives
     end
     
     # Class method primitives are class method primitives for the superclass, plus any class method
     # primitives defined for instances of this exact class
     def class_primitives
-      #unless @class_primitives
+      unless @class_primitives
         @class_primitives = []
         @class_primitives += superclass.class_primitives if superclass
         @class_primitives << class_primitives_module if class_primitives_module
         @class_primitives.uniq
-      #end
-      #@class_primitives
+      end
+      @class_primitives
     end
     
     def include_bootstrap_modules
@@ -89,54 +91,10 @@ class Carat::Runtime
       # Include the class primitives
       include_primitives(*class_primitives)
       
-      # Include the object primitives from the class (because classes are objects too)
-      include_primitives(*klass.object_primitives) if klass
-    end
-    
-    # Includes the relevant bootstrap modules for this class. These are:
-    #   * Any specific extensions to this class
-    #   * Any primitives to be defined on this class
-    #   * Any primitives which were defined on the class of this class
-=begin
-    def include_bootstrap_class_modules(target)
-      target.include_extensions(class_extensions_module) if class_extensions_module
-      target.include_primitives(class_primitives_module) if class_primitives_module
-      
-      # TODO: I think this is wrong. If we define a method Object.foo, and then create a
-      # class A, we would require that A.foo also calls that method.
-      if real_klass
-        # We want to inherit class methods from the class of this class (which is the class Class)
-        real_klass.included_class_primitives.each do |mod|
-          target.include_primitives(mod)
-        end
-        
-        real_klass.include_bootstrap_object_modules(self)
-      end
-      
-      if superclass
-        superclass.include_bootstrap_class_modules(self)
-      end
-    end
-    
-    def include_primitives(mod)
+      # Call super to include the instance-related bootstrap modules from the metaclass (because
+      # classes are objects too)
       super
-      included_class_primitives << mod
     end
-    
-    def included_class_primitives
-      @included_class_primitives ||= []
-    end
-    
-    # Includes the relevant bootstrap modules for an instance of this class. These are:
-    #   * Any specific extensions to instances of this class
-    #   * Any primitives to be defined on instances of this class
-    #   * Any primitives to be defined on instances of the superclass, if there is one
-    def include_bootstrap_object_modules(object)
-      object.include_extensions(object_extensions_module) if object_extensions_module && object.real_klass == self
-      object.include_primitives(object_primitives_module) if object_primitives_module
-      superclass.include_bootstrap_object_modules(object) if superclass
-    end
-=end
     
     def methods
       @methods ||= {}

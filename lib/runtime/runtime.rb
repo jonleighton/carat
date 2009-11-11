@@ -17,8 +17,10 @@ module Carat
     def initialize
       @stack = Stack.new
       @top_level_scope = TopLevelScope.new(self, nil)
-      Environment.new(self).setup
+      @environment = Environment.new(self)
+      @environment.setup
       @initialized = true
+      @environment.load_kernel
     end
     
     def current_frame

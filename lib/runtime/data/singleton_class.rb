@@ -5,9 +5,12 @@ class Carat::Runtime
     # For a singleton class we do not create a metaclass (this would result in infinite recursion)
     # We set the class to be the class +Class+.
     def initialize(runtime, parent, superclass)
-      @runtime, @parent, @superclass = runtime, parent, superclass
-      @klass = superclass.klass if superclass
-      include_bootstrap_modules
+      @parent = parent
+      super(runtime, nil, superclass)
+    end
+    
+    def get_klass(runtime)
+      runtime.constants[:Class]
     end
     
     def to_s
