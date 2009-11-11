@@ -6,7 +6,7 @@ class Carat::Runtime
     # We set the class to be the class +Class+.
     def initialize(runtime, parent, superclass)
       @parent = parent
-      super(runtime, nil, superclass)
+      super(runtime, superclass)
     end
     
     def get_klass(runtime)

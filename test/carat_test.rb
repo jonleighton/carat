@@ -168,7 +168,7 @@ class CaratTest < Test::Unit::TestCase
     klassm = klass.metaclass
     klassi = Carat::Runtime::Object.new(runtime, klass)
     
-    foo = Carat::Runtime::Class.new(runtime, "Foo", object)
+    foo = Carat::Runtime::Class.new(runtime, object, "Foo")
     foom = foo.metaclass
     fooi = Carat::Runtime::Object.new(runtime, foo)
     

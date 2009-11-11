@@ -10,8 +10,8 @@ class Carat::Runtime
     end
     
     def setup
-      @object_klass = constants[:Object] = Class.new(runtime, :Object, nil)
-      @class_klass  = constants[:Class]  = Class.new(runtime, :Class,  @object_klass)
+      @object_klass = constants[:Object] = Class.new(runtime, nil,           :Object)
+      @class_klass  = constants[:Class]  = Class.new(runtime, @object_klass, :Class)
       
       # The class of the metaclass of Object is Class (but Class didn't exist when Object was set up)
       @object_klass.metaclass.klass = @class_klass
@@ -37,8 +37,8 @@ class Carat::Runtime
     end
     
     def load_kernel
-      constants[:Fixnum] = Class.new(runtime, :Fixnum, @object_klass)
-      constants[:Array]  = Class.new(runtime, :Array,  @object_klass)
+      constants[:Fixnum] = Class.new(runtime, @object_klass, :Fixnum)
+      constants[:Array]  = Class.new(runtime, @object_klass, :Array)
     end
   end
 end

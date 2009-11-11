@@ -6,8 +6,8 @@ class Carat::Runtime
     alias_method :metaclass, :singleton_class
     
     # TODO: Change param order to runtime, superclass, name = nil
-    def initialize(runtime, name, superclass)
-      @name, @superclass = name, superclass
+    def initialize(runtime, superclass, name = nil)
+      @superclass, @name = superclass, name
       super(runtime, get_klass(runtime))
     end
     
