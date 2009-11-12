@@ -26,6 +26,7 @@ class Carat::Runtime
       name && Bootstrap.const_defined?(name) && Bootstrap.const_get(name)
     end
     
+    # Helper method to get a named submodule of the bootstrap module, if it exists
     def bootstrap_submodule(name)
       if bootstrap_module && bootstrap_module.const_defined?(name)
         bootstrap_module.const_get(name)
@@ -46,6 +47,9 @@ class Carat::Runtime
       bootstrap_submodule(:ObjectPrimitives)
     end
     
+    # Modules defining primitives for instances of this class. For each instance, all of the 
+    # primitive modules need to be singleton_included, so we get a full list using the inheritance
+    # hierarchy.
     def primitives
       @primitives = []
       @primitives += superclass.primitives if superclass

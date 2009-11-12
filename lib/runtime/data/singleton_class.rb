@@ -9,9 +9,10 @@ class Carat::Runtime
       super(runtime, superclass)
     end
     
+    # Use the same class as the superclass. With the definitions in +Environment+, this ends up
+    # being the metaclass of +Class+.
     def get_klass(runtime)
-      #superclass && superclass.klass
-      runtime.constants[:Class] && runtime.constants[:Class].metaclass
+      superclass && superclass.klass
     end
     
     def to_s
