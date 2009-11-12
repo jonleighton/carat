@@ -87,8 +87,12 @@ class Carat::Runtime
         constants[class_name] = klass
       end
       
+      # TODO: Add code s.t. scope.extend(klass, :foo => :bar) works
       eval(contents, Scope.new(klass, scope))
-      nil
+    end
+    
+    eval :sclass do |object, contents|
+      eval(contents, Scope.new(eval(object).singleton_class, scope))
     end
     
     eval :scope do |*statement|

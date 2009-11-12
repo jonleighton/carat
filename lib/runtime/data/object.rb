@@ -14,33 +14,22 @@ class Carat::Runtime
     
     # Lookup a instance method - i.e. one defined by this object's class
     def lookup_instance_method(name)
-      klass.lookup_method(name)
+      klass.lookup_method(name) || raise(Carat::CaratError, "method '#{self}##{name}' not found")
+    end
+    
+    # Include some behaviour just for this specific instance
+    def singleton_include(*modules)
+      modules.each do |mod|
+        (class << self; self; end).send(:include, mod)
+      end
     end
     
     def include_bootstrap_modules
       # Include extensions defined for this instances of the class
-      include_extensions(klass.object_extensions_module) if klass.object_extensions_module
+      singleton_include(klass.extensions_module) if klass.extensions_module
       
       # Include the object primitives from the class
-      include_primitives(*klass.object_primitives)
-    end
-    
-    # Include an extension - specific behaviour for particular instances
-    def include_extensions(mod)
-      (class << self; self; end).send(:include, mod)
-    end
-    
-    # Include some primitives and make them available by telling the class their names
-    def include_primitives(*modules)
-      modules.each do |mod|
-        # TODO: This only needs to happen once per class, I think? We can have several instances of
-        # the same class, all using the same method table.
-        mod.instance_methods.each do |method_name|
-          klass.methods[method_name.sub(/^primitive_/, '').to_sym] = Primitive.new(method_name.to_sym)
-        end
-        
-        (class << self; self; end).send(:include, mod)
-      end
+      singleton_include(*klass.primitives)
     end
     
     def instance_variables

@@ -86,7 +86,7 @@ class CaratTest < Test::Unit::TestCase
     assert_equal("18", execute(code))
   end
   
-  def test_object_superclass
+  def test_object
     code = <<-CODE
       class Object
         def self.a
@@ -107,7 +107,7 @@ class CaratTest < Test::Unit::TestCase
     assert_equal("7", execute(code))
   end
   
-  def test_object_superclass_primitives
+  def test_object_primitives
     Carat::Runtime::Bootstrap::Object::ClassPrimitives.send(:define_method, :a) do
       runtime.constants[:Fixnum].get(3)
     end
@@ -129,21 +129,62 @@ class CaratTest < Test::Unit::TestCase
     Carat::Runtime::Bootstrap::Object::ObjectPrimitives.send(:remove_method, :b)
   end
   
-  def test_class_class
+  def test_class
     code = <<-CODE
       class Class
-        def foo
+        def a
           3
+        end
+        
+        def self.b
+          2
         end
       end
       
       class Foo
       end
       
-      Foo.foo
+      Foo.a + (class << Foo; self; end).b
     CODE
     
-    assert_equal("3", execute(code))
+    assert_equal("5", execute(code))
+    
+    code = <<-CODE
+      class Class
+        def self.a
+          2
+        end
+      end
+      
+      class Foo
+      end
+      
+      Foo.a
+    CODE
+    
+    assert_raises(Carat::CaratError) { execute(code) }
+  end
+  
+  def test_class_primitives
+    Carat::Runtime::Bootstrap::Class::ObjectPrimitives.send(:define_method, :a) do
+      runtime.constants[:Fixnum].get(3)
+    end
+    
+    Carat::Runtime::Bootstrap::Class::ClassPrimitives.send(:define_method, :b) do
+      runtime.constants[:Fixnum].get(2)
+    end
+    
+    code = <<-CODE
+      class Foo
+      end
+      
+      Foo.a + (class << Foo; self; end).b
+    CODE
+    
+    assert_equal("5", execute(code))
+  ensure
+    Carat::Runtime::Bootstrap::Class::ObjectPrimitives.send(:remove_method, :a)
+    Carat::Runtime::Bootstrap::Class::ClassPrimitives.send(:remove_method, :b)
   end
   
   def assert_primitive_modules(object, *expected_modules)
@@ -185,11 +226,11 @@ class CaratTest < Test::Unit::TestCase
     # Object.metaclass
     assert objectm.is_a?(Carat::Runtime::MetaClass)
     assert_equal klass, objectm.superclass
-    assert_equal klass, objectm.klass
+    assert_equal klassm, objectm.klass
     assert_equal klass, objectm.real_klass
     assert_primitive_modules(objectm,
       [:Class, :Class],  # Object.metaclass is a subclass of Class
-      [:Class, :Object], # Object.metaclass is an instnace of Class
+      [:Class, :Object], # Object.metaclass is an instance of Class
       [:Object, :Class], # Object.metaclass is a subclass of Object
       [:Object, :Object] # Object.metaclass is an instance of Object
     )
@@ -243,7 +284,7 @@ class CaratTest < Test::Unit::TestCase
     # Foo.metaclass
     assert foom.is_a?(Carat::Runtime::MetaClass)
     assert_equal objectm, foom.superclass
-    assert_equal klass, foom.klass
+    assert_equal klassm, foom.klass
     assert_equal klass, foom.real_klass
     assert_primitive_modules(foom,
       [:Class, :Class],  # Foo.metaclass is a subclass of Class

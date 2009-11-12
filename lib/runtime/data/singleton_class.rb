@@ -10,7 +10,8 @@ class Carat::Runtime
     end
     
     def get_klass(runtime)
-      runtime.constants[:Class]
+      #superclass && superclass.klass
+      runtime.constants[:Class] && runtime.constants[:Class].metaclass
     end
     
     def to_s
