@@ -1,7 +1,7 @@
 class Carat::Runtime
   class Module < Object
     attr_reader :name
-    attr_accessor :superclass
+    attr_accessor :super
     attr_writer :methods
     
     def initialize(runtime, name = nil)
@@ -20,7 +20,7 @@ class Carat::Runtime
     end
     
     def lookup_method(name)
-      methods[name] || (superclass && superclass.lookup_method(name))
+      methods[name] || (self.super && self.super.lookup_method(name))
     end
     
     def to_s

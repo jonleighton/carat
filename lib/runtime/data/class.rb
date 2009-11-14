@@ -4,8 +4,13 @@ class Carat::Runtime
     # it explicit that the singleton class is specifically a metaclass
     alias_method :metaclass, :singleton_class
     
+    # Any Module has a super, but we can use the alias "superclass" if we want to make it explicit
+    # that the super is specifically a class
+    alias_method :superclass, :super
+    alias_method :superclass=, :super=
+    
     def initialize(runtime, superclass, name = nil)
-      @superclass = superclass
+      self.super = superclass
       super(runtime, name)
     end
     
