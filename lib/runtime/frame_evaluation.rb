@@ -78,17 +78,23 @@ class Carat::Runtime
       expressions.map { |expression| eval(expression) }
     end
     
+    def new_module(name)
+      Module.new(runtime, name)
+    end
+    
+    eval :module do |module_name, contents|
+      constants[module_name] ||= new_module(module_name)
+      eval(contents, Scope.new(constants[module_name], scope))
+    end
+    
+    def new_class(superclass, name)
+      Class.new(runtime, eval(superclass) || constants[:Object], name)
+    end
+    
     eval :class do |class_name, superclass, contents|
-      if constants[class_name]
-        klass = constants[class_name]
-      else
-        superclass = eval(superclass) || constants[:Object]
-        klass = Class.new(runtime, superclass, class_name)
-        constants[class_name] = klass
-      end
-      
+      constants[class_name] ||= new_class(superclass, class_name)
       # TODO: Add code s.t. scope.extend(klass, :foo => :bar) works
-      eval(contents, Scope.new(klass, scope))
+      eval(contents, Scope.new(constants[class_name], scope))
     end
     
     eval :sclass do |object, contents|

@@ -1,18 +1,16 @@
 class Carat::Runtime
-  class Class < Object
-    attr_reader :name
-    attr_accessor :superclass
-    attr_writer :methods
-    
+  class Class < Module
+    # Any Object can have a singleton_class, but we can use the alias "metaclass" if we want to make
+    # it explicit that the singleton class is specifically a metaclass
     alias_method :metaclass, :singleton_class
     
     def initialize(runtime, superclass, name = nil)
-      @superclass, @name = superclass, name
-      super(runtime, get_klass(runtime))
+      @superclass = superclass
+      super(runtime, name)
     end
     
-    # For a standard +Class+ (as opposed to a +SingletonClass+), we create a metaclass and use that
-    # "The superclass of the metaclass is the metaclass of the superclass" :)
+    # For a standard +Class+ (as opposed to a +SingletonClass+), we create a metaclass
+    # and use that "The superclass of the metaclass is the metaclass of the superclass" :)
     def get_klass(runtime)
       MetaClass.new(runtime, self, superclass && superclass.metaclass)
     end
@@ -66,14 +64,6 @@ class Carat::Runtime
           methods[method_name.sub(/^primitive_/, '').to_sym] = Primitive.new(method_name.to_sym)
         end
       end
-    end
-    
-    def methods
-      @methods ||= {}
-    end
-    
-    def lookup_method(name)
-      methods[name] || (superclass && superclass.lookup_method(name))
     end
     
     def to_s
