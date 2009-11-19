@@ -12,15 +12,19 @@ module Carat
     
     extend Forwardable
     def_delegators :top_level_scope, :constants
-    def_delegators :current_frame, :new_instance, :symbols
+    def_delegators :current_scope, :symbols
     
     def initialize
       @stack = Stack.new
-      @top_level_scope = TopLevelScope.new(self, nil)
+      @top_level_scope = TopLevelScope.new(self)
       @environment = Environment.new(self)
       @environment.setup
       @initialized = true
       @environment.load_kernel
+    end
+    
+    def current_scope
+      current_frame && current_frame.scope || top_level_scope
     end
     
     def current_frame

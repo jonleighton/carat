@@ -3,7 +3,7 @@ class Carat::Runtime
     attr_reader :runtime
   
     extend Forwardable
-    def_delegators :runtime, :constants
+    def_delegators :runtime, :constants, :symbols, :run
     
     def initialize(runtime)
       @runtime = runtime
@@ -40,6 +40,10 @@ class Carat::Runtime
       constants[:Kernel] = Module.new(runtime, :Kernel)
       constants[:Fixnum] = Class.new(runtime, @object, :Fixnum)
       constants[:Array]  = Class.new(runtime, @object, :Array)
+      
+      run(File.read(Carat::KERNEL_PATH + "/object.rb"))
+      
+      symbols[:self] = Object.new(runtime, @object)
     end
   end
 end

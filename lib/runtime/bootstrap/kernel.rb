@@ -1,6 +1,6 @@
 module Carat::Runtime::Bootstrap
   module Kernel
-    module SingletonPrimitives
+    module Primitives
       def puts(data)
         ::Kernel.puts(data)
       end

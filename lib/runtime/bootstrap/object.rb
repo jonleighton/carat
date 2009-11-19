@@ -6,7 +6,7 @@ module Carat::Runtime::Bootstrap
     module Primitives
       # The method "initialize" has a special meaning in Ruby (obviously), so we have manually
       # prefixed it here
-      def primitive_initialize
+      def primitive_initialize(*args)
         # Do nothing by default
       end
     end

@@ -11,6 +11,10 @@ class Carat::Runtime
       MetaClass.new(runtime, self, superclass && superclass.metaclass)
     end
     
+    def ancestors
+      [self] + (self.super && self.super.ancestors || [])
+    end
+    
     # The super may be an include class for a module, but we want the first ancestor which is a 
     # "proper" class
     def superclass

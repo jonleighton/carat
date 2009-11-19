@@ -1,7 +1,7 @@
 module Carat::Runtime::Bootstrap
   module Array
     module Primitives
-      def initialize(*contents)
+      def primitive_initialize(*contents)
         @contents = contents
       end
       
@@ -10,7 +10,7 @@ module Carat::Runtime::Bootstrap
       end
       
       def inspect
-        @contents.inspect
+        "[" + @contents.map(&:primitive_inspect).join(", ") + "]"
       end
     end
   end

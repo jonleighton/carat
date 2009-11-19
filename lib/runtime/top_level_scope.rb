@@ -4,8 +4,8 @@ class Carat::Runtime
   class TopLevelScope < AbstractScope
     attr_reader :runtime, :globals
     
-    def initialize(runtime, self_object)
-      super(self_object)
+    def initialize(runtime)
+      super(nil)
       @runtime, @globals = runtime, {}
     end
     

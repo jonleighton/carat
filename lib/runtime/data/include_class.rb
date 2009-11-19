@@ -2,6 +2,9 @@ class Carat::Runtime
   class IncludeClass < Class
     attr_reader :module
     
+    extend Forwardable
+    def_delegators :"self.module", :primitives_module, :extensions_module
+    
     def initialize(runtime, mod, supr)
       @module = mod
       super(runtime, supr)
@@ -13,6 +16,15 @@ class Carat::Runtime
     
     def get_klass(runtime)
       self.module
+    end
+    
+    # Delegate primitive_ methods to the module
+    def method_missing(name, *args)
+      if name.to_s =~ /^primitive_/
+        self.module.send(name, *args)
+      else
+        raise NoMethodError, "undefined method `#{name}' for #{self.inspect}"
+      end
     end
     
     def to_s
