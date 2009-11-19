@@ -17,7 +17,7 @@ class Carat::Runtime
       if self.super.instance_of?(Class)
         self.super
       else
-        super.super.superclass
+        self.super && self.super.superclass
       end
     end
     

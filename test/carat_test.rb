@@ -257,7 +257,7 @@ class CaratTest < Test::Unit::TestCase
     fooi = Carat::Runtime::Object.new(runtime, foo)
     
     # Object
-    assert_equal nil, object.superclass
+    assert_equal nil, object.super
     assert_equal object.metaclass, object.klass
     assert_equal klass, object.real_klass
     assert_primitive_modules(object,
@@ -270,10 +270,10 @@ class CaratTest < Test::Unit::TestCase
     
     # Object.metaclass
     assert objectm.is_a?(Carat::Runtime::MetaClass)
-    assert_equal klass, objectm.superclass
+    assert_equal klass, objectm.super
     assert_equal klassm, objectm.klass
     assert_equal klass, objectm.real_klass
-    assert_equal klass, objectm.superclass
+    assert_equal klass, objectm.super
     assert_primitive_modules(objectm,
       :Class,  # Object.metaclass is an instance of Class
       :Object, # Object.metaclass is an Object
@@ -290,7 +290,7 @@ class CaratTest < Test::Unit::TestCase
     assert_primitive_modules(objecti, :Object) # Object.new is an instance of Object
     
     # Module
-    assert_equal object, mod.superclass
+    assert_equal object, mod.super
     assert_equal mod.metaclass, mod.klass
     assert_equal klass, mod.real_klass
     assert_primitive_modules(mod,
@@ -307,7 +307,7 @@ class CaratTest < Test::Unit::TestCase
     assert modm.is_a?(Carat::Runtime::MetaClass)
     assert_equal klassm, modm.klass
     assert_equal klass, modm.real_klass
-    assert_equal objectm, modm.superclass
+    assert_equal objectm, modm.super
     assert_primitive_modules(objectm,
       :Class,  # Module.metaclass is an instance of Class
       :Object, # Module.metaclass is an Object
@@ -327,7 +327,7 @@ class CaratTest < Test::Unit::TestCase
     )
     
     # Class
-    assert_equal mod, klass.superclass
+    assert_equal mod, klass.super
     assert_equal klass.metaclass, klass.klass
     assert_equal klass, klass.real_klass
     assert_primitive_modules(klass,
@@ -343,10 +343,10 @@ class CaratTest < Test::Unit::TestCase
     
     # Class.metaclass
     assert klassm.is_a?(Carat::Runtime::MetaClass)
-    assert_equal modm, klassm.superclass
+    assert_equal modm, klassm.super
     assert_equal klass, klassm.klass
     assert_equal klass, klassm.real_klass
-    assert_equal modm, klassm.superclass
+    assert_equal modm, klassm.super
     assert_primitive_modules(klassm,
       :Class,  # Class.metaclass is an instance of Class
       :Object, # Class.metaclass is an Object
@@ -367,7 +367,7 @@ class CaratTest < Test::Unit::TestCase
     )
     
     # Foo
-    assert_equal object, foo.superclass
+    assert_equal object, foo.super
     assert_equal foo.metaclass, foo.klass
     assert_equal klass, foo.real_klass
     assert_primitive_modules(foo,
@@ -379,10 +379,10 @@ class CaratTest < Test::Unit::TestCase
     
     # Foo.metaclass
     assert foom.is_a?(Carat::Runtime::MetaClass)
-    assert_equal objectm, foom.superclass
+    assert_equal objectm, foom.super
     assert_equal klassm, foom.klass
     assert_equal klass, foom.real_klass
-    assert_equal objectm, foom.superclass
+    assert_equal objectm, foom.super
     assert_primitive_modules(foom,
       :Class,  # Foo.metaclass is an instance of Class
       :Object, # Foo.metaclass is an Object
