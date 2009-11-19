@@ -1,6 +1,6 @@
 module Carat::Runtime::Bootstrap
   module Fixnum
-    module ClassExtensions
+    module SingletonExtensions
       def instances
         @instances = {}
       end
@@ -16,7 +16,7 @@ module Carat::Runtime::Bootstrap
       end
     end
     
-    module ObjectExtensions
+    module Extensions
       attr_accessor :value
       
       def to_s
@@ -24,7 +24,7 @@ module Carat::Runtime::Bootstrap
       end
     end
     
-    module ObjectPrimitives
+    module Primitives
       def +(other)
         klass.get(value + other.value)
       end

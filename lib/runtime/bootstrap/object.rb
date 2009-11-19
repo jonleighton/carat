@@ -1,9 +1,9 @@
 module Carat::Runtime::Bootstrap
   module Object
-    module ClassPrimitives
+    module SingletonPrimitives
     end
     
-    module ObjectPrimitives
+    module Primitives
       # The method "initialize" has a special meaning in Ruby (obviously), so we have manually
       # prefixed it here
       def primitive_initialize

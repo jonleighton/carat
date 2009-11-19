@@ -1,9 +1,12 @@
 module Carat::Runtime::Bootstrap
   module Module
-    module ClassPrimitives
+    module SingletonPrimitives
     end
     
-    module ObjectPrimitives
+    module Primitives
+      def primitive_include(mod)
+        self.super = Carat::Runtime::IncludeClass.new(runtime, mod, self.super)
+      end
     end
   end
 end

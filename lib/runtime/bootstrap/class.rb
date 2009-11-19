@@ -1,9 +1,9 @@
 module Carat::Runtime::Bootstrap
   module Class
-    module ClassPrimitives
+    module SingletonPrimitives
     end
     
-    module ObjectPrimitives
+    module Primitives
       def new(*args)
         object = Carat::Runtime::Object.new(runtime, self)
         object.primitive_initialize(*args)

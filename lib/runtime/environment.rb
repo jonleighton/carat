@@ -37,6 +37,7 @@ class Carat::Runtime
     end
     
     def load_kernel
+      constants[:Kernel] = Module.new(runtime, :Kernel)
       constants[:Fixnum] = Class.new(runtime, @object, :Fixnum)
       constants[:Array]  = Class.new(runtime, @object, :Array)
     end

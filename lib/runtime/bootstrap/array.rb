@@ -1,6 +1,6 @@
 module Carat::Runtime::Bootstrap
   module Array
-    module ObjectPrimitives
+    module Primitives
       def initialize(*contents)
         @contents = contents
       end

@@ -18,7 +18,7 @@ module Carat::Runtime::Bootstrap
   # module is included in the object.
   constants.each do |constant|
     mod = const_get(constant)
-    rename_primitives(mod.const_get(:ClassPrimitives))  if mod.const_defined?(:ClassPrimitives)
-    rename_primitives(mod.const_get(:ObjectPrimitives)) if mod.const_defined?(:ObjectPrimitives)
+    rename_primitives(mod.const_get(:SingletonPrimitives))  if mod.const_defined?(:SingletonPrimitives)
+    rename_primitives(mod.const_get(:Primitives)) if mod.const_defined?(:Primitives)
   end
 end

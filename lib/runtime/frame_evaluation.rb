@@ -39,7 +39,7 @@ class Carat::Runtime
           value
         end
       else
-        object   = eval(receiver)
+        object   = receiver && eval(receiver) || scope[:self]
         callable = object.lookup_instance_method(method_name)
         args     = eval(args)
         
