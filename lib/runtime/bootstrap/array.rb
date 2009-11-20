@@ -9,8 +9,9 @@ module Carat::Runtime::Bootstrap
         @contents.length
       end
       
+      # TODO: When Array#map works, this can be moved to /lib/kernel
       def inspect
-        "[" + @contents.map(&:primitive_inspect).join(", ") + "]"
+        "[" + @contents.map { |obj| obj.call(:inspect) }.join(", ") + "]"
       end
     end
   end

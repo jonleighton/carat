@@ -44,7 +44,9 @@ class Carat::Runtime
       constants[:Fixnum] = Class.new(runtime, @object, :Fixnum)
       constants[:Array]  = Class.new(runtime, @object, :Array)
       
-      #run(File.read(Carat::KERNEL_PATH + "/object.rb"))
+      [:object, :fixnum].each do |file|
+        run(File.read(Carat::KERNEL_PATH + "/#{file}.rb"))
+      end
       
       symbols[:self] = Object.new(runtime, @object)
     end

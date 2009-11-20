@@ -14,5 +14,9 @@ class Carat::Runtime
     def [](symbol)
       super || parent[symbol]
     end
+    
+    def has?(symbol)
+      super || parent.has?(symbol)
+    end
   end
 end

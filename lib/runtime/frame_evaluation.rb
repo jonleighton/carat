@@ -31,41 +31,19 @@ class Carat::Runtime
     # between "foo" and "foo()". There is a difference - the second can only be a method call, but
     # the first might be a method call or a local variable lookup.
     eval :call do |receiver, method_name, args|
-      if receiver.nil? && eval(args).nil?
-        value = scope[method_name]
-        if false # should be "if value is a method"
-          raise Carat::CaratError, "not implemented"
+      if receiver.nil? && args == [:arglist]
+        # If there is no explicit receiver, and there are no arguments, we are either dealing with
+        # a local variable or a method call to 'self'
+        
+        if scope.has?(method_name)
+          scope[method_name]
         else
-          value
+          scope[:self].call(method_name, args)
         end
       else
-        object   = receiver && eval(receiver) || scope[:self]
-        callable = object.lookup_instance_method(method_name)
-        args     = eval(args)
-        
-        case callable
-          when Method
-            call_method(object, callable, args)
-          when Primitive
-            call_primitive(object, callable, args)
-        end
+        object = receiver && eval(receiver) || scope[:self]
+        object.call(method_name, args)
       end
-    end
-    
-    # Apply a list of arguments to a method
-    def call_method(object, method, args)
-      # Create up a new scope, where the object receiving the method call is 'self'
-      new_scope = Scope.new(object, scope)
-      
-      # Extend the scope, assigning all the argument values to the argument names of the method
-      new_scope.merge! Hash[*method.args.zip(args).flatten]
-      
-      # Now evaluate the method contents in our new scope
-      eval(method.contents, new_scope)
-    end
-    
-    def call_primitive(object, primitive, args)
-      object.send(primitive.name, *args)
     end
     
     # A list of identifiers for the arguments of a method when it is being defined
@@ -73,7 +51,7 @@ class Carat::Runtime
       identifiers
     end
     
-    # A list of expressions being past as arguments to a method
+    # A list of expressions being passed as arguments to a method
     eval :arglist do |*expressions|
       expressions.map { |expression| eval(expression) }
     end

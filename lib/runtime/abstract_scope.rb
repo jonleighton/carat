@@ -10,12 +10,19 @@ class Carat::Runtime
       symbols[symbol]
     end
     
+    def has?(symbol)
+      symbols[symbol] || false
+    end
+    
     def []=(symbol, value)
-      symbols[symbol] = value
+      symbols[symbol] = runtime.meta_convert(value)
     end
     
     def merge!(items)
-      symbols.merge!(items)
+      items.each do |symbol, value|
+        symbols[symbol] = runtime.meta_convert(value)
+      end
+      items
     end
   end
 end

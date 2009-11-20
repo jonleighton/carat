@@ -9,7 +9,7 @@ module Carat::Runtime::Bootstrap
         if instances[number]
           instances[number]
         else
-          instance = primitive_new
+          instance = call(:new)
           instance.value = number
           instances[number] = instance
         end

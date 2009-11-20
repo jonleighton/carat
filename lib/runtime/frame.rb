@@ -33,6 +33,7 @@ class Carat::Runtime
     # frame we need a reference to the stack so that we can add new frames to it.
     def execute(stack)
       return nil if sexp_type.nil?
+      return sexp unless sexp_type.is_a?(Symbol) # We assume it is already evaluated
       
       @stack = stack
       if respond_to?("eval_#{sexp_type}")
@@ -48,6 +49,24 @@ class Carat::Runtime
     # not given, it will default to the current scope.
     def eval(sexp, scope = nil)
       @stack << Frame.new(sexp, scope || self.scope) unless sexp.nil?
+    end
+    
+    # Converts an object in the metalanguage to a representative object in the object language. For
+    # example, an Array would be converted into a Carat::Runtime::Object with
+    # klass = constants[:Array]
+    def meta_convert(object)
+      case object
+        when Carat::Runtime::Object # No need to convert
+          object
+        when Fixnum
+          constants[:Fixnum].get(object)
+        when Array
+          constants[:Array].call(:new, object)
+        when NilClass
+          nil
+        else
+          raise Carat::CaratError, "unable to meta convert #{object.inspect}"
+      end
     end
     
     require Carat::RUNTIME_PATH + "/frame_evaluation"

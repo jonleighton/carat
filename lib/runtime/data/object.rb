@@ -3,6 +3,9 @@ class Carat::Runtime
     attr_reader :runtime
     attr_accessor :klass
     
+    extend Forwardable
+    def_delegators :runtime, :current_scope, :eval
+    
     def initialize(runtime, klass)
       if klass.nil? && runtime.initialized?
         raise Carat::CaratError, "cannot create object without a class"
@@ -14,7 +17,38 @@ class Carat::Runtime
     
     # Lookup a instance method - i.e. one defined by this object's class
     def lookup_instance_method(name)
-      klass.lookup_method(name) || raise(Carat::CaratError, "method '#{self}##{name}' not found")
+      klass.lookup_method(name)
+    end
+    
+    def lookup_instance_method!(name)
+      lookup_instance_method(name) || raise(Carat::CaratError, "method '#{self}##{name}' not found")
+    end
+    
+    def call(method_name, args = [])
+      callable = lookup_instance_method!(method_name)
+      args = eval(args) if args.first == :arglist
+      
+      case callable
+        when Method
+          call_method(callable, args)
+        when Primitive
+          call_primitive(callable, args)
+      end
+    end
+    
+    def call_method(method, args)
+      # Create up a new scope, where the object receiving the method call is 'self'
+      new_scope = Scope.new(self, current_scope)
+      
+      # Extend the scope, assigning all the argument values to the argument names of the method
+      new_scope.merge!(method.assign_args(args))
+      
+      # Now evaluate the method contents in our new scope
+      eval(method.contents, new_scope)
+    end
+    
+    def call_primitive(primitive, args)
+      send(primitive.name, *args)
     end
     
     # Include some behaviour just for this specific instance

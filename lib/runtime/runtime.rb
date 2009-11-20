@@ -13,6 +13,7 @@ module Carat
     extend Forwardable
     def_delegators :top_level_scope, :constants
     def_delegators :current_scope, :symbols
+    def_delegators :current_frame, :eval, :meta_convert
     
     def initialize
       @stack = Stack.new
