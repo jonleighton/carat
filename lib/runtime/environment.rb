@@ -10,7 +10,7 @@ class Carat::Runtime
     end
     
     def setup
-      @object = constants[:Object] = Class.new(runtime, nil,     :Object)
+      @object = constants[:Object] = Class.new(runtime, nil, :Object)
       @module = constants[:Module] = Class.new(runtime, @object, :Module)
       @class  = constants[:Class]  = Class.new(runtime, @module, :Class)
       
@@ -25,23 +25,26 @@ class Carat::Runtime
       # The superclass of the metaclass of Object is just Class
       @object.metaclass.superclass = @class
       
-      # Do this manually as the superclass and klass pointers were incorrect before
-      [@object, @module, @class].each do |klass|
-        klass.include_bootstrap_modules
-        klass.metaclass.include_bootstrap_modules
-      end
+      # Set up the Kernel module and include it in Object
+      @kernel = constants[:Kernel] = Module.new(runtime, :Kernel)
+      @object.super = IncludeClass.new(runtime, @kernel, nil)
       
       # The metaclass of Class needs to include its own primitives, as it is a special case in that
       # its class is the class Class, rather than another metaclass.
       @class.metaclass.singleton_include(*@class.metaclass.primitives)
+      
+      # Do this manually as the superclass and klass pointers were incorrect before
+      [@object, @module, @class, @kernel].each do |klass|
+        klass.include_bootstrap_modules
+        klass.metaclass.include_bootstrap_modules
+      end
     end
     
     def load_kernel
-      constants[:Kernel] = Module.new(runtime, :Kernel)
       constants[:Fixnum] = Class.new(runtime, @object, :Fixnum)
       constants[:Array]  = Class.new(runtime, @object, :Array)
       
-      run(File.read(Carat::KERNEL_PATH + "/object.rb"))
+      #run(File.read(Carat::KERNEL_PATH + "/object.rb"))
       
       symbols[:self] = Object.new(runtime, @object)
     end

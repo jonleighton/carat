@@ -6,15 +6,20 @@ require File.dirname(__FILE__) + "/../lib/carat"
 
 class CaratTest < Test::Unit::TestCase
   def execute(code)
+    old_stdout = $stdout
+    output = StringIO.new
+    $stdout = output
     Carat.execute(code)
+    $stdout = old_stdout
+    output.string
   end
   
   def test_lit
-    assert_equal("73", execute("73"))
+    assert_equal("73\n", execute("puts 73"))
   end
   
   def test_addition
-    assert_equal("7", execute("4 + 3"))
+    assert_equal("7\n", execute("puts 4 + 3"))
   end
   
   def test_class_definition_and_method_calling
@@ -29,10 +34,10 @@ class CaratTest < Test::Unit::TestCase
         end
       end
       
-      Foo.new.foo + Foo.foo
+      puts Foo.new.foo + Foo.foo
     CODE
     
-    assert_equal("8", execute(code))
+    assert_equal("8\n", execute(code))
   end
   
   def test_class_reopening
@@ -54,10 +59,10 @@ class CaratTest < Test::Unit::TestCase
       end
       
       foo = Foo.new
-      foo.a + foo.b
+      puts foo.a + foo.b
     CODE
     
-    assert_equal("4", execute(code))
+    assert_equal("4\n", execute(code))
   end
   
   def test_subclassing
@@ -80,10 +85,10 @@ class CaratTest < Test::Unit::TestCase
       
       a = A.new
       b = B.new
-      a.a + a.b + a.a + b.b
+      puts a.a + a.b + a.a + b.b
     CODE
     
-    assert_equal("18", execute(code))
+    assert_equal("18\n", execute(code))
   end
   
   def test_object
@@ -101,10 +106,10 @@ class CaratTest < Test::Unit::TestCase
       class Foo
       end
       
-      Foo.a + Foo.b + Foo.new.b
+      puts Foo.a + Foo.b + Foo.new.b
     CODE
     
-    assert_equal("7", execute(code))
+    assert_equal("7\n", execute(code))
   end
   
   def test_object_primitives
@@ -120,10 +125,10 @@ class CaratTest < Test::Unit::TestCase
       class Foo
       end
       
-      Foo.a + Foo.b + Foo.new.b
+      puts Foo.a + Foo.b + Foo.new.b
     CODE
     
-    assert_equal("7", execute(code))
+    assert_equal("7\n", execute(code))
   ensure
     Carat::Runtime::Bootstrap::Object::SingletonPrimitives.send(:remove_method, :a)
     Carat::Runtime::Bootstrap::Object::Primitives.send(:remove_method, :b)
@@ -144,10 +149,10 @@ class CaratTest < Test::Unit::TestCase
       class Foo
       end
       
-      Foo.a + (class << Foo; self; end).b
+      puts Foo.a + (class << Foo; self; end).b
     CODE
     
-    assert_equal("5", execute(code))
+    assert_equal("5\n", execute(code))
     
     code = <<-CODE
       class Class
@@ -178,10 +183,10 @@ class CaratTest < Test::Unit::TestCase
       class Foo
       end
       
-      Foo.a + (class << Foo; self; end).b
+      puts Foo.a + (class << Foo; self; end).b
     CODE
     
-    assert_equal("5", execute(code))
+    assert_equal("5\n", execute(code))
   ensure
     Carat::Runtime::Bootstrap::Class::Primitives.send(:remove_method, :a)
     Carat::Runtime::Bootstrap::Class::SingletonPrimitives.send(:remove_method, :b)
@@ -211,10 +216,10 @@ class CaratTest < Test::Unit::TestCase
       end
       
       bar = Bar.new
-      bar.a + bar.c + Foo.b
+      puts bar.a + bar.c + Foo.b
     CODE
     
-    assert_equal("11", execute(code))
+    assert_equal("11\n", execute(code))
   end
   
   def assert_bootstrap_modules(object, type, *expected_modules)
@@ -257,10 +262,11 @@ class CaratTest < Test::Unit::TestCase
     fooi = Carat::Runtime::Object.new(runtime, foo)
     
     # Object
-    assert_equal nil, object.super
+    assert_equal nil, object.superclass
     assert_equal object.metaclass, object.klass
     assert_equal klass, object.real_klass
     assert_primitive_modules(object,
+      :Kernel, # Object includes Kernel
       :Class,  # Object is an instance of Class
       :Object, # Object is an Object
       :Module  # Object is a Module
@@ -275,6 +281,7 @@ class CaratTest < Test::Unit::TestCase
     assert_equal klass, objectm.real_klass
     assert_equal klass, objectm.super
     assert_primitive_modules(objectm,
+      :Kernel, # Object includes Kernel
       :Class,  # Object.metaclass is an instance of Class
       :Object, # Object.metaclass is an Object
       :Module  # Object.metaclass is a Module
@@ -287,13 +294,17 @@ class CaratTest < Test::Unit::TestCase
     
     # Object.new
     assert_equal object, objecti.klass
-    assert_primitive_modules(objecti, :Object) # Object.new is an instance of Object
+    assert_primitive_modules(objecti,
+      :Kernel, # Object includes Kernel
+      :Object  # Object.new is an instance of Object
+    )
     
     # Module
     assert_equal object, mod.super
     assert_equal mod.metaclass, mod.klass
     assert_equal klass, mod.real_klass
     assert_primitive_modules(mod,
+      :Kernel, # Object includes Kernel
       :Object, # Module is an Object
       :Module, # Module is a Module
       :Class   # Module is an instance of Class
@@ -309,6 +320,7 @@ class CaratTest < Test::Unit::TestCase
     assert_equal klass, modm.real_klass
     assert_equal objectm, modm.super
     assert_primitive_modules(objectm,
+      :Kernel, # Object includes Kernel
       :Class,  # Module.metaclass is an instance of Class
       :Object, # Module.metaclass is an Object
       :Module  # Module.metaclass is a Module
@@ -322,6 +334,7 @@ class CaratTest < Test::Unit::TestCase
     # Module.new
     assert_equal mod, modi.klass
     assert_primitive_modules(modi,
+      :Kernel, # Object includes Kernel
       :Module, # Module.new is an instance of Module
       :Object  # Module.new is an Object
     )
@@ -331,6 +344,7 @@ class CaratTest < Test::Unit::TestCase
     assert_equal klass.metaclass, klass.klass
     assert_equal klass, klass.real_klass
     assert_primitive_modules(klass,
+      :Kernel, # Object includes Kernel
       :Object, # Class is an Object
       :Class,  # Class is an instance of Class
       :Module  # Class is a Module
@@ -348,6 +362,7 @@ class CaratTest < Test::Unit::TestCase
     assert_equal klass, klassm.real_klass
     assert_equal modm, klassm.super
     assert_primitive_modules(klassm,
+      :Kernel, # Object includes Kernel
       :Class,  # Class.metaclass is an instance of Class
       :Object, # Class.metaclass is an Object
       :Module  # Class.metaclass is a Module
@@ -361,6 +376,7 @@ class CaratTest < Test::Unit::TestCase
     # Class.new
     assert_equal klass, klassi.klass
     assert_primitive_modules(klassi,
+      :Kernel, # Object includes Kernel
       :Class,  # Class.new is an instance of Class
       :Module, # Class.new is a Module
       :Object  # Class.new is an Object
@@ -371,6 +387,7 @@ class CaratTest < Test::Unit::TestCase
     assert_equal foo.metaclass, foo.klass
     assert_equal klass, foo.real_klass
     assert_primitive_modules(foo,
+      :Kernel, # Object includes Kernel
       :Class,  # Foo is an instance of Class
       :Module, # Foo is a Module
       :Object  # Foo is an Object
@@ -384,6 +401,7 @@ class CaratTest < Test::Unit::TestCase
     assert_equal klass, foom.real_klass
     assert_equal objectm, foom.super
     assert_primitive_modules(foom,
+      :Kernel, # Object includes Kernel
       :Class,  # Foo.metaclass is an instance of Class
       :Object, # Foo.metaclass is an Object
       :Module  # Foo.metaclass is a Module
@@ -396,6 +414,9 @@ class CaratTest < Test::Unit::TestCase
     
     # Foo.new
     assert_equal foo, fooi.klass
-    assert_primitive_modules(fooi, :Object) # Foo is a subclass of Object
+    assert_primitive_modules(fooi,
+      :Kernel, # Object includes Kernel
+      :Object  # Foo is a subclass of Object
+    )
   end
 end

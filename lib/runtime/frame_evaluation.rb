@@ -111,14 +111,13 @@ class Carat::Runtime
     
     # Define a method on a given class. +klass+ should be any instance of +Carat::Runtime::Class+.
     def define_method(klass, method_name, args, contents)
-      p klass
       klass.methods[method_name] = Method.new(eval(args), contents)
       nil
     end
     
     # Define a method in the current scope
     eval :defn do |method_name, args, contents|
-      klass = scope[:self].is_a?(Class) ? scope[:self] : scope[:self].real_klass
+      klass = scope[:self].is_a?(Module) ? scope[:self] : scope[:self].real_klass
       define_method(klass, method_name, args, contents)
     end
     

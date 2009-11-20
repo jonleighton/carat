@@ -25,11 +25,13 @@ module Carat
   end
   
   # Creates a new runtime object and tells it to run some code
-  def self.execute(code)
+  def self.execute(code, debug = false)
+    @debug = debug
     Runtime.new.run(code).to_s
+    @debug = false
   end
   
   def self.debug(message)
-    puts message
+    puts message if @debug
   end
 end
