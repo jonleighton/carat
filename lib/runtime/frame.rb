@@ -54,6 +54,9 @@ class Carat::Runtime
     # Converts an object in the metalanguage to a representative object in the object language. For
     # example, an Array would be converted into a Carat::Runtime::Object with
     # klass = constants[:Array]
+    #
+    # It makes a lot of the code more succinct, as there is (or will be, in a complete implementation)
+    # a 1-1 map between classes in the metalanguage and classes in the object language
     def meta_convert(object)
       case object
         when Carat::Runtime::Object # No need to convert

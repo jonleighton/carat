@@ -39,10 +39,12 @@ module Carat
     def run(code)
       sexp = Carat.parse(code)
       Carat.debug "Running sexp: #{sexp.inspect}"
-      stack << Frame.new(sexp, @top_level_scope)
-    rescue StandardError => e
-      puts "Error while running: #{current_frame.sexp.inspect}"
-      raise e
+      begin
+        stack << Frame.new(sexp, @top_level_scope)
+      rescue StandardError => e
+        puts "Error while running: #{current_frame.sexp.inspect}"
+        raise e
+      end
     end
     
     def run_file(file_name)

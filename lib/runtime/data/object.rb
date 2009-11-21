@@ -4,7 +4,7 @@ class Carat::Runtime
     attr_accessor :klass
     
     extend Forwardable
-    def_delegators :runtime, :current_scope, :eval
+    def_delegators :runtime, :current_scope, :eval, :meta_convert
     
     def initialize(runtime, klass)
       if klass.nil? && runtime.initialized?
@@ -48,7 +48,7 @@ class Carat::Runtime
     end
     
     def call_primitive(primitive, args)
-      send(primitive.name, *args)
+      meta_convert(send(primitive.name, *args))
     end
     
     # Include some behaviour just for this specific instance

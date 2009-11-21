@@ -26,11 +26,11 @@ module Carat::Runtime::Bootstrap
     
     module Primitives
       def +(other)
-        klass.get(value + other.value)
+        value + other.value
       end
       
       def -(other)
-        klass.get(value - other.value)
+        value - other.value
       end
       
       def to_s
