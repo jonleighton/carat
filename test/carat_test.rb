@@ -178,6 +178,17 @@ class CaratTest < Test::Unit::TestCase
     assert_equal("11\n", execute(code))
   end
   
+  def test_multiple_assignment
+    code = <<-CODE
+      x, *y = 5, [3, 6]
+
+      puts x
+      puts y.inspect
+    CODE
+    
+    assert_equal("5\n[3, 6]\n", execute(code))
+  end
+  
   def test_environment
     runtime = Carat::Runtime.new
     constants = runtime.constants

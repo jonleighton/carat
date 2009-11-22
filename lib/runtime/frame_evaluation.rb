@@ -120,5 +120,25 @@ class Carat::Runtime
     eval :self do
       scope[:self]
     end
+    
+    # Multiple assignment - e.g. x, y = 5, 2
+    # 
+    # First we have to do some manipulation of the arguments, to go from this:
+    #   
+    #   [:masgn, [:array, [:lasgn, :x], [:splat, [:lasgn, :y]]], [:array, [:lit, 5], [:array, [:lit, 3], [:lit, 6]]]]
+    # 
+    # To this:
+    # 
+    #   [[:lasgn, :x, [:lit, 5]], [:splat, [:lasgn, :y], [:array, [:lit, 3], [:lit, 6]]]]
+    #
+    # We then evaluate each assignment in turn.
+    eval :masgn do |left, right|
+      assignments = left.zip(right).drop(1).map { |item| item.first + item.drop(1) }
+      assignments.each { |assignment| eval(assignment) }
+    end
+    
+    eval :splat do |lasgn, items|
+      eval(lasgn << items)
+    end
   end
 end
