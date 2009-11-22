@@ -1,4 +1,4 @@
-class Carat::Runtime
+module Carat::Data
   class IncludeClassInstance < ClassInstance
     attr_reader :module
     

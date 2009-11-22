@@ -57,7 +57,7 @@ class Carat::Runtime
     end
     
     def new_module(name)
-      ModuleInstance.new(runtime, name)
+      Carat::Data::ModuleInstance.new(runtime, name)
     end
     
     eval :module do |module_name, contents|
@@ -66,12 +66,11 @@ class Carat::Runtime
     end
     
     def new_class(superclass, name)
-      ClassInstance.new(runtime, eval(superclass) || constants[:Object], name)
+      Carat::Data::ClassInstance.new(runtime, eval(superclass) || constants[:Object], name)
     end
     
     eval :class do |class_name, superclass, contents|
       constants[class_name] ||= new_class(superclass, class_name)
-      # TODO: Add code s.t. scope.extend(klass, :foo => :bar) works
       eval(contents, Scope.new(constants[class_name], scope))
     end
     
@@ -89,13 +88,18 @@ class Carat::Runtime
     
     # Define a method on a given class. +klass+ should be any instance of +Carat::Runtime::Class+.
     def define_method(klass, method_name, args, contents)
-      klass.method_table[method_name] = Method.new(eval(args), contents)
+      klass.method_table[method_name] = Carat::Data::Method.new(eval(args), contents)
       nil
     end
     
     # Define a method in the current scope
     eval :defn do |method_name, args, contents|
-      klass = scope[:self].is_a?(ModuleInstance) ? scope[:self] : scope[:self].real_klass
+      if scope[:self].is_a?(Carat::Data::ModuleInstance)
+        klass = scope[:self]
+      else
+        klass = scope[:self].real_klass
+      end
+      
       define_method(klass, method_name, args, contents)
     end
     

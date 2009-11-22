@@ -1,4 +1,4 @@
-class Carat::Runtime
+module Carat::Data
   module PrimitiveHost
     # Allow for primitives to be renamed. This is because we can't (easily) define a method named
     # something like 'primitive_+', so we have to call it 'primitive_plus' - but we still want it

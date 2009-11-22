@@ -184,19 +184,19 @@ class CaratTest < Test::Unit::TestCase
     
     object = constants[:Object]
     objectm = object.metaclass
-    objecti = Carat::Runtime::ObjectInstance.new(runtime, object)
+    objecti = Carat::Data::ObjectInstance.new(runtime, object)
     
     mod = constants[:Module]
     modm = mod.metaclass
-    modi = Carat::Runtime::ModuleInstance.new(runtime)
+    modi = Carat::Data::ModuleInstance.new(runtime)
     
     klass = constants[:Class]
     klassm = klass.metaclass
-    klassi = Carat::Runtime::ClassInstance.new(runtime, klass)
+    klassi = Carat::Data::ClassInstance.new(runtime, klass)
     
-    foo = Carat::Runtime::ClassInstance.new(runtime, object, :Foo)
+    foo = Carat::Data::ClassInstance.new(runtime, object, :Foo)
     foom = foo.metaclass
-    fooi = Carat::Runtime::ObjectInstance.new(runtime, foo)
+    fooi = Carat::Data::ObjectInstance.new(runtime, foo)
     
     # Object
     assert_equal nil, object.superclass

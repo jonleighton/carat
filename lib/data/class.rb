@@ -1,4 +1,4 @@
-class Carat::Runtime
+module Carat::Data
   class ClassClass < ClassInstance
   end
 
@@ -36,10 +36,10 @@ class Carat::Runtime
     # For example, if this class is +FixnumClass+, the +instance_class+ will be +FixnumInstance+
     def instance_class
       @instance_class ||= begin
-        if Carat::Runtime.const_defined?(instance_class_name)
-          Carat::Runtime.const_get(instance_class_name)
+        if Carat::Data.const_defined?(instance_class_name)
+          Carat::Data.const_get(instance_class_name)
         else
-          Carat::Runtime::ObjectInstance
+          Carat::Data::ObjectInstance
         end
       end
     end

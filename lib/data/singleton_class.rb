@@ -1,4 +1,4 @@
-class Carat::Runtime
+module Carat::Data
   class SingletonClassInstance < ClassInstance
     attr_reader :parent
     

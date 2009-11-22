@@ -1,4 +1,4 @@
-class Carat::Runtime
+module Carat::Data
   class MetaClassInstance < SingletonClassInstance
     def to_s
       "<metaclass:#{parent}>"

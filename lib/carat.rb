@@ -10,10 +10,11 @@ require "forwardable"
 module Carat
   ROOT_PATH    = File.expand_path(File.dirname(__FILE__))
   RUNTIME_PATH = ROOT_PATH + "/runtime"
-  DATA_PATH    = RUNTIME_PATH + "/data"
+  DATA_PATH    = ROOT_PATH + "/data"
   KERNEL_PATH  = ROOT_PATH + "/kernel"
   
   require RUNTIME_PATH + "/runtime"
+  require DATA_PATH    + "/data"
   
   # Currently use this for all errors, before implementing exceptions
   class CaratError < StandardError; end

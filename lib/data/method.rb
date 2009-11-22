@@ -1,4 +1,4 @@
-class Carat::Runtime
+module Carat::Data
   class Method
     attr_reader :args, :contents
     

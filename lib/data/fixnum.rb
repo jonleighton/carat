@@ -1,4 +1,4 @@
-class Carat::Runtime
+module Carat::Data
   class FixnumClass < ClassInstance
     def instances
       @instances = {}

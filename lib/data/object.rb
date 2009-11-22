@@ -1,4 +1,4 @@
-class Carat::Runtime
+module Carat::Data
   class ObjectClass < ClassInstance
   end
 
@@ -43,7 +43,7 @@ class Carat::Runtime
     
     def call_method(method, args)
       # Create up a new scope, where the object receiving the method call is 'self'
-      new_scope = Scope.new(self, current_scope)
+      new_scope = Carat::Runtime::Scope.new(self, current_scope)
       
       # Extend the scope, assigning all the argument values to the argument names of the method
       new_scope.merge!(method.assign_args(args))

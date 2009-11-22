@@ -1,10 +1,13 @@
 module Carat
   class Runtime
-    %w[abstract_scope top_level_scope scope stack frame environment].each do |file|
-      require RUNTIME_PATH + "/" + file
-    end
+    require RUNTIME_PATH + "/abstract_scope"
+    require RUNTIME_PATH + "/top_level_scope"
+    require RUNTIME_PATH + "/scope"
     
-    require DATA_PATH + "/data"
+    require RUNTIME_PATH + "/stack"
+    require RUNTIME_PATH + "/frame"
+    
+    require RUNTIME_PATH + "/environment"
     
     attr_reader :stack, :top_level_scope
     

@@ -1,4 +1,4 @@
-class Carat::Runtime
+module Carat::Data
   class ModuleClass < ClassInstance
     
   end
@@ -32,8 +32,8 @@ class Carat::Runtime
     # This is useful, because then when "Kernel" is included in another module/class, we can also
     # make the primitives available to the module/class it is included in. 
     def primitives_module
-      if name && Carat::Runtime.const_defined?("#{name}Module")
-        Carat::Runtime.const_get("#{name}Module")
+      if name && Carat::Data.const_defined?("#{name}Module")
+        Carat::Data.const_get("#{name}Module")
       end
     end
     

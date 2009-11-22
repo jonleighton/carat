@@ -1,4 +1,4 @@
-class Carat::Runtime
+module Carat::Data
   module KernelModule
     extend PrimitiveHost
     

@@ -10,9 +10,9 @@ class Carat::Runtime
     end
     
     def setup
-      @object = constants[:Object] = ObjectClass.new(runtime, nil)
-      @module = constants[:Module] = ModuleClass.new(runtime, @object)
-      @class  = constants[:Class]  = ClassClass.new(runtime, @module)
+      @object = constants[:Object] = Carat::Data::ObjectClass.new(runtime, nil)
+      @module = constants[:Module] = Carat::Data::ModuleClass.new(runtime, @object)
+      @class  = constants[:Class]  = Carat::Data::ClassClass.new(runtime, @module)
       
       # The class of the metaclass of Class is Class (but Class didn't exist when Class was set up)
       @class.metaclass.klass = @class
@@ -30,15 +30,15 @@ class Carat::Runtime
     end
     
     def load_kernel
-      constants[:Kernel] = ModuleInstance.new(runtime, :Kernel)
-      constants[:Fixnum] = FixnumClass.new(runtime, @object)
-      constants[:Array]  = ArrayClass.new(runtime, @object)
+      constants[:Kernel] = Carat::Data::ModuleInstance.new(runtime, :Kernel)
+      constants[:Fixnum] = Carat::Data::FixnumClass.new(runtime, @object)
+      constants[:Array]  = Carat::Data::ArrayClass.new(runtime, @object)
       
       [:object, :fixnum].each do |file|
         run(File.read(Carat::KERNEL_PATH + "/#{file}.rb"))
       end
       
-      symbols[:self] = ObjectInstance.new(runtime, @object)
+      symbols[:self] = Carat::Data::ObjectInstance.new(runtime, @object)
     end
   end
 end
