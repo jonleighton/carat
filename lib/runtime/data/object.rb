@@ -72,7 +72,9 @@ class Carat::Runtime
     end
     
     def real_klass
-      klass && klass.singleton? ? klass && klass.real_klass : klass
+      if klass
+        klass.singleton? ? klass.real_klass : klass
+      end
     end
     
     def to_s

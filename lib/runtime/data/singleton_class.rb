@@ -15,6 +15,12 @@ class Carat::Runtime
       superclass && superclass.klass
     end
     
+    def real_klass
+      if superclass
+        superclass.singleton? ? superclass.real_klass : superclass
+      end
+    end
+    
     def singleton?
       true
     end
