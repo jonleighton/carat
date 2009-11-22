@@ -14,10 +14,8 @@ class Carat::Runtime
     
     def initialize(runtime, name = nil)
       @name = name
-      super(runtime, get_klass(runtime))
-      
       include_module_primitives if instance_of?(ModuleInstance)
-      add_primitives_to_method_table if runtime.initialized?
+      super(runtime, get_klass(runtime))
     end
     
     # Modules have a metaclass so that they can have module methods. The class of the metaclass is
@@ -41,28 +39,6 @@ class Carat::Runtime
     
     def include_module_primitives
       (class << self; self; end).send(:include, primitives_module) if primitives_module
-    end
-    
-    # Returns the class which is used to represent an instance of this class.
-    # 
-    # For example, if this class is +FixnumClass+, the +instance_class+ will be +FixnumInstance+
-    # 
-    # TODO: Should this really be defined in Module?
-    def instance_class
-      @instance_class ||= begin
-        class_name = self.class.to_s.sub(/^.*\:\:/, '')
-        instance_class_name = class_name.sub(/Class$/, "Instance")
-        
-        if class_name !~ /Instance$/ && Carat::Runtime.const_defined?(instance_class_name)
-          Carat::Runtime.const_get(instance_class_name)
-        else
-          Carat::Runtime::ObjectInstance
-        end
-      end
-    end
-    
-    def add_primitives_to_method_table
-      method_table.merge!(instance_class.primitives)
     end
     
     def ancestors
@@ -90,14 +66,6 @@ class Carat::Runtime
     
     def primitive_include(mod)
       self.super = IncludeClassInstance.new(runtime, mod, self.super)
-      
-      # If the module being included has some primitives, then make them available by including
-      # the actual primitive methods in the instance class, and adding them to the method table
-      if mod.primitives_module
-        instance_class.send(:include, mod.primitives_module)
-        method_table.merge!(mod.primitives_module.primitives)
-      end
-      
       mod
     end
     
