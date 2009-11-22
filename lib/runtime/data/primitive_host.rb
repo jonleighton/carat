@@ -1,18 +1,5 @@
 class Carat::Runtime
   module PrimitiveHost
-    def self.extended(base)
-      if base.instance_of?(Module)
-        # If the base is a module which may be further included, we want it to pass along its 
-        # primitives when included
-        
-        base.module_eval do
-          def self.included(base2)
-            base2.module_primitives.merge!(primitives)
-          end
-        end
-      end
-    end
-    
     # Allow for primitives to be renamed. This is because we can't (easily) define a method named
     # something like 'primitive_+', so we have to call it 'primitive_plus' - but we still want it
     # to actually represent the '+' method.

@@ -27,16 +27,12 @@ class Carat::Runtime
       # The superclass of the metaclass of Object is just Class
       @object.metaclass.superclass = @class
       
-      # Set up the Kernel module and include it in Object
-      # TODO: Can this happen later?
-      @kernel = constants[:Kernel] = KernelModule.new(runtime, :Kernel)
-      @object.super = IncludeClassInstance.new(runtime, @kernel, nil)
-      
       # Do this manually as the superclass and klass pointers were incorrect before
-      [@object, @module, @class, @kernel].each(&:add_primitives_to_method_table)
+      [@object, @module, @class].each(&:add_primitives_to_method_table)
     end
     
     def load_kernel
+      constants[:Kernel] = ModuleInstance.new(runtime, :Kernel)
       constants[:Fixnum] = FixnumClass.new(runtime, @object, :Fixnum)
       constants[:Array]  = ArrayClass.new(runtime, @object, :Array)
       

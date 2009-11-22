@@ -5,6 +5,7 @@ class Carat::Runtime
   class ArrayInstance < ObjectInstance
     def primitive_initialize(*contents)
       @contents = contents
+      self
     end
     
     def primitive_length

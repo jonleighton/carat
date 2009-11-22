@@ -1,13 +1,9 @@
 class Carat::Runtime
-  class KernelModule < ModuleInstance
-    module Primitives
-      extend PrimitiveHost
-      
-      def primitive_puts(data)
-        Kernel.puts(data)
-      end
-    end
+  module KernelModule
+    extend PrimitiveHost
     
-    include Primitives
+    def primitive_puts(data)
+      Kernel.puts(data)
+    end
   end
 end

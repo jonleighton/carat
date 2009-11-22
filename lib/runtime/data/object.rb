@@ -3,14 +3,14 @@ class Carat::Runtime
   end
 
   class ObjectInstance
-    # TODO: Can this be done automatically when the module is included in the object language?
-    include KernelModule::Primitives
-    
     attr_reader :runtime
     attr_accessor :klass
     
     extend Forwardable
     def_delegators :runtime, :current_scope, :eval, :meta_convert
+    
+    # All objects can have primitives
+    extend PrimitiveHost
     
     def initialize(runtime, klass)
       if klass.nil? && runtime.initialized?

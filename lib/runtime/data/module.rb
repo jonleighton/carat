@@ -15,6 +15,8 @@ class Carat::Runtime
     def initialize(runtime, name = nil)
       @name = name
       super(runtime, get_klass(runtime))
+      
+      include_module_primitives if instance_of?(ModuleInstance)
       add_primitives_to_method_table if runtime.initialized?
     end
     
@@ -22,6 +24,23 @@ class Carat::Runtime
     # always +Module+.
     def get_klass(runtime)
       MetaClassInstance.new(runtime, self, runtime.constants[:Module])
+    end
+    
+    # If this is actually a module (as opposed to a class or whatever) then we can have an object-
+    # language module containing primitives for this specific module in the meta-language. For
+    # instance, if we create a +ModuleInstance+ with name "Kernel", then the module named
+    # "KernelModule", defined primitives for it.
+    # 
+    # This is useful, because then when "Kernel" is included in another module/class, we can also
+    # make the primitives available to the module/class it is included in. 
+    def primitives_module
+      if name && Carat::Runtime.const_defined?("#{name}Module")
+        Carat::Runtime.const_get("#{name}Module")
+      end
+    end
+    
+    def include_module_primitives
+      (class << self; self; end).send(:include, primitives_module) if primitives_module
     end
     
     # Returns the class which is used to represent an instance of this class.
@@ -59,12 +78,27 @@ class Carat::Runtime
       method_table[name] || (self.super && self.super.lookup_method(name))
     end
     
+    def singleton?
+      false
+    end
+    
     def to_s
       "<module:#{name}>"
     end
     
+    # ***** Primitives ***** #
+    
     def primitive_include(mod)
       self.super = IncludeClassInstance.new(runtime, mod, self.super)
+      
+      # If the module being included has some primitives, then make them available by including
+      # the actual primitive methods in the instance class, and adding them to the method table
+      if mod.primitives_module
+        instance_class.send(:include, mod.primitives_module)
+        method_table.merge!(mod.primitives_module.primitives)
+      end
+      
+      mod
     end
     
     alias_method :primitive_ancestors, :ancestors

@@ -29,13 +29,11 @@ class Carat::Runtime
       self.super = klass
     end
     
-    def singleton?
-      false
-    end
-    
     def to_s
       "<class:#{name}>"
     end
+    
+    # ***** Primitives ***** #
     
     def primitive_new(*args)
       object = instance_class.new(runtime, self)
