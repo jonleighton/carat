@@ -1,5 +1,5 @@
 class Carat::Runtime
-  class IncludeClass < Class
+  class IncludeClassInstance < ClassInstance
     attr_reader :module
     
     extend Forwardable
@@ -11,7 +11,7 @@ class Carat::Runtime
       
       # An include class does not have its own method table, it uses the method table of the module
       # being included
-      self.methods = mod.methods
+      self.method_table = mod.method_table
     end
     
     def get_klass(runtime)

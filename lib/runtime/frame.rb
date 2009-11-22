@@ -59,14 +59,14 @@ class Carat::Runtime
     # a 1-1 map between classes in the metalanguage and classes in the object language
     def meta_convert(object)
       case object
-        when Carat::Runtime::Object # No need to convert
+        when Carat::Runtime::ObjectInstance # No need to convert
           object
         when Fixnum
           constants[:Fixnum].get(object)
         when Array
           constants[:Array].call(:new, object)
-        when NilClass
-          nil
+        when NilClass, String # TODO
+          object
         else
           raise Carat::CaratError, "unable to meta convert #{object.inspect}"
       end

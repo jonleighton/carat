@@ -1,5 +1,5 @@
 class Carat::Runtime
-  class SingletonClass < Class
+  class SingletonClassInstance < ClassInstance
     attr_reader :parent
     
     # For a singleton class we do not create a metaclass (this would result in infinite recursion)
@@ -13,6 +13,10 @@ class Carat::Runtime
     # being the metaclass of +Class+.
     def get_klass(runtime)
       superclass && superclass.klass
+    end
+    
+    def singleton?
+      true
     end
     
     def to_s

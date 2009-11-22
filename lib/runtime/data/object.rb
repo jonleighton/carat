@@ -1,5 +1,11 @@
 class Carat::Runtime
-  class Object
+  class ObjectClass < ClassInstance
+  end
+
+  class ObjectInstance
+    # TODO: Can this be done automatically when the module is included in the object language?
+    include KernelModule::Primitives
+    
     attr_reader :runtime
     attr_accessor :klass
     
@@ -12,7 +18,6 @@ class Carat::Runtime
       end
       
       @runtime, @klass = runtime, klass
-      include_bootstrap_modules if runtime.initialized?
     end
     
     # Lookup a instance method - i.e. one defined by this object's class
@@ -51,21 +56,6 @@ class Carat::Runtime
       meta_convert(send(primitive.name, *args))
     end
     
-    # Include some behaviour just for this specific instance
-    def singleton_include(*modules)
-      modules.each do |mod|
-        (class << self; self; end).send(:include, mod)
-      end
-    end
-    
-    def include_bootstrap_modules
-      # Include extensions defined for this instances of the class
-      singleton_include(klass.extensions_module) if klass.extensions_module
-      
-      # Include the object primitives from the class
-      singleton_include(*klass.primitives)
-    end
-    
     def instance_variables
       @instance_variables ||= {}
     end
@@ -74,15 +64,15 @@ class Carat::Runtime
     # in the hierarchy in between this object and the class. Note: +Class+ creates its singleton
     # class on initialization, and the way it fits into the hierarchy is slightly different.
     def singleton_class
-      if klass.is_a?(SingletonClass)
+      if klass.singleton?
         klass
       else
-        self.klass = SingletonClass.new(runtime, self, klass)
+        self.klass = SingletonClassInstance.new(runtime, self, klass)
       end
     end
     
     def real_klass
-      klass.is_a?(SingletonClass) ? klass && klass.real_klass : klass
+      klass && klass.singleton? ? klass && klass.real_klass : klass
     end
     
     def to_s

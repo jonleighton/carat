@@ -9,10 +9,12 @@ class Carat::Runtime
       @runtime = runtime
     end
     
+    # TODO: Refactor to avoid repetition
+    
     def setup
-      @object = constants[:Object] = Class.new(runtime, nil, :Object)
-      @module = constants[:Module] = Class.new(runtime, @object, :Module)
-      @class  = constants[:Class]  = Class.new(runtime, @module, :Class)
+      @object = constants[:Object] = ObjectClass.new(runtime, nil, :Object)
+      @module = constants[:Module] = ModuleClass.new(runtime, @object, :Module)
+      @class  = constants[:Class]  = ClassClass.new(runtime, @module, :Class)
       
       # The class of the metaclass of Class is Class (but Class didn't exist when Class was set up)
       @class.metaclass.klass = @class
@@ -26,29 +28,23 @@ class Carat::Runtime
       @object.metaclass.superclass = @class
       
       # Set up the Kernel module and include it in Object
-      @kernel = constants[:Kernel] = Module.new(runtime, :Kernel)
-      @object.super = IncludeClass.new(runtime, @kernel, nil)
-      
-      # The metaclass of Class needs to include its own primitives, as it is a special case in that
-      # its class is the class Class, rather than another metaclass.
-      @class.metaclass.singleton_include(*@class.metaclass.primitives)
+      # TODO: Can this happen later?
+      @kernel = constants[:Kernel] = KernelModule.new(runtime, :Kernel)
+      @object.super = IncludeClassInstance.new(runtime, @kernel, nil)
       
       # Do this manually as the superclass and klass pointers were incorrect before
-      [@object, @module, @class, @kernel].each do |klass|
-        klass.include_bootstrap_modules
-        klass.metaclass.include_bootstrap_modules
-      end
+      [@object, @module, @class, @kernel].each(&:add_primitives_to_method_table)
     end
     
     def load_kernel
-      constants[:Fixnum] = Class.new(runtime, @object, :Fixnum)
-      constants[:Array]  = Class.new(runtime, @object, :Array)
+      constants[:Fixnum] = FixnumClass.new(runtime, @object, :Fixnum)
+      constants[:Array]  = ArrayClass.new(runtime, @object, :Array)
       
       [:object, :fixnum].each do |file|
         run(File.read(Carat::KERNEL_PATH + "/#{file}.rb"))
       end
       
-      symbols[:self] = Object.new(runtime, @object)
+      symbols[:self] = ObjectInstance.new(runtime, @object)
     end
   end
 end
