@@ -71,8 +71,11 @@ class Carat::Runtime
     
     alias_method :primitive_ancestors, :ancestors
     
-    def primitive_inspect
+    def primitive_name
       name.to_s
     end
+    
+    alias_method :primitive_inspect, :primitive_name
+    alias_method :primitive_to_s, :primitive_name
   end
 end

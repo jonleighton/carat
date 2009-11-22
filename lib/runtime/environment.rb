@@ -9,12 +9,10 @@ class Carat::Runtime
       @runtime = runtime
     end
     
-    # TODO: Refactor to avoid repetition
-    
     def setup
-      @object = constants[:Object] = ObjectClass.new(runtime, nil, :Object)
-      @module = constants[:Module] = ModuleClass.new(runtime, @object, :Module)
-      @class  = constants[:Class]  = ClassClass.new(runtime, @module, :Class)
+      @object = constants[:Object] = ObjectClass.new(runtime, nil)
+      @module = constants[:Module] = ModuleClass.new(runtime, @object)
+      @class  = constants[:Class]  = ClassClass.new(runtime, @module)
       
       # The class of the metaclass of Class is Class (but Class didn't exist when Class was set up)
       @class.metaclass.klass = @class
@@ -33,8 +31,8 @@ class Carat::Runtime
     
     def load_kernel
       constants[:Kernel] = ModuleInstance.new(runtime, :Kernel)
-      constants[:Fixnum] = FixnumClass.new(runtime, @object, :Fixnum)
-      constants[:Array]  = ArrayClass.new(runtime, @object, :Array)
+      constants[:Fixnum] = FixnumClass.new(runtime, @object)
+      constants[:Array]  = ArrayClass.new(runtime, @object)
       
       [:object, :fixnum].each do |file|
         run(File.read(Carat::KERNEL_PATH + "/#{file}.rb"))

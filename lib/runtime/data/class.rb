@@ -5,7 +5,7 @@ class Carat::Runtime
   class ClassInstance < ModuleInstance
     def initialize(runtime, supr, name = nil)
       self.super = supr
-      super(runtime, name)
+      super(runtime, name || inferred_name)
       add_primitives_to_method_table if runtime.initialized?
     end
     
@@ -15,15 +15,28 @@ class Carat::Runtime
       MetaClassInstance.new(runtime, self, superclass && superclass.metaclass)
     end
     
+    # The inferred name is the name of the class in the object language, taken from the name of the
+    # class representing it in the metalanguage. For instance, if this is an instance of
+    # +FixnumClass+, then the inferred name is +:Fixnum+
+    def inferred_name
+      @inferred_name ||= begin
+        # We must be in a subclass of ClassInstance in order to infer a name
+        unless instance_of?(ClassInstance)
+          self.class.to_s.sub(/^.*\:\:/, '').sub(/Class$/, '').to_sym
+        end
+      end
+    end
+    
+    def instance_class_name
+      "#{name}Instance"
+    end
+    
     # Returns the class which is used to represent an instance of this class.
     # 
     # For example, if this class is +FixnumClass+, the +instance_class+ will be +FixnumInstance+
     def instance_class
       @instance_class ||= begin
-        class_name = self.class.to_s.sub(/^.*\:\:/, '')
-        instance_class_name = class_name.sub(/Class$/, "Instance")
-        
-        if class_name !~ /Instance$/ && Carat::Runtime.const_defined?(instance_class_name)
+        if Carat::Runtime.const_defined?(instance_class_name)
           Carat::Runtime.const_get(instance_class_name)
         else
           Carat::Runtime::ObjectInstance
