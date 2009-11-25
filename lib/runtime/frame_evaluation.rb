@@ -122,23 +122,24 @@ class Carat::Runtime
     end
     
     # Multiple assignment - e.g. x, y = 5, 2
-    # 
-    # First we have to do some manipulation of the arguments, to go from this:
-    #   
-    #   [:masgn, [:array, [:lasgn, :x], [:splat, [:lasgn, :y]]], [:array, [:lit, 5], [:array, [:lit, 3], [:lit, 6]]]]
-    # 
-    # To this:
-    # 
-    #   [[:lasgn, :x, [:lit, 5]], [:splat, [:lasgn, :y], [:array, [:lit, 3], [:lit, 6]]]]
-    #
-    # We then evaluate each assignment in turn.
     eval :masgn do |left, right|
-      assignments = left.zip(right).drop(1).map { |item| item.first + item.drop(1) }
-      assignments.each { |assignment| eval(assignment) }
+      # Remove the :array entry from left and right
+      left.shift
+      right.shift
+      
+      # Match up elements from the LHS and the RHS
+      left.each do |item|
+        case item.first
+          when :lasgn
+            eval(item << right.shift)
+          when :splat
+            eval(item + right)
+        end
+      end
     end
     
-    eval :splat do |lasgn, items|
-      eval(lasgn << items)
+    eval :splat do |lasgn, *items|
+      eval(lasgn << [:array, *items])
     end
   end
 end

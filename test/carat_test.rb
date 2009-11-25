@@ -180,7 +180,7 @@ class CaratTest < Test::Unit::TestCase
   
   def test_multiple_assignment
     code = <<-CODE
-      x, *y = 5, [3, 6]
+      x, *y = 5, 3, 6
 
       puts x
       puts y.inspect
