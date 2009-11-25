@@ -30,7 +30,7 @@ class Carat::Runtime
     # call a method or retrieve a local variable. Unfortunately the sexp does not differentiate
     # between "foo" and "foo()". There is a difference - the second can only be a method call, but
     # the first might be a method call or a local variable lookup.
-    eval :call do |receiver, method_name, args|
+    def eval_call(receiver, method_name, args, block = nil)
       if receiver.nil? && args == [:arglist]
         # If there is no explicit receiver, and there are no arguments, we are either dealing with
         # a local variable or a method call to 'self'
@@ -38,11 +38,11 @@ class Carat::Runtime
         if scope.has?(method_name)
           scope[method_name]
         else
-          scope[:self].call(method_name, args)
+          scope[:self].call(method_name, args, block)
         end
       else
         object = receiver && eval(receiver) || scope[:self]
-        object.call(method_name, args)
+        object.call(method_name, args, block)
       end
     end
     
@@ -140,6 +140,19 @@ class Carat::Runtime
     
     eval :splat do |lasgn, *items|
       eval(lasgn << [:array, *items])
+    end
+    
+    # Call a method with a block as an iterator
+    eval :iter do |call, args, contents|
+      eval(call << Carat::Data::ProcInstance.new(runtime, args, contents))
+    end
+    
+    eval :yield do |*args|
+      block = scope.block
+      eval [:block,
+        block.args << [:array, *args], # Assign the arguments
+        block.contents # Now run the contents of the block
+      ]
     end
   end
 end

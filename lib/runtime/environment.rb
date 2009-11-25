@@ -33,6 +33,7 @@ class Carat::Runtime
       constants[:Kernel] = Carat::Data::ModuleInstance.new(runtime, :Kernel)
       constants[:Fixnum] = Carat::Data::FixnumClass.new(runtime, @object)
       constants[:Array]  = Carat::Data::ArrayClass.new(runtime, @object)
+      constants[:Proc]   = Carat::Data::ProcClass.new(runtime, @object)
       
       [:object, :fixnum].each do |file|
         run(File.read(Carat::KERNEL_PATH + "/#{file}.rb"))

@@ -7,8 +7,8 @@ class Carat::Runtime
     def_delegators :parent, :runtime, :globals, :constants
     
     def initialize(self_object, parent, block = nil)
+      @parent, @block  = parent, block
       super(self_object)
-      @parent  = parent
     end
     
     def [](symbol)

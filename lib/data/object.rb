@@ -29,21 +29,21 @@ module Carat::Data
       lookup_instance_method(name) || raise(Carat::CaratError, "method '#{self}##{name}' not found")
     end
     
-    def call(method_name, args = [])
+    def call(method_name, args = [], block = nil)
       callable = lookup_instance_method!(method_name)
       args = eval(args) if args.first == :arglist
       
       case callable
         when Method
-          call_method(callable, args)
+          call_method(callable, args, block)
         when Primitive
-          call_primitive(callable, args)
+          call_primitive(callable, args, block)
       end
     end
     
-    def call_method(method, args)
+    def call_method(method, args, block)
       # Create up a new scope, where the object receiving the method call is 'self'
-      new_scope = Carat::Runtime::Scope.new(self, current_scope)
+      new_scope = Carat::Runtime::Scope.new(self, current_scope, block)
       
       # Extend the scope, assigning all the argument values to the argument names of the method
       new_scope.merge!(method.assign_args(args))
@@ -52,7 +52,7 @@ module Carat::Data
       eval(method.contents, new_scope)
     end
     
-    def call_primitive(primitive, args)
+    def call_primitive(primitive, args, block)
       meta_convert(send(primitive.name, *args))
     end
     
