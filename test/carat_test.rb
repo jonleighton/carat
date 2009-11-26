@@ -183,7 +183,7 @@ class CaratTest < Test::Unit::TestCase
       x, *y = 5, 3, 6
 
       puts x
-      puts y.inspect
+      p y
     CODE
     
     assert_equal("5\n[3, 6]\n", execute(code))
@@ -198,6 +198,24 @@ class CaratTest < Test::Unit::TestCase
       foo { |x|
         puts x + 5
       }
+    CODE
+    
+    assert_equal("7\n", execute(code))
+  end
+  
+  def test_block_with_closure
+    code = <<-CODE
+      class Foo
+        def a
+          foo = 5
+          yield
+        end
+      end
+
+      foo = 2
+      block = proc { puts foo }
+      foo = 7
+      Foo.new.a(&block)
     CODE
     
     assert_equal("7\n", execute(code))

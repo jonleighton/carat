@@ -87,7 +87,12 @@ class Carat::Runtime
     
     # A list of expressions being passed as arguments to a method
     eval :arglist do |*expressions|
-      expressions.map { |expression| eval(expression) }
+      expressions.map { |expression| eval(expression) }.compact
+    end
+    
+    eval :block_pass do |block|
+      scope.block = eval(block)
+      nil
     end
     
     def new_module(name)

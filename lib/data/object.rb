@@ -7,7 +7,7 @@ module Carat::Data
     attr_accessor :klass
     
     extend Forwardable
-    def_delegators :runtime, :current_scope, :eval, :meta_convert
+    def_delegators :runtime, :current_scope, :eval, :meta_convert, :stack
     
     # All objects can have primitives
     extend PrimitiveHost
@@ -30,30 +30,40 @@ module Carat::Data
     end
     
     def call(method_name, args = [], block = nil)
+      # Look up the method or primitive
       callable = lookup_instance_method!(method_name)
-      args = eval(args) if args.first == :arglist
       
+      # Create a new scope in which to evaluate the arguments and method body. Assign the block
+      # to the scope if there is one.
+      scope = current_scope.extend(:self => self)
+      scope.block = block
+      
+      # Evaluate the arguments, unless they are given already evaluated. This may also assign a
+      # block, if the block-as-argument syntax is used.
+      args = eval(args, scope) if args.first == :arglist
+      
+      # Run the actual method or primitive
       case callable
         when Method
-          call_method(callable, args, block)
+          call_method(scope, callable, args)
         when Primitive
-          call_primitive(callable, args, block)
+          call_primitive(scope, callable, args)
       end
     end
     
-    def call_method(method, args, block)
-      # Create up a new scope, where the object receiving the method call is 'self'
-      new_scope = Carat::Runtime::Scope.new(self, current_scope, block)
-      
-      # Extend the scope, assigning all the argument values to the argument names of the method
-      new_scope.merge!(method.assign_args(args))
-      
-      # Now evaluate the method contents in our new scope
-      eval(method.contents, new_scope)
+    def call_method(scope, method, args)
+      scope.merge!(method.assign_args(args, scope.block))
+      eval(method.contents, scope)
     end
     
-    def call_primitive(primitive, args, block)
-      meta_convert(send(primitive.name, *args))
+    # The frame will not actually be executed, but it holds the scope which applies when
+    # we execute the primitive. Ideally a frame would take a sexp OR perhaps a block
+    # or something, which would represent what we are "executing".
+    def call_primitive(scope, primitive, args)
+      stack << Carat::Runtime::Frame.new(nil, scope)
+      result = meta_convert(send(primitive.name, *args))
+      stack.pop # Don't need the frame any more
+      result
     end
     
     def instance_variables
