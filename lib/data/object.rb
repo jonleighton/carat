@@ -87,6 +87,10 @@ module Carat::Data
       end
     end
     
+    def instance_variables
+      @instance_variables ||= {}
+    end
+    
     def to_s
       "<object:#{klass}>"
     end

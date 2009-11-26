@@ -21,6 +21,8 @@ class Carat::Runtime
       case type
         when :lasgn # e.g. [:lasgn, :x, [:lit, :4]]
           scope[left] = eval(right)
+        when :iasgn
+          scope[:self].instance_variables[left] = eval(right)
         when :masgn # e.g. [:masgn, [:array, [:lasgn, :x], [:splat, :y]], [:array, [:lit, 4], [:lit, 5], [:lit, 6]]]
           # left and right are initially [:array, ...]
           left.shift
@@ -56,9 +58,19 @@ class Carat::Runtime
       assign(:masgn, left, right)
     end
     
+    # Instance variable assignment
+    eval :iasgn do |left, right|
+      assign(:iasgn, left, right)
+    end
+    
     # Get a local variable
     eval :lvar do |identifier|
       scope[identifier]
+    end
+    
+    # Get an instance variable
+    eval :ivar do |identifier|
+      scope[:self].instance_variables[identifier]
     end
     
     # call a method or retrieve a local variable. Unfortunately the sexp does not differentiate
