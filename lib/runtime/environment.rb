@@ -35,7 +35,8 @@ class Carat::Runtime
       constants[:Array]  = Carat::Data::ArrayClass.new(runtime, @object)
       constants[:Proc]   = Carat::Data::ProcClass.new(runtime, @object)
       
-      [:object, :fixnum].each do |file|
+      # TODO: Implement require, and just call run on one file which requires the rest
+      [:kernel, :object, :fixnum].each do |file|
         run(File.read(Carat::KERNEL_PATH + "/#{file}.rb"))
       end
       

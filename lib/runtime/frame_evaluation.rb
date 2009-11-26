@@ -17,9 +17,43 @@ class Carat::Runtime
       statements.reduce(nil) { |last_result, statement| eval(statement) }
     end
     
+    def assign(type, left, right)
+      case type
+        when :lasgn # e.g. [:lasgn, :x, [:lit, :4]]
+          scope[left] = eval(right)
+        when :masgn # e.g. [:masgn, [:array, [:lasgn, :x], [:splat, :y]], [:array, [:lit, 4], [:lit, 5], [:lit, 6]]]
+          # left and right are initially [:array, ...]
+          left.shift
+          right.shift
+          
+          # Match up elements from the left and right
+          left.each do |item|
+            case item.first
+              when :lasgn
+                identifier = item[1]
+                value = right.shift
+              when :splat
+                identifier = item[1][1]
+                value = [:array, *right]
+              else
+                raise Carat::CaratError
+            end
+            
+            assign(:lasgn, identifier, value)
+          end
+        else
+          raise Carat::CaratError
+      end
+    end
+    
     # Make a local assignment assignment
-    eval :lasgn do |identifier, value|
-      scope[identifier] = eval(value)
+    eval :lasgn do |left, right|
+      assign(:lasgn, left, right)
+    end
+    
+    # Multiple assignment - e.g. x, y = 5, 2
+    eval :masgn do |left, right|
+      assign(:masgn, left, right)
     end
     
     # Get a local variable
@@ -121,38 +155,23 @@ class Carat::Runtime
       scope[:self]
     end
     
-    # Multiple assignment - e.g. x, y = 5, 2
-    eval :masgn do |left, right|
-      # Remove the :array entry from left and right
-      left.shift
-      right.shift
-      
-      # Match up elements from the LHS and the RHS
-      left.each do |item|
-        case item.first
-          when :lasgn
-            eval(item << right.shift)
-          when :splat
-            eval(item + right)
-        end
-      end
-    end
-    
-    eval :splat do |lasgn, *items|
-      eval(lasgn << [:array, *items])
-    end
-    
     # Call a method with a block as an iterator
     eval :iter do |call, args, contents|
       eval(call << Carat::Data::ProcInstance.new(runtime, args, contents))
     end
     
     eval :yield do |*args|
+      # Get the current block in this scope
       block = scope.block
-      eval [:block,
-        block.args << [:array, *args], # Assign the arguments
-        block.contents # Now run the contents of the block
-      ]
+      
+      # Create a new frame to evaluate the contents of the block
+      stack << Frame.new(block.contents, scope.extend)
+      
+      # Assign the arguments of the block to the values given to yield
+      stack.peek.assign(*(block.args + args))
+      
+      # Now actually execute the frame
+      stack.reduce
     end
   end
 end

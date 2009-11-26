@@ -189,6 +189,20 @@ class CaratTest < Test::Unit::TestCase
     assert_equal("5\n[3, 6]\n", execute(code))
   end
   
+  def test_block_without_closure
+    code = <<-CODE
+      def foo
+        yield(2)
+      end
+
+      foo { |x|
+        puts x + 5
+      }
+    CODE
+    
+    assert_equal("7\n", execute(code))
+  end
+  
   def test_environment
     runtime = Carat::Runtime.new
     constants = runtime.constants

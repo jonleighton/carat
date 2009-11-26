@@ -3,6 +3,7 @@
 class Carat::Runtime
   class Frame
     attr_reader :sexp, :scope
+    attr_accessor :stack
     
     extend Forwardable
     def_delegators :scope, :runtime, :constants, :symbols
@@ -31,24 +32,21 @@ class Carat::Runtime
     
     # Theoretically a frame can exist independently of a stack, but when we are executing the
     # frame we need a reference to the stack so that we can add new frames to it.
-    def execute(stack)
+    def execute
       return nil if sexp_type.nil?
       return sexp unless sexp_type.is_a?(Symbol) # We assume it is already evaluated
       
-      @stack = stack
       if respond_to?("eval_#{sexp_type}")
         send("eval_#{sexp_type}", *sexp_body)
       else
         error "'#{sexp_type}' not implemented"
       end
-    ensure
-      @stack = nil
     end
     
     # Creates a new frame for the sexp and scope, and adds it to the current stack. If scope is
     # not given, it will default to the current scope.
     def eval(sexp, scope = nil)
-      @stack << Frame.new(sexp, scope || self.scope) unless sexp.nil?
+      stack.execute Frame.new(sexp, scope || self.scope) unless sexp.nil?
     end
     
     # Converts an object in the metalanguage to a representative object in the object language. For

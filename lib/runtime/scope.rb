@@ -18,5 +18,11 @@ class Carat::Runtime
     def has?(symbol)
       super || parent.has?(symbol)
     end
+    
+    def extend(assignments = {})
+      child = Scope.new(symbols[:self], self)
+      child.merge!(assignments)
+      child
+    end
   end
 end

@@ -41,7 +41,7 @@ module Carat
       sexp = Carat.parse(code)
       Carat.debug "Running sexp: #{sexp.inspect}"
       begin
-        stack << Frame.new(sexp, @top_level_scope)
+        stack.execute Frame.new(sexp, @top_level_scope)
       rescue StandardError => e
         puts "Error while running: #{current_frame.sexp.inspect}"
         raise e
