@@ -157,7 +157,7 @@ class Carat::Runtime
     
     # Call a method with a block as an iterator
     eval :iter do |call, args, contents|
-      eval(call << Carat::Data::ProcInstance.new(runtime, args, contents))
+      eval(call << Carat::Data::ProcInstance.new(runtime, scope, args, contents))
     end
     
     eval :yield do |*args|
@@ -165,10 +165,10 @@ class Carat::Runtime
       block = scope.block
       
       # Create a new frame to evaluate the contents of the block
-      stack << Frame.new(block.contents, scope.extend)
+      stack << Frame.new(block.contents, block.scope.extend)
       
       # Assign the arguments of the block to the values given to yield
-      stack.peek.assign(*(block.args + args))
+      stack.peek.assign(*(block.args + args)) unless block.args.nil?
       
       # Now actually execute the frame
       stack.reduce

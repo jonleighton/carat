@@ -69,8 +69,12 @@ module Carat::Data
     
     # ***** Primitives ***** #
     
+    def primitive_allocate
+      instance_class.new(runtime, self)
+    end
+    
     def primitive_new(*args)
-      object = instance_class.new(runtime, self)
+      object = self.call(:allocate)
       object.call(:initialize, args)
       object
     end
