@@ -63,8 +63,14 @@ class Carat::Runtime
           constants[:Fixnum].get(object)
         when Array
           constants[:Array].call(:new, object)
-        when NilClass, String # TODO
-          object
+        when String
+          Carat::Data::StringInstance.new(runtime, object)
+        when NilClass
+          constants[:NilClass].instance
+        when FalseClass
+          constants[:FalseClass].instance
+        when TrueClass
+          constants[:TrueClass].instance
         else
           raise Carat::CaratError, "unable to meta convert #{object.inspect}"
       end

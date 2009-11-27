@@ -242,6 +242,25 @@ class CaratTest < Test::Unit::TestCase
     assert_equal("nil\n5\n", execute(code))
   end
   
+  def test_nil_false_true
+    code = <<-CODE
+      puts nil
+      puts true
+      puts false
+    CODE
+    
+    assert_equal("nil\ntrue\nfalse\n", execute(code))
+  end
+  
+  def test_string
+    code = <<-CODE
+      puts "foo"
+      puts String.new + "bar"
+    CODE
+    
+    assert_equal("foo\nbar\n", execute(code))
+  end
+  
   def test_environment
     runtime = Carat::Runtime.new
     constants = runtime.constants
