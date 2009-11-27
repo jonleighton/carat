@@ -25,6 +25,7 @@ module Carat
     require DATA_PATH + '/kernel'
     require DATA_PATH + '/fixnum'
     require DATA_PATH + '/array'
+    require DATA_PATH + '/string'
     require DATA_PATH + '/proc'
     require DATA_PATH + '/nil_class'
     require DATA_PATH + '/true_class'

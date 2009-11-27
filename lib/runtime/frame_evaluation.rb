@@ -168,6 +168,10 @@ class Carat::Runtime
       constants[:Array].call(:new, contents)
     end
     
+    eval :str do |contents|
+      Carat::Data::StringInstance.new(runtime, contents)
+    end
+    
     eval :self do
       scope[:self]
     end
