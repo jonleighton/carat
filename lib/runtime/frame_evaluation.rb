@@ -5,7 +5,7 @@ class Carat::Runtime
   class Frame
     eval(:false) { false }
     eval(:true) { true }
-    eval(:nil) { nil }
+    eval(:nil) { constants[:NilClass].instance }
     
     # A literal number value. This is evaluated by the lexer, so we can just use it straight off.
     eval :lit do |value|
@@ -70,7 +70,7 @@ class Carat::Runtime
     
     # Get an instance variable
     eval :ivar do |identifier|
-      scope[:self].instance_variables[identifier]
+      scope[:self].instance_variables[identifier] || constants[:NilClass].instance
     end
     
     # call a method or retrieve a local variable. Unfortunately the sexp does not differentiate

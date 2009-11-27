@@ -29,11 +29,15 @@ class Carat::Runtime
       [@object, @module, @class].each(&:add_primitives_to_method_table)
     end
     
-    def load_kernel
+    def create_classes(*names)
+      names.each do |name|
+        constants[name] = Carat::Data.const_get("#{name}Class").new(runtime, @object)
+      end
+    end
+    
+    def load_kernel    
       constants[:Kernel] = Carat::Data::ModuleInstance.new(runtime, :Kernel)
-      constants[:Fixnum] = Carat::Data::FixnumClass.new(runtime, @object)
-      constants[:Array]  = Carat::Data::ArrayClass.new(runtime, @object)
-      constants[:Proc]   = Carat::Data::ProcClass.new(runtime, @object)
+      create_classes(:Fixnum, :Array, :Proc, :NilClass)
       
       # TODO: Implement require, and just call run on one file which requires the rest
       [:kernel, :object, :fixnum].each do |file|

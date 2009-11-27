@@ -221,6 +221,27 @@ class CaratTest < Test::Unit::TestCase
     assert_equal("7\n", execute(code))
   end
   
+  def test_instance_variables
+    code = <<-CODE
+      class Foo
+        def a
+          @foo = 5
+        end
+        
+        def b
+          @foo
+        end
+      end
+
+      foo = Foo.new
+      puts foo.b
+      foo.a
+      puts foo.b
+    CODE
+    
+    assert_equal("nil\n5\n", execute(code))
+  end
+  
   def test_environment
     runtime = Carat::Runtime.new
     constants = runtime.constants

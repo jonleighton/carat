@@ -3,7 +3,11 @@ module Carat::Data
     extend PrimitiveHost
     
     def primitive_puts(data)
-      Kernel.puts(data)
+      if data.is_a?(NilClassInstance)
+        Kernel.puts(nil)
+      else
+        Kernel.puts(data)
+      end
     end
   end
 end
