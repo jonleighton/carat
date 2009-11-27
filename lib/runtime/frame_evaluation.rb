@@ -3,9 +3,9 @@
 
 class Carat::Runtime
   class Frame
-    eval(:false) { false }
-    eval(:true) { true }
-    eval(:nil) { constants[:NilClass].instance }
+    eval(:false) { constants[:FalseClass].instance }
+    eval(:true)  { constants[:TrueClass].instance  }
+    eval(:nil)   { constants[:NilClass].instance   }
     
     # A literal number value. This is evaluated by the lexer, so we can just use it straight off.
     eval :lit do |value|

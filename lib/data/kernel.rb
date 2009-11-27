@@ -4,9 +4,11 @@ module Carat::Data
     
     def primitive_puts(data)
       if data.is_a?(NilClassInstance)
-        Kernel.puts(nil)
+        Kernel.puts("nil")
       else
-        Kernel.puts(data)
+        # data.call(:to_s) gets the StringInstance representing the string, and then calling
+        # to_s actually gets the string.
+        Kernel.puts(data.call(:to_s).to_s)
       end
     end
   end
