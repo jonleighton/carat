@@ -3,6 +3,31 @@
 
 class Carat::Runtime
   class Frame
+    # ***** GENERAL ***** #
+    
+    # A block of statements. Evaluate each in turn and return the result of the last one.
+    eval :block do |*statements|
+      statements.reduce(nil) { |last_result, statement| eval(statement) }
+    end
+    
+    eval :scope do |*statement|
+      # AFAIK :scope will either have 0 or 1 arguments. But if it has 0, we will get "warning: 
+      # multiple values for a block parameter (0 for 1)" from MRI. So we use a splat to get around
+      # that.
+      statement = statement.first
+      statement && eval(statement)
+    end
+    
+    eval :const do |const_name|
+      constants[const_name]
+    end
+    
+    eval :self do
+      scope[:self]
+    end
+  
+    # ***** LITERALS ***** #
+  
     eval(:false) { constants[:FalseClass].instance }
     eval(:true)  { constants[:TrueClass].instance  }
     eval(:nil)   { constants[:NilClass].instance   }
@@ -12,10 +37,28 @@ class Carat::Runtime
       constants[:Fixnum].get(value)
     end
     
-    # A block of statements. Evaluate each in turn and return the result of the last one.
-    eval :block do |*statements|
-      statements.reduce(nil) { |last_result, statement| eval(statement) }
+    eval :array do |*contents|
+      contents = contents.map { |object| eval(object) }
+      constants[:Array].call(:new, contents)
     end
+    
+    eval :str do |contents|
+      Carat::Data::StringInstance.new(runtime, contents)
+    end
+    
+    # ***** VARIABLE RETRIEVAL ***** #
+    
+    # Get a local variable
+    eval :lvar do |identifier|
+      scope[identifier]
+    end
+    
+    # Get an instance variable
+    eval :ivar do |identifier|
+      scope[:self].instance_variables[identifier] || constants[:NilClass].instance
+    end
+    
+    # ***** VARIABLE ASSIGNMENT ***** #
     
     def assign(type, left, right)
       case type
@@ -48,7 +91,7 @@ class Carat::Runtime
       end
     end
     
-    # Make a local assignment assignment
+    # Local variable assignment
     eval :lasgn do |left, right|
       assign(:lasgn, left, right)
     end
@@ -63,49 +106,7 @@ class Carat::Runtime
       assign(:iasgn, left, right)
     end
     
-    # Get a local variable
-    eval :lvar do |identifier|
-      scope[identifier]
-    end
-    
-    # Get an instance variable
-    eval :ivar do |identifier|
-      scope[:self].instance_variables[identifier] || constants[:NilClass].instance
-    end
-    
-    # call a method or retrieve a local variable. Unfortunately the sexp does not differentiate
-    # between "foo" and "foo()". There is a difference - the second can only be a method call, but
-    # the first might be a method call or a local variable lookup.
-    def eval_call(receiver, method_name, args, block = nil)
-      if receiver.nil? && args == [:arglist]
-        # If there is no explicit receiver, and there are no arguments, we are either dealing with
-        # a local variable or a method call to 'self'
-        
-        if scope.has?(method_name)
-          scope[method_name]
-        else
-          scope[:self].call(method_name, args, block)
-        end
-      else
-        object = receiver && eval(receiver) || scope[:self]
-        object.call(method_name, args, block)
-      end
-    end
-    
-    # A list of identifiers for the arguments of a method when it is being defined
-    eval :args do |*identifiers|
-      identifiers
-    end
-    
-    # A list of expressions being passed as arguments to a method
-    eval :arglist do |*expressions|
-      expressions.map { |expression| eval(expression) }.compact
-    end
-    
-    eval :block_pass do |block|
-      scope.block = eval(block)
-      nil
-    end
+    # ***** MODULE/CLASS CONSTRUCTS ***** #
     
     def new_module(name)
       Carat::Data::ModuleInstance.new(runtime, name)
@@ -129,13 +130,20 @@ class Carat::Runtime
       eval(contents, Scope.new(eval(object).singleton_class, scope))
     end
     
-    eval :scope do |*statement|
-      # AFAIK :scope will either have 0 or 1 arguments. But if it has 0, we will get "warning: 
-      # multiple values for a block parameter (0 for 1)" from MRI. So we use a splat to get around
-      # that.
-      statement = statement.first
-      statement && eval(statement)
+    # ***** CONTROL FLOW CONSTRUCTS ***** #
+    
+    eval :if do |test, true_expr, false_expr|
+      test = eval(test)
+      
+      if !test.is_a?(Carat::Data::FalseClassInstance) &&
+         !test.is_a?(Carat::Data::NilClassInstance)
+        eval(true_expr)
+      else
+        eval(false_expr)
+      end
     end
+    
+    # ***** METHOD DEFINITION ***** #
     
     # Define a method on a given class. +klass+ should be any instance of +Carat::Runtime::Class+.
     def define_method(klass, method_name, args, contents)
@@ -159,22 +167,43 @@ class Carat::Runtime
       define_method(eval(object).singleton_class, method_name, args, contents)
     end
     
-    eval :const do |const_name|
-      constants[const_name]
+    # A list of identifiers for the arguments of a method when it is being defined
+    eval :args do |*identifiers|
+      identifiers
     end
     
-    eval :array do |*contents|
-      contents = contents.map { |object| eval(object) }
-      constants[:Array].call(:new, contents)
+    # ***** METHOD CALLING ***** #
+    
+    # call a method or retrieve a local variable. Unfortunately the sexp does not differentiate
+    # between "foo" and "foo()". There is a difference - the second can only be a method call, but
+    # the first might be a method call or a local variable lookup.
+    def eval_call(receiver, method_name, args, block = nil)
+      if receiver.nil? && args == [:arglist]
+        # If there is no explicit receiver, and there are no arguments, we are either dealing with
+        # a local variable or a method call to 'self'
+        
+        if scope.has?(method_name)
+          scope[method_name]
+        else
+          scope[:self].call(method_name, args, block)
+        end
+      else
+        object = receiver && eval(receiver) || scope[:self]
+        object.call(method_name, args, block)
+      end
     end
     
-    eval :str do |contents|
-      Carat::Data::StringInstance.new(runtime, contents)
+    # A list of expressions being passed as arguments to a method
+    eval :arglist do |*expressions|
+      expressions.map { |expression| eval(expression) }.compact
     end
     
-    eval :self do
-      scope[:self]
+    eval :block_pass do |block|
+      scope.block = eval(block)
+      nil
     end
+    
+    # ***** BLOCKS ***** #
     
     # Call a method with a block as an iterator
     eval :iter do |call, args, contents|

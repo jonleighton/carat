@@ -261,6 +261,24 @@ class CaratTest < Test::Unit::TestCase
     assert_equal("foo\nbar\n", execute(code))
   end
   
+  def test_conditional
+    code = <<-CODE
+      if true
+        puts "hi"
+      else
+        puts "FAIL"
+      end
+      
+      if false
+        puts "FAIL"
+      else
+        puts "bye"
+      end
+    CODE
+    
+    assert_equal("hi\nbye\n", execute(code))
+  end
+  
   def test_environment
     runtime = Carat::Runtime.new
     constants = runtime.constants
