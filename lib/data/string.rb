@@ -28,8 +28,13 @@ module Carat::Data
     end
     
     def primitive_plus(other)
-      to_s + other.to_s
+      contents + other.contents
     end
     rename_primitive :plus, :+
+    
+    def primitive_push(other)
+      contents << other.contents
+    end
+    rename_primitive :push, :<<
   end
 end

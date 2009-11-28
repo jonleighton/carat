@@ -12,9 +12,21 @@ module Carat::Data
       @contents.length
     end
     
-    # TODO: When Array#map works, this can be moved to /lib/kernel
-    def primitive_inspect
-      "[" + @contents.map { |obj| obj.call(:inspect) }.join(", ") + "]"
+    def primitive_each(*args)
+      @contents.each do |item|
+        current_frame.eval_yield(item)
+      end
     end
+    
+    def primitive_push(item)
+      @contents << item
+      self
+    end
+    rename_primitive :push, :<<
+    
+    def primitive_at(i)
+      @contents[i.value]
+    end
+    rename_primitive :at, :[]
   end
 end

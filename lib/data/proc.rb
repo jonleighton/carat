@@ -1,7 +1,7 @@
 module Carat::Data
   class ProcClass < ClassInstance
     def primitive_new
-      runtime.current_scope.block
+      scope.block
     end
   end
   

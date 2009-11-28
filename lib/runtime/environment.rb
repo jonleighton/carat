@@ -3,7 +3,7 @@ class Carat::Runtime
     attr_reader :runtime
   
     extend Forwardable
-    def_delegators :runtime, :constants, :symbols, :run
+    def_delegators :runtime, :constants, :scope, :execute
     
     def initialize(runtime)
       @runtime = runtime
@@ -40,11 +40,13 @@ class Carat::Runtime
       create_classes(:Fixnum, :Array, :String, :Proc, :NilClass, :TrueClass, :FalseClass)
       
       # TODO: Implement require, and just call run on one file which requires the rest
-      [:kernel, :object, :fixnum, :nil_class, :true_class, :false_class].each do |file|
-        run(File.read(Carat::KERNEL_PATH + "/#{file}.rb"))
+      [:kernel, :object, :fixnum, :array, :nil_class, :true_class, :false_class].each do |file|
+        data = File.read(Carat::KERNEL_PATH + "/#{file}.rb")
+        sexp = Carat.parse(data)
+        execute(sexp)
       end
       
-      symbols[:self] = Carat::Data::ObjectInstance.new(runtime, @object)
+      scope[:self] = Carat::Data::ObjectInstance.new(runtime, @object)
     end
   end
 end

@@ -6,55 +6,59 @@ class Carat::Runtime
     # ***** GENERAL ***** #
     
     # A block of statements. Evaluate each in turn and return the result of the last one.
-    eval :block do |*statements|
-      statements.reduce(nil) { |last_result, statement| eval(statement) }
+    def eval_block(*statements)
+      statements.reduce(nil) { |last_result, statement| execute(statement) }
     end
     
-    eval :scope do |*statement|
-      # AFAIK :scope will either have 0 or 1 arguments. But if it has 0, we will get "warning: 
-      # multiple values for a block parameter (0 for 1)" from MRI. So we use a splat to get around
-      # that.
-      statement = statement.first
-      statement && eval(statement)
+    def eval_scope(statement = nil)
+      statement && execute(statement) || constants[:NilClass].instance
     end
     
-    eval :const do |const_name|
-      constants[const_name]
+    def eval_const(name)
+      constants[name]
     end
     
-    eval :self do
+    def eval_self
       scope[:self]
     end
   
     # ***** LITERALS ***** #
   
-    eval(:false) { constants[:FalseClass].instance }
-    eval(:true)  { constants[:TrueClass].instance  }
-    eval(:nil)   { constants[:NilClass].instance   }
+    def eval_false
+      constants[:FalseClass].instance
+    end
+    
+    def eval_true
+      constants[:TrueClass].instance
+    end
+    
+    def eval_nil
+      constants[:NilClass].instance
+    end
     
     # A literal number value. This is evaluated by the lexer, so we can just use it straight off.
-    eval :lit do |value|
+    def eval_lit(value)
       constants[:Fixnum].get(value)
     end
     
-    eval :array do |*contents|
-      contents = contents.map { |object| eval(object) }
+    def eval_array(*contents)
+      contents = contents.map { |object| execute(object) }
       constants[:Array].call(:new, contents)
     end
     
-    eval :str do |contents|
+    def eval_str(contents)
       Carat::Data::StringInstance.new(runtime, contents)
     end
     
     # ***** VARIABLE RETRIEVAL ***** #
     
     # Get a local variable
-    eval :lvar do |identifier|
+    def eval_lvar(identifier)
       scope[identifier]
     end
     
     # Get an instance variable
-    eval :ivar do |identifier|
+    def eval_ivar(identifier)
       scope[:self].instance_variables[identifier] || constants[:NilClass].instance
     end
     
@@ -63,9 +67,9 @@ class Carat::Runtime
     def assign(type, left, right)
       case type
         when :lasgn # e.g. [:lasgn, :x, [:lit, :4]]
-          scope[left] = eval(right)
+          scope[left] = execute(right)
         when :iasgn
-          scope[:self].instance_variables[left] = eval(right)
+          scope[:self].instance_variables[left] = execute(right)
         when :masgn # e.g. [:masgn, [:array, [:lasgn, :x], [:splat, :y]], [:array, [:lit, 4], [:lit, 5], [:lit, 6]]]
           # left and right are initially [:array, ...]
           left.shift
@@ -92,17 +96,17 @@ class Carat::Runtime
     end
     
     # Local variable assignment
-    eval :lasgn do |left, right|
+    def eval_lasgn(left, right)
       assign(:lasgn, left, right)
     end
     
     # Multiple assignment - e.g. x, y = 5, 2
-    eval :masgn do |left, right|
+    def eval_masgn(left, right)
       assign(:masgn, left, right)
     end
     
     # Instance variable assignment
-    eval :iasgn do |left, right|
+    def eval_iasgn(left, right)
       assign(:iasgn, left, right)
     end
     
@@ -112,34 +116,40 @@ class Carat::Runtime
       Carat::Data::ModuleInstance.new(runtime, name)
     end
     
-    eval :module do |module_name, contents|
-      constants[module_name] ||= new_module(module_name)
-      eval(contents, Scope.new(constants[module_name], scope))
+    def eval_module(module_name, contents)
+      unless constants.has?(module_name)
+        constants[module_name] = new_module(module_name)
+      end
+      scope = SymbolTable.new(:self => constants[module_name])
+      execute(contents, scope)
     end
     
     def new_class(superclass, name)
-      Carat::Data::ClassInstance.new(runtime, eval(superclass) || constants[:Object], name)
+      Carat::Data::ClassInstance.new(runtime, execute(superclass) || constants[:Object], name)
     end
     
-    eval :class do |class_name, superclass, contents|
-      constants[class_name] ||= new_class(superclass, class_name)
-      eval(contents, Scope.new(constants[class_name], scope))
+    def eval_class(class_name, superclass, contents)
+      unless constants.has?(class_name)
+        constants[class_name] = new_class(superclass, class_name)
+      end
+      scope = SymbolTable.new(:self => constants[class_name])
+      execute(contents, scope)
     end
     
-    eval :sclass do |object, contents|
-      eval(contents, Scope.new(eval(object).singleton_class, scope))
+    def eval_sclass(object, contents)
+      execute(contents, SymbolTable.new(:self => execute(object).singleton_class))
     end
     
     # ***** CONTROL FLOW CONSTRUCTS ***** #
     
-    eval :if do |test, true_expr, false_expr|
-      test = eval(test)
+    def eval_if(test, true_expr, false_expr)
+      test = execute(test)
       
       if !test.is_a?(Carat::Data::FalseClassInstance) &&
          !test.is_a?(Carat::Data::NilClassInstance)
-        eval(true_expr)
+        execute(true_expr)
       else
-        eval(false_expr)
+        execute(false_expr)
       end
     end
     
@@ -147,12 +157,12 @@ class Carat::Runtime
     
     # Define a method on a given class. +klass+ should be any instance of +Carat::Runtime::Class+.
     def define_method(klass, method_name, args, contents)
-      klass.method_table[method_name] = Carat::Data::Method.new(eval(args), contents)
+      klass.method_table[method_name] = Carat::Data::Method.new(execute(args), contents)
       nil
     end
     
     # Define a method in the current scope
-    eval :defn do |method_name, args, contents|
+    def eval_defn(method_name, args, contents)
       if scope[:self].is_a?(Carat::Data::ModuleInstance)
         klass = scope[:self]
       else
@@ -163,12 +173,12 @@ class Carat::Runtime
     end
     
     # Define a singleton method (by defining a method on the object's singleton class)
-    eval :defs do |object, method_name, args, contents|
-      define_method(eval(object).singleton_class, method_name, args, contents)
+    def eval_defs(object, method_name, args, contents)
+      define_method(execute(object).singleton_class, method_name, args, contents)
     end
     
     # A list of identifiers for the arguments of a method when it is being defined
-    eval :args do |*identifiers|
+    def eval_args(*identifiers)
       identifiers
     end
     
@@ -178,49 +188,62 @@ class Carat::Runtime
     # between "foo" and "foo()". There is a difference - the second can only be a method call, but
     # the first might be a method call or a local variable lookup.
     def eval_call(receiver, method_name, args, block = nil)
-      if receiver.nil? && args == [:arglist]
+      if receiver.nil? && args == [:arglist] && block.nil?
         # If there is no explicit receiver, and there are no arguments, we are either dealing with
         # a local variable or a method call to 'self'
         
         if scope.has?(method_name)
           scope[method_name]
         else
-          scope[:self].call(method_name, args, block)
+          scope[:self].call(method_name, args)
         end
       else
-        object = receiver && eval(receiver) || scope[:self]
+        object = receiver && execute(receiver) || scope[:self]
         object.call(method_name, args, block)
       end
     end
     
     # A list of expressions being passed as arguments to a method
-    eval :arglist do |*expressions|
-      expressions.map { |expression| eval(expression) }.compact
+    def eval_arglist(*expressions)
+      expressions.map { |expression| execute(expression) }.compact
     end
     
-    eval :block_pass do |block|
-      scope.block = eval(block)
+    def eval_block_pass(block)
+      scope.block = execute(block)
       nil
     end
     
     # ***** BLOCKS ***** #
     
     # Call a method with a block as an iterator
-    eval :iter do |call, args, contents|
-      eval(call << Carat::Data::ProcInstance.new(runtime, scope, args, contents))
+    def eval_iter(call, args, contents)
+      block = Carat::Data::ProcInstance.new(runtime, scope, args, contents)
+      eval_call(call[1], call[2], call[3], block)
     end
     
-    eval :yield do |*args|
+    def eval_yield(*argvals)
       # Get the current block in this scope
       block = scope.block
       
-      # Create a new frame to evaluate the contents of the block
-      stack << Frame.new(block.contents, block.scope.extend)
+      if block.nil?
+        raise Carat::CaratError, "no block given"
+      end
+      
+      # Evaluate the argument values in the scope of the "yield" call
+      argvals = argvals.map { |arg| execute(arg) }
+      
+      # Create a new frame to evaluate the contents of the block. Note that we are creating a new
+      # scope which extends the block's creation scope - the implication being that all fresh
+      # variables inside the block are local to the block. However, variables which were available
+      # in the block's creation scope will be available inside the block and can be changed.
+      scope       = block.scope.extend
+      scope.block = block.scope.block
+      frame = stack.push(block.contents, scope)
       
       # Assign the arguments of the block to the values given to yield
-      stack.peek.assign(*(block.args + args)) unless block.args.nil?
+      frame.assign(*(block.args + argvals)) unless block.args.nil?
       
-      # Now actually execute the frame
+      # Now actually evaluate the frame
       stack.reduce
     end
   end

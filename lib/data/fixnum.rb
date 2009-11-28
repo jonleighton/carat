@@ -1,22 +1,21 @@
 module Carat::Data
   class FixnumClass < ClassInstance
     def instances
-      @instances = {}
+      @instances ||= {}
     end
     
     def get(number)
-      if instances[number]
-        instances[number]
-      else
-        instance = call(:new)
-        instance.value = number
-        instances[number] = instance
-      end
+      instances[number] ||= FixnumInstance.new(runtime, number)
     end
   end
   
   class FixnumInstance < ObjectInstance
-    attr_accessor :value
+    attr_reader :value
+    
+    def initialize(runtime, value)
+      @value = value
+      super(runtime, runtime.constants[:Fixnum])
+    end
     
     def to_s
       value && value.to_s || super

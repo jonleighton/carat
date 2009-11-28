@@ -3,11 +3,22 @@ module Carat::Data
   end
 
   class ObjectInstance
-    attr_reader :runtime
+    class << self
+      def next_object_id
+        if @current_object_id
+          @current_object_id += 1
+        else
+          @current_object_id = 1
+        end
+      end
+    end
+    
+    attr_reader :runtime, :carat_object_id
     attr_accessor :klass
     
     extend Forwardable
-    def_delegators :runtime, :current_scope, :eval, :meta_convert, :stack
+    def_delegators :runtime, :current_frame, :stack, :meta_convert
+    def_delegators :current_frame, :execute, :scope
     
     # All objects can have primitives
     extend PrimitiveHost
@@ -18,6 +29,7 @@ module Carat::Data
       end
       
       @runtime, @klass = runtime, klass
+      @carat_object_id = ObjectInstance.next_object_id
     end
     
     # Lookup a instance method - i.e. one defined by this object's class
@@ -33,34 +45,41 @@ module Carat::Data
       # Look up the method or primitive
       callable = lookup_instance_method!(method_name)
       
-      # Create a new scope in which to evaluate the arguments and method body. Assign the block
-      # to the scope if there is one.
-      scope = current_scope.extend(:self => self)
-      scope.block = block
+      # We want the arguments to be evaluated within the caller's scope. However, the arguments
+      # may change the scope's block, if there is a :block_pass. We don't want this to persist
+      # after the arguments are evaluated, so we create a child scope solely for evaluating the
+      # arguments.
+      arg_scope       = scope.extend
+      arg_scope.block = scope.block
+      args = execute(args, arg_scope) if args.first == :arglist
       
-      # Evaluate the arguments, unless they are given already evaluated. This may also assign a
-      # block, if the block-as-argument syntax is used.
-      args = eval(args, scope) if args.first == :arglist
+      # Create a new scope for the method body, with self as the receiving object
+      method_scope = Carat::Runtime::SymbolTable.new(:self => self)
+      
+      # Set the block which will be available inside the method. This is either a block passed
+      # within the args, or a block which is explicitly given as an iterator.
+      method_scope.block = block || arg_scope.block
       
       # Run the actual method or primitive
       case callable
         when Method
-          call_method(scope, callable, args)
+          call_method(method_scope, callable, args)
         when Primitive
-          call_primitive(scope, callable, args)
+          call_primitive(method_scope, callable, args)
       end
     end
     
     def call_method(scope, method, args)
       scope.merge!(method.assign_args(args, scope.block))
-      eval(method.contents, scope)
+      result = execute(method.contents, scope)
+      result
     end
     
     # The frame will not actually be executed, but it holds the scope which applies when
     # we execute the primitive. Ideally a frame would take a sexp OR perhaps a block
     # or something, which would represent what we are "executing".
     def call_primitive(scope, primitive, args)
-      stack << Carat::Runtime::Frame.new(nil, scope)
+      stack.push(nil, scope)
       result = meta_convert(send(primitive.name, *args))
       stack.pop # Don't need the frame any more
       result
@@ -100,6 +119,17 @@ module Carat::Data
       ":klass=#{real_klass} " + 
       ":instance_variables=#{instance_variables.inspect} " +
       ":to_s=#{to_s}>"
+    end
+    
+    # ***** PRIMITIVES ***** #
+    
+    def primitive_equality_op(other)
+      carat_object_id == other.carat_object_id
+    end
+    rename_primitive :equality_op, :==
+    
+    def primitive_object_id
+      carat_object_id
     end
   end
 end

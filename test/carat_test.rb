@@ -213,12 +213,17 @@ class CaratTest < Test::Unit::TestCase
       end
 
       foo = 2
-      block = proc { puts foo }
+      block = proc do
+        puts foo
+        foo = 3
+      end
       foo = 7
-      Foo.new.a(&block)
+      obj = Foo.new
+      obj.a(&block)
+      puts foo
     CODE
     
-    assert_equal("7\n", execute(code))
+    assert_equal("7\n3\n", execute(code))
   end
   
   def test_instance_variables
@@ -277,6 +282,52 @@ class CaratTest < Test::Unit::TestCase
     CODE
     
     assert_equal("hi\nbye\n", execute(code))
+  end
+  
+  def test_scoping
+    code = <<-CODE
+      a = 1
+      puts a
+
+      class Foo
+        a = 2
+        puts a
+        
+        def bar
+          a = 3
+          puts a
+        end
+        Foo.new.bar
+        
+        puts a
+      end
+
+      puts a
+    CODE
+    
+    assert_equal("1\n2\n3\n2\n1\n", execute(code))
+    
+    code = <<-CODE
+      a = 1
+      
+      class Foo
+        puts a
+      end
+    CODE
+    
+    assert_raises(Carat::CaratError) { execute(code) }
+  end
+  
+  def test_array_block_operations
+    code = <<-CODE
+      y = [3, 5, 2].map do |item|
+        item + 1
+      end
+
+      p y
+    CODE
+    
+    assert_equal("[4, 6, 3]\n", execute(code))
   end
   
   def test_environment
