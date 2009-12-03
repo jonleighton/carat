@@ -1,0 +1,21 @@
+#!/usr/bin/ruby
+
+require "rubygems"
+require "treetop"
+
+require File.dirname(__FILE__) + "/../lib/ast/ast"
+require File.dirname(__FILE__) + "/../lib/parser/nodes"
+Treetop.load(File.dirname(__FILE__) + "/../lib/parser/carat")
+
+parser = Carat::LanguageParser.new
+parse_tree = parser.parse(File.read(ARGV[0]))
+if parse_tree
+  puts "Parse treee:"
+  p parse_tree
+  puts
+  puts "AST:"
+  p parse_tree.to_ast
+else
+  puts "Parsing failed"
+  puts parser.failure_reason
+end

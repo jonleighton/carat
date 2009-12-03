@@ -1,0 +1,115 @@
+module Carat
+  grammar Language
+    # A program is the top-level node, containing just a block of code
+    rule program
+      block
+    end
+    
+    # A block is 0 or more expressions separated by terminators
+    # TODO: Allow empty blocks
+    rule block
+      first:expression rest:(terminator expression)* terminator? <Block>
+    end
+    
+    # An expression is the basic 'thing'
+    rule expression
+      class_definition /
+      method_definition /
+      assignment /
+      literal /
+      variable_or_call
+    end
+    
+    rule class_definition
+      'class' space constant definition_body <ClassDefinition>
+    end
+    
+    rule method_definition
+      'def' space identifier definition_body <MethodDefinition>
+    end
+    
+    rule definition_body
+      multiline_space block 'end' <DefinitionBody>
+    end
+    
+    rule assignment
+      variable space? '=' space? expression
+    end
+    
+    # A literal object, e.g. a number, string, true, false, etc
+    rule literal
+      number / string / boolean / nil
+    end
+    
+    # A local or instance variable
+    rule variable
+      local_variable / instance_variable
+    end
+    
+    # This is the same as "variable" except that a "local variable" may also be a call to a method
+    # with an implicit receiver, no parentheses and no arguments. This ambiguity has to be resolved
+    # at runtime.
+    rule variable_or_call
+      local_variable_or_call / instance_variable
+    end
+    
+    rule local_variable_or_call
+      identifier_without_keyword
+    end
+    
+    rule local_variable
+      identifier_without_keyword
+    end
+    
+    rule instance_variable
+      '@' identifier
+    end
+    
+    rule constant
+      [A-Z] [a-zA-Z0-9_]*
+    end
+    
+    rule keyword
+      'class' / 'def' / 'end'
+    end
+    
+    rule identifier
+      [a-zA-Z_] [a-zA-Z0-9_]*
+    end
+    
+    rule identifier_without_keyword
+      !keyword identifier
+    end
+    
+    rule number
+      [0-9]+ <Integer>
+    end
+    
+    rule string
+      "'" value:[^\']* "'" <String> /
+      '"' value:[^\"]* '"' <String>
+    end
+    
+    rule boolean
+      'true' <True> / 'false' <False>
+    end
+    
+    rule nil
+      'nil' <Nil>
+    end
+    
+    # A terminator signifies the end of a statement. It can be a newline or a semicolon, followed
+    # by any amount of space
+    rule terminator
+      ("\n" / ";") multiline_space?
+    end
+    
+    rule space
+      [ \t]+
+    end
+    
+    rule multiline_space
+      [ \t\n\r]+
+    end
+  end
+end
