@@ -58,5 +58,35 @@ module Carat
         Carat::AST::Integer.new(text_value.to_i)
       end
     end
+    
+    class Assignment < Treetop::Runtime::SyntaxNode
+      def to_ast
+        Carat::AST::Assignment.new(variable.to_ast, expression.to_ast)
+      end
+    end
+    
+    module LocalVariable
+      def to_ast
+        Carat::AST::LocalVariable.new(text_value)
+      end
+    end
+    
+    class InstanceVariable < Treetop::Runtime::SyntaxNode
+      def to_ast
+        Carat::AST::InstanceVariable.new(identifier.text_value)
+      end
+    end
+    
+    class MethodCall < Treetop::Runtime::SyntaxNode
+      def to_ast
+        Carat::AST::MethodCall.new(receiver.to_ast, identifier.text_value)
+      end
+    end
+    
+    class Constant < Treetop::Runtime::SyntaxNode
+      def to_ast
+        Carat::AST::Constant.new(text_value)
+      end
+    end
   end
 end

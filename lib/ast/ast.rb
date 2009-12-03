@@ -44,11 +44,25 @@ module Carat
       end
     end
     
+    class NamedNode < Node
+      attr_reader :name
+      
+      def initialize(name)
+        @name = name
+      end
+      
+      def inspect
+        super + "[#{name}]"
+      end
+    end
+    
     # ***** CONCRETE CLASSES ***** #
     
     require AST_DIR + "/block"
     require AST_DIR + "/class_definition"
     require AST_DIR + "/method_definition"
+    require AST_DIR + "/method_call"
     require AST_DIR + "/literals"
+    require AST_DIR + "/variables"
   end
 end

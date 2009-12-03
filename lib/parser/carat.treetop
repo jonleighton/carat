@@ -17,7 +17,9 @@ module Carat
       method_definition /
       assignment /
       literal /
-      variable_or_call
+      method_call /
+      variable /
+      local_variable_or_method_call
     end
     
     rule class_definition
@@ -33,7 +35,7 @@ module Carat
     end
     
     rule assignment
-      variable space? '=' space? expression
+      variable space? '=' space? expression <Assignment>
     end
     
     # A literal object, e.g. a number, string, true, false, etc
@@ -41,44 +43,53 @@ module Carat
       number / string / boolean / nil
     end
     
+    rule method_call
+      receiver '.' identifier <MethodCall>
+    end
+    
+    # The receiver of a method call
+    rule receiver
+      constant / variable
+    end
+    
     # A local or instance variable
     rule variable
       local_variable / instance_variable
     end
     
-    # This is the same as "variable" except that a "local variable" may also be a call to a method
-    # with an implicit receiver, no parentheses and no arguments. This ambiguity has to be resolved
-    # at runtime.
-    rule variable_or_call
-      local_variable_or_call / instance_variable
+    # This is the same as local_variable except that it may also be a method call with an implicit
+    # receiver, no parentheses and no arguments. This ambiguity has to be resolved at runtime.
+    rule local_variable_or_method_call
+      local_identifier
     end
     
-    rule local_variable_or_call
-      identifier_without_keyword
-    end
-    
+    # A local variable when we know it is definitely a variable (not a method)
     rule local_variable
-      identifier_without_keyword
+      local_identifier <LocalVariable>
     end
     
     rule instance_variable
-      '@' identifier
-    end
-    
-    rule constant
-      [A-Z] [a-zA-Z0-9_]*
+      '@' identifier <InstanceVariable>
     end
     
     rule keyword
       'class' / 'def' / 'end'
     end
     
+    # A general identifier must not start with a number
     rule identifier
       [a-zA-Z_] [a-zA-Z0-9_]*
     end
     
-    rule identifier_without_keyword
-      !keyword identifier
+    # A local identifier must start with an underscore or lowercase letter, and must not conflict
+    # with a keyword
+    rule local_identifier
+      !keyword [a-z_] [a-zA-Z0-9_]*
+    end
+    
+    # A constant must start with a capital letter
+    rule constant
+      [A-Z] [a-zA-Z0-9_]* <Constant>
     end
     
     rule number
