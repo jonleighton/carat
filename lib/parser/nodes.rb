@@ -1,5 +1,11 @@
 module Carat
   module Language
+    class Program < Treetop::Runtime::SyntaxNode
+      def to_ast
+        block.to_ast
+      end
+    end
+  
     class Block < Treetop::Runtime::SyntaxNode
       # An array of nodes representing the expressions in the block
       def expressions
@@ -30,8 +36,12 @@ module Carat
     end
     
     class MethodDefinition < DefinitionNode
+      def receiver_ast
+        !receiver.empty? && receiver.secondary.to_ast || nil
+      end
+      
       def to_ast
-        Carat::AST::MethodDefinition.new(method_name.text_value, contents)
+        Carat::AST::MethodDefinition.new(receiver_ast, method_name.text_value, contents)
       end
     end
     
@@ -119,8 +129,16 @@ module Carat
     end
     
     class ImplicitMethodCallChain < MethodCallChain
+      def tail_elements
+        if tail.empty?
+          []
+        else
+          tail.elements
+        end
+      end
+    
       def chain
-        [nil, head] + tail.elements
+        [nil, head] + tail_elements
       end
     end
     

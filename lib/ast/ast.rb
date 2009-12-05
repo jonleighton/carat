@@ -18,19 +18,6 @@ module Carat
         end
     end
     
-    # A node representing the definition of "something" - for example a class or a method
-    class DefinitionNode < Node
-      attr_reader :name, :contents
-      
-      def initialize(name, contents)
-        @name, @contents = name, contents
-      end
-      
-      def inspect
-        super + "[#{name}]:\n" + indent(contents.inspect)
-      end
-    end
-    
     # A node representing a value - for example a string or integer value
     class ValueNode < Node
       attr_reader :value

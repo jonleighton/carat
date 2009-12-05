@@ -2,7 +2,7 @@ module Carat
   grammar Language
     # A program is the top-level node, containing just a block of code
     rule program
-      block
+      multiline_space? block <Program>
     end
     
     # A block is 1 or more expressions separated by terminators
@@ -21,13 +21,13 @@ module Carat
     end
     
     rule secondary
+      class_definition /
+      method_definition /
+      assignment /
       literal /
       instance_variable /
       constant /
-      local_variable_or_method_call /
-      class_definition /
-      method_definition /
-      assignment
+      local_variable_or_method_call
     end
     
     rule binary_method
@@ -39,7 +39,7 @@ module Carat
     end
     
     rule method_definition
-      'def' space method_name definition_body <MethodDefinition>
+      'def' space receiver:(secondary space? '.')? space? method_name definition_body <MethodDefinition>
     end
     
     rule definition_body
@@ -62,11 +62,11 @@ module Carat
     # when creating the AST.
     rule method_call_chain
       receiver:secondary tail:method_call_chain_tail <MethodCallChain> /
-      head:(basic_method_name space? arguments) tail:method_call_chain_tail? <ImplicitMethodCallChain>
+      head:(method_name:identifier arguments) tail:method_call_chain_tail? <ImplicitMethodCallChain>
     end
     
     rule method_call_chain_tail
-      ('.' multiline_space? method_name space? arguments:arguments?)+
+      ('.' multiline_space? method_name arguments:arguments?)+
     end
     
     # Arguments - this is when there are definitely arguments but they are possibly empty (i.e. an
@@ -74,8 +74,8 @@ module Carat
     # arguments *not* surrounded by parentheses) these are not matched - this special case is dealt
     # with by the local_variable_or_method_call rule
     rule arguments
-      '(' multiline_space? ')' <EmptyArgumentList> /
-      '(' multiline_space? first:expression rest:(multiline_space? ',' multiline_space? expression)* multiline_space? ')' <ArgumentList> /
+      space? '(' multiline_space? ')' <EmptyArgumentList> /
+      space? '(' multiline_space? first:expression rest:(multiline_space? ',' multiline_space? expression)* multiline_space? ')' <ArgumentList> /
       space first:expression rest:(space? ',' multiline_space? expression)* <ArgumentList>
     end
     
