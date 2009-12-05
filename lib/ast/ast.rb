@@ -56,6 +56,18 @@ module Carat
       end
     end
     
+    class NodeList < Node
+      attr_reader :items
+      
+      def initialize(items)
+        @items = items
+      end
+      
+      def inspect
+        super + ":\n" + indent(items.map(&:inspect).join("\n"))
+      end
+    end
+    
     # ***** CONCRETE CLASSES ***** #
     
     require AST_DIR + "/block"

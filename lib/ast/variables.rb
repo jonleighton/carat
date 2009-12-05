@@ -14,6 +14,9 @@ module Carat::AST
   class LocalVariable < NamedNode
   end
   
+  class LocalVariableOrMethodCall < NamedNode
+  end
+  
   class InstanceVariable < NamedNode
   end
   

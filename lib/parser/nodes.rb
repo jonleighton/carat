@@ -11,21 +11,43 @@ module Carat
       end
     end
     
-    class ClassDefinition < Treetop::Runtime::SyntaxNode
+    class EmptyBlock < Treetop::Runtime::SyntaxNode
       def to_ast
-        Carat::AST::ClassDefinition.new(constant.text_value, definition_body.to_ast)
+        nil
       end
     end
     
-    class MethodDefinition < Treetop::Runtime::SyntaxNode
-      def to_ast
-        Carat::AST::MethodDefinition.new(identifier.text_value, definition_body.to_ast)
+    class DefinitionNode < Treetop::Runtime::SyntaxNode
+      def contents
+        definition_body.block.to_ast
       end
     end
     
-    class DefinitionBody < Treetop::Runtime::SyntaxNode
+    class ClassDefinition < DefinitionNode
       def to_ast
-        block.to_ast
+        Carat::AST::ClassDefinition.new(constant.text_value, contents)
+      end
+    end
+    
+    class MethodDefinition < DefinitionNode
+      def to_ast
+        Carat::AST::MethodDefinition.new(identifier.text_value, contents)
+      end
+    end
+    
+    class ArgumentList < Treetop::Runtime::SyntaxNode
+      def values
+        [first] + rest.elements.map(&:expression)
+      end
+      
+      def to_ast
+        Carat::AST::ArgumentList.new(values.map(&:to_ast))
+      end
+    end
+    
+    class EmptyArgumentList < ArgumentList
+      def values
+        []
       end
     end
     
@@ -71,6 +93,12 @@ module Carat
       end
     end
     
+    module LocalVariableOrMethodCall
+      def to_ast
+        Carat::AST::LocalVariableOrMethodCall.new(text_value)
+      end
+    end
+    
     class InstanceVariable < Treetop::Runtime::SyntaxNode
       def to_ast
         Carat::AST::InstanceVariable.new(identifier.text_value)
@@ -79,13 +107,19 @@ module Carat
     
     class MethodCall < Treetop::Runtime::SyntaxNode
       def to_ast
-        Carat::AST::MethodCall.new(receiver.to_ast, identifier.text_value)
+        Carat::AST::MethodCall.new(receiver.to_ast, identifier.text_value, arguments.to_ast)
       end
     end
     
     class Constant < Treetop::Runtime::SyntaxNode
       def to_ast
         Carat::AST::Constant.new(text_value)
+      end
+    end
+    
+    class Nothing < Treetop::Runtime::SyntaxNode
+      def to_ast
+        nil
       end
     end
   end

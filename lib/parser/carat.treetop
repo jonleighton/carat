@@ -5,10 +5,10 @@ module Carat
       block
     end
     
-    # A block is 0 or more expressions separated by terminators
-    # TODO: Allow empty blocks
+    # A block is 1 or more expressions separated by terminators
     rule block
-      first:expression rest:(terminator expression)* terminator? <Block>
+      first:expression rest:(terminator expression)* terminator? <Block> /
+      '' <EmptyBlock>
     end
     
     # An expression is the basic 'thing'
@@ -18,7 +18,7 @@ module Carat
       assignment /
       literal /
       method_call /
-      variable /
+      instance_variable /
       local_variable_or_method_call
     end
     
@@ -31,7 +31,7 @@ module Carat
     end
     
     rule definition_body
-      multiline_space block 'end' <DefinitionBody>
+      multiline_space block 'end'
     end
     
     rule assignment
@@ -43,13 +43,26 @@ module Carat
       number / string / boolean / nil
     end
     
+    # A method call. This is for when we definitely know it's a method call, so simply "foo" is not
+    # matched as that may be a local variable or a method call.
     rule method_call
-      receiver '.' identifier <MethodCall>
+      receiver '.' identifier arguments:arguments? <MethodCall> / # Explicit receiver
+      receiver:nothing identifier arguments <MethodCall>          # Implicit receiver
     end
     
     # The receiver of a method call
     rule receiver
       constant / variable
+    end
+    
+    # Arguments - this is when there are definitely arguments but they are possibly empty (i.e. an
+    # empty pair of parentheses). If there is simply an empty string (i.e. an empty list of
+    # arguments *not* surrounded by parentheses) these are not matched - this special case is dealt
+    # with by the local_variable_or_method_call rule
+    rule arguments
+      '(' multiline_space? ')' <EmptyArgumentList> /
+      '(' multiline_space? first:expression rest:(multiline_space? ',' multiline_space? expression)* multiline_space? ')' <ArgumentList> /
+      space first:expression rest:(space? ',' multiline_space? expression)* <ArgumentList>
     end
     
     # A local or instance variable
@@ -60,7 +73,7 @@ module Carat
     # This is the same as local_variable except that it may also be a method call with an implicit
     # receiver, no parentheses and no arguments. This ambiguity has to be resolved at runtime.
     rule local_variable_or_method_call
-      local_identifier
+      local_identifier <LocalVariableOrMethodCall>
     end
     
     # A local variable when we know it is definitely a variable (not a method)
@@ -121,6 +134,11 @@ module Carat
     
     rule multiline_space
       [ \t\n\r]+
+    end
+    
+    # This rule is useful because it has a to_ast method which returns nil
+    rule nothing
+      '' <Nothing>
     end
   end
 end
