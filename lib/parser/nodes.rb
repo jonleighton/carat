@@ -35,22 +35,6 @@ module Carat
       end
     end
     
-    class ArgumentList < Treetop::Runtime::SyntaxNode
-      def values
-        [first] + rest.elements.map(&:expression)
-      end
-      
-      def to_ast
-        Carat::AST::ArgumentList.new(values.map(&:to_ast))
-      end
-    end
-    
-    class EmptyArgumentList < ArgumentList
-      def values
-        []
-      end
-    end
-    
     class String < Treetop::Runtime::SyntaxNode
       def to_ast
         Carat::AST::String.new(value.text_value)
@@ -105,9 +89,54 @@ module Carat
       end
     end
     
-    class MethodCall < Treetop::Runtime::SyntaxNode
+    class MethodCallChain < Treetop::Runtime::SyntaxNode
+      def chain
+        [receiver] + tail.elements
+      end
+      
+      def reduce(chain)
+        if chain.length == 1
+          chain.first && chain.first.to_ast
+        else
+          call = chain.last
+          
+          receiver = reduce(chain[0..-2])
+          method_name = call.identifier.text_value
+          
+          if call.arguments.empty?
+            arguments = Carat::AST::ArgumentList.new
+          else
+            arguments = call.arguments.to_ast
+          end
+          
+          Carat::AST::MethodCall.new(receiver, method_name, arguments)
+        end
+      end
+      
       def to_ast
-        Carat::AST::MethodCall.new(receiver.to_ast, identifier.text_value, arguments.to_ast)
+        reduce(chain)
+      end
+    end
+    
+    class ImplicitMethodCallChain < MethodCallChain
+      def chain
+        [nil, head] + tail.elements
+      end
+    end
+    
+    class ArgumentList < Treetop::Runtime::SyntaxNode
+      def values
+        [first] + rest.elements.map(&:expression)
+      end
+      
+      def to_ast
+        Carat::AST::ArgumentList.new(values.map(&:to_ast))
+      end
+    end
+    
+    class EmptyArgumentList < ArgumentList
+      def values
+        []
       end
     end
     

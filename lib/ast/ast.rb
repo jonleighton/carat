@@ -59,12 +59,20 @@ module Carat
     class NodeList < Node
       attr_reader :items
       
-      def initialize(items)
+      def initialize(items = [])
         @items = items
       end
       
+      def empty?
+        items.empty?
+      end
+      
       def inspect
-        super + ":\n" + indent(items.map(&:inspect).join("\n"))
+        if empty?
+          super + ":[Empty]"
+        else
+          super + ":\n" + indent(items.map(&:inspect).join("\n"))
+        end
       end
     end
     

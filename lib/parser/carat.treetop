@@ -13,13 +13,18 @@ module Carat
     
     # An expression is the basic 'thing'
     rule expression
+      method_call_chain / primary
+    end
+    
+    # This is basically anything except a method call (necessary to avoid left recursion)
+    rule primary
+      literal /
+      instance_variable /
+      constant /
+      local_variable_or_method_call /
       class_definition /
       method_definition /
-      assignment /
-      literal /
-      method_call /
-      instance_variable /
-      local_variable_or_method_call
+      assignment
     end
     
     rule class_definition
@@ -43,16 +48,18 @@ module Carat
       number / string / boolean / nil
     end
     
-    # A method call. This is for when we definitely know it's a method call, so simply "foo" is not
-    # matched as that may be a local variable or a method call.
-    rule method_call
-      receiver '.' identifier arguments:arguments? <MethodCall> / # Explicit receiver
-      receiver:nothing identifier arguments <MethodCall>          # Implicit receiver
+    # A chain of one or more method calls. This matches only when we know for sure that a method is
+    # being called. So for example just "foo" will not match - as that may be a local variable or
+    # a method call. But "foo()" is definitely a method call, so we can match that. A chain is of 
+    # the form "foo.bar(...).baz(...)" and we have to convert this to several MethodCall instances
+    # when creating the AST.
+    rule method_call_chain
+      receiver:primary tail:method_call_chain_tail <MethodCallChain> /
+      head:(identifier space? arguments) tail:method_call_chain_tail? <ImplicitMethodCallChain>
     end
     
-    # The receiver of a method call
-    rule receiver
-      constant / variable
+    rule method_call_chain_tail
+      ('.' multiline_space? identifier space? arguments:arguments?)+
     end
     
     # Arguments - this is when there are definitely arguments but they are possibly empty (i.e. an
@@ -89,9 +96,9 @@ module Carat
       'class' / 'def' / 'end'
     end
     
-    # A general identifier must not start with a number
+    # A general identifier must not start with a number and must not conflict with a keyword
     rule identifier
-      [a-zA-Z_] [a-zA-Z0-9_]*
+      !keyword [a-zA-Z_] [a-zA-Z0-9_]*
     end
     
     # A local identifier must start with an underscore or lowercase letter, and must not conflict
