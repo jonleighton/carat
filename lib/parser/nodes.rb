@@ -31,7 +31,7 @@ module Carat
     
     class MethodDefinition < DefinitionNode
       def to_ast
-        Carat::AST::MethodDefinition.new(identifier.text_value, contents)
+        Carat::AST::MethodDefinition.new(method_name.text_value, contents)
       end
     end
     
@@ -101,7 +101,7 @@ module Carat
           call = chain.last
           
           receiver = reduce(chain[0..-2])
-          method_name = call.identifier.text_value
+          method_name = call.method_name.text_value
           
           if call.arguments.empty?
             arguments = Carat::AST::ArgumentList.new
@@ -121,6 +121,15 @@ module Carat
     class ImplicitMethodCallChain < MethodCallChain
       def chain
         [nil, head] + tail.elements
+      end
+    end
+    
+    class BinaryOperation < Treetop::Runtime::SyntaxNode
+      def to_ast
+        Carat::AST::MethodCall.new(
+          left.to_ast, name.text_value,
+          Carat::AST::ArgumentList.new([right.to_ast])
+        )
       end
     end
     
