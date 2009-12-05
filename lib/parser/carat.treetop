@@ -7,7 +7,7 @@ module Carat
     
     # A block is 1 or more expressions separated by terminators
     rule block
-      first:expression rest:(terminator expression)* terminator? <Block> /
+      first:expression rest:(space? terminator expression)* space? terminator? <Block> /
       '' <EmptyBlock>
     end
     
@@ -35,7 +35,7 @@ module Carat
     end
     
     rule class_definition
-      'class' space constant definition_body <ClassDefinition>
+      'class' space constant space? superclass:('<' multiline_space? primary)? definition_body <ClassDefinition>
     end
     
     rule method_definition

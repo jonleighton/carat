@@ -30,8 +30,16 @@ module Carat
     end
     
     class ClassDefinition < DefinitionNode
+      def superclass_ast
+        if superclass.empty?
+          nil
+        else
+          superclass.primary.to_ast
+        end
+      end
+      
       def to_ast
-        Carat::AST::ClassDefinition.new(constant.text_value, contents)
+        Carat::AST::ClassDefinition.new(constant.text_value, superclass_ast, contents)
       end
     end
     
