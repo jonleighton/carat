@@ -54,17 +54,25 @@ module Carat
     # The arguments defined as part of a method definition
     rule method_argument_pattern
       space? '(' contents:argument_pattern_contents ')' <ArgumentPattern> /
-      '' <EmptyArgumentPattern>
+      '' <ArgumentPattern>
     end
     
     # The arguments defined as part of a block definition
     rule block_argument_pattern
       space? '|' contents:argument_pattern_contents '|' <ArgumentPattern> /
-      '' <EmptyArgumentPattern>
+      '' <ArgumentPattern>
     end
     
     rule argument_pattern_contents
-      head:local_variable tail:(multiline_space? ',' multiline_space? item:local_variable)* multiline_space?
+      head:argument_pattern_item
+      tail:(multiline_space? ',' multiline_space? item:argument_pattern_item)*
+      block_pass:(',' multiline_space? '&' multiline_space? local_identifier)?
+      multiline_space?
+    end
+    
+    rule argument_pattern_item
+      local_identifier default:(multiline_space? '=' multiline_space expression)? <ArgumentPatternItem> /
+      '*' multiline_space? local_identifier <SplatArgumentPatternItem>
     end
     
     rule assignment
@@ -98,21 +106,53 @@ module Carat
     #
     # A block is also considered to be a part of the argument list
     rule argument_list
-      # Empty parentheses, optional block
-      space? '(' multiline_space? ')' block:block? <EmptyArgumentList>
+      # Parentheses containing no proper arguments, but maybe a block pass, or maybe a literal block
+      space? '(' multiline_space?
+      block:(
+        ')' item:block? /
+        item:block_pass multiline_space? ')'
+      )
+      <ArgumentList>
       /
       # Parentheses containing at least one item, optional block
       space? '(' multiline_space?
-        first:expression
-        rest:(multiline_space? ',' multiline_space? expression)*
-      multiline_space? ')' block:block? <ArgumentList>
+      items:(
+        head:argument_list_item
+        tail:(multiline_space? ',' multiline_space? argument_list_item)*
+      )
+      block:(
+        multiline_space? ')' item:block? /
+        multiline_space? ',' multiline_space? item:block_pass multiline_space? ')'
+      )
+      <ArgumentList>
       /
       # No parentheses, but at least one item, optional block
-      # Also no + or - in front of first item, so as not to confuse "x + 1" and "x(+1)"
-      space !('+' / '-') first:expression rest:(space? ',' multiline_space? expression)* block:block? <ArgumentList>
+      # Also no + or - in front of first item, so as not to confuse "x+1" and "x(+1)"
+      space !('+' / '-')
+      items:(
+        head:argument_list_item
+        tail:(space? ',' multiline_space? argument_list_item)*
+      )
+      block:(
+        '' item:block /
+        '' item:block_pass
+      )?
+      <ArgumentList>
       /
       # No parentheses and no argument items, but a mandatory block
-      '' block <EmptyArgumentList>
+      '' block:('' item:block) <ArgumentList>
+    end
+    
+    rule argument_list_item
+      splat / expression
+    end
+    
+    rule splat
+      '*' expression <Splat>
+    end
+    
+    rule block_pass
+      '&' multiline_space? expression <BlockPass>
     end
     
     rule block

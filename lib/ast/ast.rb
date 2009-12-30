@@ -30,6 +30,18 @@ module Carat
         super + "[#{value.inspect}]"
       end
     end
+  
+    class ExpressionNode < Node
+      attr_reader :expression
+      
+      def initialize(expression)
+        @expression = expression
+      end
+      
+      def inspect
+        super + ":\n" + indent(expression.inspect)
+      end
+    end
     
     class NamedNode < Node
       attr_reader :name

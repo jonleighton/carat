@@ -44,5 +44,30 @@ module Carat::AST
   end
   
   class ArgumentPattern < NodeList
+    attr_reader :block_pass
+    
+    def initialize(items = [], block_pass = nil)
+      super(items)
+      @block_pass = block_pass
+    end
+    
+    def inspect
+      super + (block_pass && "\n" + indent("Block Pass: #{block_pass}") || "")
+    end
+  end
+  
+  class ArgumentPatternItem < Node
+    attr_reader :name, :default
+    
+    def initialize(name, default)
+      @name, @default = name, default
+    end
+    
+    def inspect
+      super + "[#{name}]" + (default && " = \n" + indent(default.inspect) || '')
+    end
+  end
+  
+  class SplatArgumentPatternItem < NamedNode
   end
 end

@@ -64,14 +64,32 @@ module Carat
         [contents.head] + contents.tail.elements.map(&:item)
       end
       
+      def block_pass
+        contents.block_pass.local_identifier.text_value unless contents.block_pass.empty?
+      end
+      
       def to_ast
-        Carat::AST::ArgumentPattern.new(items.map(&:to_ast))
+        if respond_to?(:contents)
+          Carat::AST::ArgumentPattern.new(items.map(&:to_ast), block_pass)
+        else
+          Carat::AST::ArgumentPattern.new
+        end
       end
     end
     
-    class EmptyArgumentPattern < ArgumentPattern
-      def items
-        []
+    class ArgumentPatternItem < Treetop::Runtime::SyntaxNode
+      def default_value
+        default.expression.to_ast unless default.empty?
+      end
+      
+      def to_ast
+        Carat::AST::ArgumentPatternItem.new(local_identifier.text_value, default_value)
+      end
+    end
+    
+    class SplatArgumentPatternItem < Treetop::Runtime::SyntaxNode
+      def to_ast
+        Carat::AST::SplatArgumentPatternItem.new(local_identifier.text_value)
       end
     end
     
@@ -183,11 +201,15 @@ module Carat
     
     class ArgumentList < Treetop::Runtime::SyntaxNode
       def values
-        [first] + rest.elements.map(&:expression)
+        if !respond_to?(:items) || items.empty?
+          []
+        else
+          [items.head] + items.tail.elements.map(&:argument_list_item)
+        end
       end
       
       def block_ast
-        block.to_ast unless block.empty?
+        block.item.to_ast if respond_to?(:block) && !(block.empty? || block.item.empty?)
       end
       
       def to_ast
@@ -195,9 +217,15 @@ module Carat
       end
     end
     
-    class EmptyArgumentList < ArgumentList
-      def values
-        []
+    class BlockPass < Treetop::Runtime::SyntaxNode
+      def to_ast
+        Carat::AST::BlockPass.new(expression.to_ast)
+      end
+    end
+    
+    class Splat < Treetop::Runtime::SyntaxNode
+      def to_ast
+        Carat::AST::Splat.new(expression.to_ast)
       end
     end
     

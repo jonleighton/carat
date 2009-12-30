@@ -14,15 +14,15 @@ module Carat::AST
   end
   
   class ArgumentList < NodeList
-    attr_accessor :block_pass
+    attr_accessor :block
     
-    def initialize(items, block_pass = nil)
+    def initialize(items = [], block = nil)
       super(items)
-      @block_pass = block_pass
+      @block = block
     end
     
     def inspect
-      super + (block_pass && "\n#{indent(block_pass.inspect)}" || '')
+      super + (block && "\n#{indent(block.inspect)}" || '')
     end
   end
   
@@ -38,5 +38,11 @@ module Carat::AST
       indent(argument_pattern.inspect) + "\n" +
       indent(contents.inspect)
     end
+  end
+  
+  class Splat < ExpressionNode
+  end
+  
+  class BlockPass < ExpressionNode
   end
 end
