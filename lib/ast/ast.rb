@@ -65,10 +65,8 @@ module Carat
     
     # ***** CONCRETE CLASSES ***** #
     
-    require AST_DIR + "/block"
-    require AST_DIR + "/class_definition"
-    require AST_DIR + "/method_definition"
-    require AST_DIR + "/method_call"
+    require AST_DIR + "/scopes"
+    require AST_DIR + "/messages"
     require AST_DIR + "/literals"
     require AST_DIR + "/variables"
   end

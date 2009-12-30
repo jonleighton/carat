@@ -1,14 +1,14 @@
 module Carat
   grammar Language
-    # A program is the top-level node, containing just a block of code
+    # A program is the top-level node, containing just a list of expressions
     rule program
-      multiline_space? block <Program>
+      multiline_space? expression_list <Program>
     end
     
-    # A block is 1 or more expressions separated by terminators
-    rule block
-      first:expression rest:(space? terminator expression)* space? terminator? <Block> /
-      '' <EmptyBlock>
+    # 1 or more expressions separated by terminators
+    rule expression_list
+      first:expression rest:(space? terminator expression)* space? terminator? <ExpressionList> /
+      '' <EmptyExpressionList>
     end
     
     # An expression is the basic 'thing'
@@ -21,6 +21,7 @@ module Carat
     end
     
     rule secondary
+      module_definition /
       class_definition /
       method_definition /
       assignment /
@@ -34,16 +35,36 @@ module Carat
       left:primary space? name:('+' / '-' / '==') multiline_space? right:expression <BinaryOperation>
     end
     
+    rule module_definition
+      'module' space constant definition_body <ModuleDefinition>
+    end
+    
     rule class_definition
       'class' space constant space? superclass:('<' multiline_space? primary)? definition_body <ClassDefinition>
     end
     
     rule method_definition
-      'def' space receiver:(secondary space? '.')? space? method_name definition_body <MethodDefinition>
+      'def' space receiver:(secondary space? '.')? space? method_name method_argument_pattern definition_body <MethodDefinition>
     end
     
     rule definition_body
-      multiline_space block 'end'
+      multiline_space expression_list 'end'
+    end
+    
+    # The arguments defined as part of a method definition
+    rule method_argument_pattern
+      space? '(' contents:argument_pattern_contents ')' <ArgumentPattern> /
+      '' <EmptyArgumentPattern>
+    end
+    
+    # The arguments defined as part of a block definition
+    rule block_argument_pattern
+      space? '|' contents:argument_pattern_contents '|' <ArgumentPattern> /
+      '' <EmptyArgumentPattern>
+    end
+    
+    rule argument_pattern_contents
+      head:local_variable tail:(multiline_space? ',' multiline_space? item:local_variable)* multiline_space?
     end
     
     rule assignment
@@ -62,21 +83,48 @@ module Carat
     # when creating the AST.
     rule method_call_chain
       receiver:secondary tail:method_call_chain_tail <MethodCallChain> /
-      head:(method_name:identifier arguments) tail:method_call_chain_tail? <ImplicitMethodCallChain>
+      head:(method_name:identifier argument_list) tail:method_call_chain_tail? <ImplicitMethodCallChain>
     end
     
     rule method_call_chain_tail
-      ('.' multiline_space? method_name arguments:arguments?)+
+      ('.' multiline_space? method_name argument_list:argument_list?)+
     end
     
-    # Arguments - this is when there are definitely arguments but they are possibly empty (i.e. an
+    # Argument list - values which are passed during a method call
+    # This is when there are definitely arguments but they are possibly empty (i.e. an
     # empty pair of parentheses). If there is simply an empty string (i.e. an empty list of
     # arguments *not* surrounded by parentheses) these are not matched - this special case is dealt
     # with by the local_variable_or_method_call rule
-    rule arguments
-      space? '(' multiline_space? ')' <EmptyArgumentList> /
-      space? '(' multiline_space? first:expression rest:(multiline_space? ',' multiline_space? expression)* multiline_space? ')' <ArgumentList> /
-      space first:expression rest:(space? ',' multiline_space? expression)* <ArgumentList>
+    #
+    # A block is also considered to be a part of the argument list
+    rule argument_list
+      # Empty parentheses, optional block
+      space? '(' multiline_space? ')' block:block? <EmptyArgumentList>
+      /
+      # Parentheses containing at least one item, optional block
+      space? '(' multiline_space?
+        first:expression
+        rest:(multiline_space? ',' multiline_space? expression)*
+      multiline_space? ')' block:block? <ArgumentList>
+      /
+      # No parentheses, but at least one item, optional block
+      # Also no + or - in front of first item, so as not to confuse "x + 1" and "x(+1)"
+      space !('+' / '-') first:expression rest:(space? ',' multiline_space? expression)* block:block? <ArgumentList>
+      /
+      # No parentheses and no argument items, but a mandatory block
+      '' block <EmptyArgumentList>
+    end
+    
+    rule block
+      braces_block / do_block
+    end
+    
+    rule braces_block
+      space? '{' block_argument_pattern multiline_space? expression_list '}' <Block>
+    end
+    
+    rule do_block
+      space 'do' block_argument_pattern multiline_space? expression_list 'end' <Block>
     end
     
     # A local or instance variable
@@ -100,7 +148,7 @@ module Carat
     end
     
     rule keyword
-      'class' / 'def' / 'end'
+      'class' / 'module' / 'def' / 'do' / 'end'
     end
     
     rule method_name

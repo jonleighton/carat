@@ -2,22 +2,22 @@ module Carat
   module Language
     class Program < Treetop::Runtime::SyntaxNode
       def to_ast
-        block.to_ast
+        expression_list.to_ast
       end
     end
   
-    class Block < Treetop::Runtime::SyntaxNode
+    class ExpressionList < Treetop::Runtime::SyntaxNode
       # An array of nodes representing the expressions in the block
       def expressions
         [first] + rest.elements.map(&:expression)
       end
       
       def to_ast
-        Carat::AST::Block.new(expressions.map(&:to_ast))
+        Carat::AST::ExpressionList.new(expressions.map(&:to_ast))
       end
     end
     
-    class EmptyBlock < Treetop::Runtime::SyntaxNode
+    class EmptyExpressionList < Treetop::Runtime::SyntaxNode
       def to_ast
         nil
       end
@@ -25,7 +25,13 @@ module Carat
     
     class DefinitionNode < Treetop::Runtime::SyntaxNode
       def contents
-        definition_body.block.to_ast
+        definition_body.expression_list.to_ast
+      end
+    end
+    
+    class ModuleDefinition < DefinitionNode
+      def to_ast
+        Carat::AST::ModuleDefinition.new(constant.text_value, contents)
       end
     end
     
@@ -49,7 +55,23 @@ module Carat
       end
       
       def to_ast
-        Carat::AST::MethodDefinition.new(receiver_ast, method_name.text_value, contents)
+        Carat::AST::MethodDefinition.new(receiver_ast, method_name.text_value, method_argument_pattern.to_ast, contents)
+      end
+    end
+    
+    class ArgumentPattern < Treetop::Runtime::SyntaxNode
+      def items
+        [contents.head] + contents.tail.elements.map(&:item)
+      end
+      
+      def to_ast
+        Carat::AST::ArgumentPattern.new(items.map(&:to_ast))
+      end
+    end
+    
+    class EmptyArgumentPattern < ArgumentPattern
+      def items
+        []
       end
     end
     
@@ -121,13 +143,13 @@ module Carat
           receiver = reduce(chain[0..-2])
           method_name = call.method_name.text_value
           
-          if call.arguments.empty?
-            arguments = Carat::AST::ArgumentList.new
+          if call.argument_list.empty?
+            argument_list = Carat::AST::ArgumentList.new
           else
-            arguments = call.arguments.to_ast
+            argument_list = call.argument_list.to_ast
           end
           
-          Carat::AST::MethodCall.new(receiver, method_name, arguments)
+          Carat::AST::MethodCall.new(receiver, method_name, argument_list)
         end
       end
       
@@ -164,14 +186,24 @@ module Carat
         [first] + rest.elements.map(&:expression)
       end
       
+      def block_ast
+        block.to_ast unless block.empty?
+      end
+      
       def to_ast
-        Carat::AST::ArgumentList.new(values.map(&:to_ast))
+        Carat::AST::ArgumentList.new(values.map(&:to_ast), block_ast)
       end
     end
     
     class EmptyArgumentList < ArgumentList
       def values
         []
+      end
+    end
+    
+    class Block < Treetop::Runtime::SyntaxNode
+      def to_ast
+        Carat::AST::Block.new(block_argument_pattern.to_ast, expression_list.to_ast)
       end
     end
     

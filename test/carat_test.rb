@@ -118,19 +118,15 @@ class CaratTest < Test::Unit::TestCase
         def a
           3
         end
-        
-        def self.b
-          2
-        end
       end
       
       class Foo
       end
       
-      puts Foo.a + (class << Foo; self; end).b
+      puts Foo.a
     CODE
     
-    assert_equal("5\n", execute(code))
+    assert_equal("3\n", execute(code))
     
     code = <<-CODE
       class Class
@@ -176,17 +172,6 @@ class CaratTest < Test::Unit::TestCase
     CODE
     
     assert_equal("11\n", execute(code))
-  end
-  
-  def test_multiple_assignment
-    code = <<-CODE
-      x, *y = 5, 3, 6
-
-      puts x
-      p y
-    CODE
-    
-    assert_equal("5\n[3, 6]\n", execute(code))
   end
   
   def test_block_without_closure
