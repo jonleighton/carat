@@ -9,7 +9,7 @@ module Carat::AST
     attr_reader :name, :contents
     
     def initialize(name, contents)
-      @name, @contents = name.to_sym, contents
+      @name, @contents = name, contents
     end
     
     def module_object
@@ -37,7 +37,7 @@ module Carat::AST
     attr_reader :name, :superclass, :contents
     
     def initialize(name, superclass, contents)
-      @name, @superclass, @contents = name.to_sym, superclass, contents
+      @name, @superclass, @contents = name, superclass, contents
     end
     
     def superclass_object

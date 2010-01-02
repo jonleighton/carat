@@ -22,6 +22,8 @@ module Carat
       
       # Execute a node on the stack. Either use the given scope, or this node's scope otherwise.
       def execute(node_or_object, scope = nil)
+        return nil if node_or_object.nil?
+        
         if node_or_object.is_a?(Carat::Data::ObjectInstance)
           node_or_object # We have an immediate value, no need to evaluate it
         else
@@ -74,7 +76,7 @@ module Carat
       attr_reader :name
       
       def initialize(name)
-        @name = name.to_sym
+        @name = name
       end
       
       def inspect
@@ -99,20 +101,6 @@ module Carat
         else
           type + ":\n" + indent(items.map(&:inspect).join("\n"))
         end
-      end
-    end
-    
-    # This is a special node which allows a meta-language method to be called within a given
-    # scope on the stack. It is used for executing primitives in the correct scope.
-    class SendMethod < Node
-      attr_reader :object, :method_name, :args
-    
-      def initialize(object, method_name, *args)
-        @object, @method_name, @args = object, method_name, args
-      end
-      
-      def eval
-        object.send(method_name, *args)
       end
     end
     

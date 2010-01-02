@@ -30,9 +30,7 @@ module Carat
     if parse_tree
       parse_tree.to_ast
     else
-      puts "Syntax error:"
-      puts parser.failure_reason
-      exit 1
+      raise Carat::CaratError, "Syntax error:\n#{parser.failure_reason}"
     end
   end
   

@@ -3,7 +3,7 @@ module Carat::AST
     attr_reader :receiver, :name, :arguments
     
     def initialize(receiver, name, arguments)
-      @receiver, @name, @arguments = receiver, name.to_sym, arguments
+      @receiver, @name, @arguments = receiver, name, arguments
     end
     
     def receiver_object
@@ -56,5 +56,23 @@ module Carat::AST
   end
   
   class BlockPass < ExpressionNode
+  end
+    
+  # This is a special node which allows a meta-language method to be called within a given
+  # scope on the stack. It is used for executing primitives in the correct scope.
+  class SendMethod < Node
+    attr_reader :object, :method_name, :args
+  
+    def initialize(object, method_name, *args)
+      @object, @method_name, @args = object, method_name, args
+    end
+    
+    def eval
+      object.send(method_name, *args)
+    end
+    
+    def inspect
+      type + "[#{object}.#{method_name}(#{args.join(', ')})]"
+    end
   end
 end

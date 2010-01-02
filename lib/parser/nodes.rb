@@ -37,7 +37,7 @@ module Carat
     
     class ModuleDefinition < DefinitionNode
       def to_ast
-        Carat::AST::ModuleDefinition.new(constant.text_value, contents)
+        Carat::AST::ModuleDefinition.new(constant.text_value.to_sym, contents)
       end
     end
     
@@ -51,7 +51,7 @@ module Carat
       end
       
       def to_ast
-        Carat::AST::ClassDefinition.new(constant.text_value, superclass_ast, contents)
+        Carat::AST::ClassDefinition.new(constant.text_value.to_sym, superclass_ast, contents)
       end
     end
     
@@ -61,7 +61,7 @@ module Carat
       end
       
       def to_ast
-        Carat::AST::MethodDefinition.new(receiver_ast, method_name.text_value, method_argument_pattern.to_ast, contents)
+        Carat::AST::MethodDefinition.new(receiver_ast, method_name.text_value.to_sym, method_argument_pattern.to_ast, contents)
       end
     end
     
@@ -93,13 +93,13 @@ module Carat
       end
       
       def to_ast
-        Carat::AST::ArgumentPatternItem.new(local_identifier.text_value, default_value)
+        Carat::AST::ArgumentPatternItem.new(local_identifier.text_value.to_sym, default_value)
       end
     end
     
     class SplatArgumentPatternItem < Treetop::Runtime::SyntaxNode
       def to_ast
-        Carat::AST::SplatArgumentPatternItem.new(local_identifier.text_value)
+        Carat::AST::SplatArgumentPatternItem.new(local_identifier.text_value.to_sym)
       end
     end
     
@@ -155,19 +155,19 @@ module Carat
     
     module LocalVariable
       def to_ast
-        Carat::AST::LocalVariable.new(text_value)
+        Carat::AST::LocalVariable.new(text_value.to_sym)
       end
     end
     
     module LocalVariableOrMethodCall
       def to_ast
-        Carat::AST::LocalVariableOrMethodCall.new(text_value)
+        Carat::AST::LocalVariableOrMethodCall.new(text_value.to_sym)
       end
     end
     
     class InstanceVariable < Treetop::Runtime::SyntaxNode
       def to_ast
-        Carat::AST::InstanceVariable.new(identifier.text_value)
+        Carat::AST::InstanceVariable.new(identifier.text_value.to_sym)
       end
     end
     
@@ -183,7 +183,7 @@ module Carat
           call = chain.last
           
           receiver = reduce(chain[0..-2])
-          method_name = call.method_name.text_value
+          method_name = call.method_name.text_value.to_sym
           
           if call.argument_list.empty?
             argument_list = Carat::AST::ArgumentList.new
@@ -217,7 +217,7 @@ module Carat
     class BinaryOperation < Treetop::Runtime::SyntaxNode
       def to_ast
         Carat::AST::MethodCall.new(
-          left.to_ast, name.text_value,
+          left.to_ast, name.text_value.to_sym,
           Carat::AST::ArgumentList.new([right.to_ast])
         )
       end
@@ -261,7 +261,7 @@ module Carat
     
     class Constant < Treetop::Runtime::SyntaxNode
       def to_ast
-        Carat::AST::Constant.new(text_value)
+        Carat::AST::Constant.new(text_value.to_sym)
       end
     end
     
