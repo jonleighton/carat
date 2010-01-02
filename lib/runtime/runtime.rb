@@ -6,13 +6,13 @@ module Carat
     
     require RUNTIME_PATH + "/environment"
     
-    attr_reader :stack, :constants, :scope
+    attr_reader :stack, :constants, :top_level_scope
     
     def initialize
       @stack = Stack.new(self)
       
-      @constants = SymbolTable.new
-      @scope     = SymbolTable.new
+      @constants       = SymbolTable.new
+      @top_level_scope = SymbolTable.new
       
       @environment = Environment.new(self)
       @environment.setup
@@ -25,28 +25,25 @@ module Carat
       @initialized == true
     end
     
-    def current_scope
-      current_frame && current_frame.scope || scope
-    end
-    
-    def current_frame
+    def current_node
       stack.peek
     end
     
-    def execute(sexp, scope = nil)
-      stack.execute(sexp, scope)
+    def execute(ast)
+      stack.execute(ast)
     end
     
     def run(code)
-      sexp = Carat.parse(code)
-      Carat.debug "Running sexp: #{sexp.inspect}"
+      ast = Carat.parse(code)
+      Carat.debug "Abstract Syntax Tree:\n#{ast.inspect}\n\n"
       begin
-        execute(sexp)
+        ast.scope = top_level_scope
+        execute(ast)
       rescue StandardError => e
-        puts "Error while running: #{current_frame.sexp.inspect}"
+        puts "Error while running:\n#{current_node.inspect}"
         puts "Stack:"
-        stack.frames.each do |frame|
-          puts " * #{frame.sexp.inspect}"
+        stack.nodes.each do |node|
+          puts " * #{node}"
         end
         raise e
       end

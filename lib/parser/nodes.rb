@@ -13,13 +13,19 @@ module Carat
       end
       
       def to_ast
-        Carat::AST::ExpressionList.new(expressions.map(&:to_ast))
+        Carat::AST::ExpressionList.new(expressions.map(&:to_ast).compact)
       end
     end
     
     class EmptyExpressionList < Treetop::Runtime::SyntaxNode
       def to_ast
         nil
+      end
+    end
+    
+    class Expression < Treetop::Runtime::SyntaxNode
+      def to_ast
+        item.to_ast
       end
     end
     
@@ -61,7 +67,11 @@ module Carat
     
     class ArgumentPattern < Treetop::Runtime::SyntaxNode
       def items
-        [contents.head] + contents.tail.elements.map(&:item)
+        if contents.respond_to?(:head)
+          [contents.head] + contents.tail.elements.map(&:item)
+        else
+          []
+        end
       end
       
       def block_pass
@@ -90,6 +100,20 @@ module Carat
     class SplatArgumentPatternItem < Treetop::Runtime::SyntaxNode
       def to_ast
         Carat::AST::SplatArgumentPatternItem.new(local_identifier.text_value)
+      end
+    end
+    
+    class Array < Treetop::Runtime::SyntaxNode
+      def items
+        if respond_to?(:head)
+          [head] + tail.elements.map(&:expression)
+        else
+          []
+        end
+      end
+      
+      def to_ast
+        Carat::AST::Array.new(items.map(&:to_ast))
       end
     end
     

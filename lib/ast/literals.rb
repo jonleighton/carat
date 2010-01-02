@@ -12,5 +12,11 @@ module Carat::AST
   end
   
   class Integer < ValueNode
+    def eval
+      constants[:Fixnum].get(value)
+    end
+  end
+  
+  class Array < NodeList
   end
 end

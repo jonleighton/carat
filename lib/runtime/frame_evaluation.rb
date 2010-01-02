@@ -5,9 +5,8 @@ class Carat::Runtime
   class Frame
     # ***** GENERAL ***** #
     
-    # A block of statements. Evaluate each in turn and return the result of the last one.
-    def eval_block(*statements)
-      statements.reduce(nil) { |last_result, statement| execute(statement) }
+    def eval_expression_list(node)
+      node.items.reduce(nil) { |last_result, expression| execute(expression) }
     end
     
     def eval_scope(statement = nil)
@@ -116,12 +115,12 @@ class Carat::Runtime
       Carat::Data::ModuleInstance.new(runtime, name)
     end
     
-    def eval_module(module_name, contents)
-      unless constants.has?(module_name)
-        constants[module_name] = new_module(module_name)
+    def eval_module_definition(node)
+      unless constants.has?(node.name)
+        constants[node.name] = new_module(node.name)
       end
-      scope = SymbolTable.new(:self => constants[module_name])
-      execute(contents, scope)
+      scope = SymbolTable.new(:self => constants[node.name])
+      execute(node.contents, scope)
     end
     
     def new_class(superclass, name)
@@ -162,7 +161,7 @@ class Carat::Runtime
     end
     
     # Define a method in the current scope
-    def eval_defn(method_name, args, contents)
+    def eval_method_definition(node)
       if scope[:self].is_a?(Carat::Data::ModuleInstance)
         klass = scope[:self]
       else

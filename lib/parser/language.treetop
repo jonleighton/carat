@@ -13,7 +13,8 @@ module Carat
     
     # An expression is the basic 'thing'
     rule expression
-      binary_method / primary
+      item:(binary_method / primary) comment? <Expression> /
+      comment
     end
     
     rule primary
@@ -32,7 +33,7 @@ module Carat
     end
     
     rule binary_method
-      left:primary space? name:('+' / '-' / '==') multiline_space? right:expression <BinaryOperation>
+      left:primary space? name:binary_operator multiline_space? right:expression <BinaryOperation>
     end
     
     rule module_definition
@@ -68,6 +69,8 @@ module Carat
       tail:(multiline_space? ',' multiline_space? item:argument_pattern_item)*
       block_pass:(',' multiline_space? '&' multiline_space? local_identifier)?
       multiline_space?
+      /
+      block_pass:('&' multiline_space? local_identifier)? multiline_space?
     end
     
     rule argument_pattern_item
@@ -81,7 +84,7 @@ module Carat
     
     # A literal object, e.g. a number, string, true, false, etc
     rule literal
-      number / string / boolean / nil
+      number / array / string / boolean / nil
     end
     
     # A chain of one or more method calls. This matches only when we know for sure that a method is
@@ -192,7 +195,7 @@ module Carat
     end
     
     rule method_name
-      basic_method_name / binary_method_name
+      basic_method_name / binary_operator
     end
     
     # Keywords are allowed
@@ -200,8 +203,8 @@ module Carat
       [a-zA-Z_] [a-zA-Z0-9_]*
     end
     
-    rule binary_method_name
-      '+' / '-' / '=='
+    rule binary_operator
+      '+' / '-' / '==' / '!=' / '<<'
     end
     
     # A general identifier must not start with a number and must not conflict with a keyword
@@ -224,6 +227,15 @@ module Carat
       ('+' / '-')? multiline_space? [0-9]+ <Integer>
     end
     
+    rule array
+      '[' multiline_space?
+      head:expression
+      tail:(multiline_space? ',' multiline_space? expression)*
+      multiline_space? ']' <Array>
+      /
+      '[' multiline_space? ']' <Array>
+    end
+    
     rule string
       "'" value:[^\']* "'" <String> /
       '"' value:[^\"]* '"' <String>
@@ -244,16 +256,23 @@ module Carat
     end
     
     rule space
-      [ \t]+
+      block_comment? ([ \t]+ block_comment?)+
     end
     
     rule multiline_space
-      [ \t\n\r]+
+      block_comment? ([ \t\n\r]+ block_comment?)+
     end
     
-    # This rule is useful because it has a to_ast method which returns nil
-    rule nothing
-      '' <Nothing>
+    rule comment
+      block_comment / line_comment
+    end
+    
+    rule block_comment
+      '##' (!'##' .)* '##' <Nothing>
+    end
+    
+    rule line_comment
+      '#' [^\n]* <Nothing>
     end
   end
 end

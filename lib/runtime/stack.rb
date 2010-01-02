@@ -1,40 +1,37 @@
 class Carat::Runtime
   class Stack
-    attr_reader :runtime, :frames
+    attr_reader :runtime, :nodes
   
     def initialize(runtime)
       @runtime = runtime
-      @frames = []
+      @nodes = []
     end
     
-    # Create a frame from an expression and push it on to the stack. Either use the given scope or
-    # the top-level scope provided by the runtime.
-    def push(sexp, scope = nil)
-      @frames << Frame.new(self, sexp, scope || runtime.scope)
-      peek
+    def <<(node)
+      @nodes << node
     end
     
     # Execute the frame at the top of the stack, then pop it and return the result
     def reduce
-      result = peek.eval
+      result = peek.eval_in_runtime(runtime)
       pop
       result
     end
     
-    # Push a sexp with an optional scope on to the stack and reduce immediately
-    def execute(sexp, scope = nil)
-      push(sexp, scope)
+    # Push a node on to the stack and reduce immediately
+    def execute(node)
+      self << node
       reduce
     end
     
     # Get the last stack frame
     def peek
-      @frames.last
+      @nodes.last
     end
     
     # Remove and return the last stack frame
     def pop
-      @frames.pop
+      @nodes.pop
     end
   end
 end

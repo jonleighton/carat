@@ -1,14 +1,41 @@
 module Carat
-  # TODO: Remove when integrated with main source
-  AST_DIR = File.dirname(__FILE__)
-
   module AST
     # ***** ABSTRACT SUPERCLASSES ****** #
     
     # The superclass of all AST nodes
     class Node
-      def inspect
+      attr_accessor :scope
+      attr_reader :runtime
+      
+      extend Forwardable
+      def_delegators :runtime, :stack, :constants
+      
+      def eval_in_runtime(runtime)
+        @runtime = runtime
+        raise CaratError, "scope not set" if scope.nil?
+        eval
+      end
+      
+      def eval
+        raise CaratError, "evaluation logic for #{type} not implemented"
+      end
+      
+      # Execute a node on the stack. Either use the given scope, or this node's scope otherwise.
+      def execute(node_or_object, scope = nil)
+        if node_or_object.is_a?(Carat::Data::ObjectInstance)
+          node_or_object # We have an immediate value, no need to evaluate it
+        else
+          node_or_object.scope = scope || self.scope
+          stack.execute(node_or_object)
+        end
+      end
+      
+      def type
         self.class.to_s.sub("Carat::AST::", "")
+      end
+      
+      def inspect
+        type
       end
       
       protected
@@ -27,7 +54,7 @@ module Carat
       end
       
       def inspect
-        super + "[#{value.inspect}]"
+        type + "[#{value.inspect}]"
       end
     end
   
@@ -39,7 +66,7 @@ module Carat
       end
       
       def inspect
-        super + ":\n" + indent(expression.inspect)
+        type + ":\n" + indent(expression.inspect)
       end
     end
     
@@ -47,11 +74,11 @@ module Carat
       attr_reader :name
       
       def initialize(name)
-        @name = name
+        @name = name.to_sym
       end
       
       def inspect
-        super + "[#{name}]"
+        type + "[#{name}]"
       end
     end
     
@@ -68,18 +95,32 @@ module Carat
       
       def inspect
         if empty?
-          super + ":[Empty]"
+          type + ":[Empty]"
         else
-          super + ":\n" + indent(items.map(&:inspect).join("\n"))
+          type + ":\n" + indent(items.map(&:inspect).join("\n"))
         end
+      end
+    end
+    
+    # This is a special node which allows a meta-language method to be called within a given
+    # scope on the stack. It is used for executing primitives in the correct scope.
+    class SendMethod < Node
+      attr_reader :object, :method_name, :args
+    
+      def initialize(object, method_name, *args)
+        @object, @method_name, @args = object, method_name, args
+      end
+      
+      def eval
+        object.send(method_name, *args)
       end
     end
     
     # ***** CONCRETE CLASSES ***** #
     
-    require AST_DIR + "/scopes"
-    require AST_DIR + "/messages"
-    require AST_DIR + "/literals"
-    require AST_DIR + "/variables"
+    require AST_PATH + "/scopes"
+    require AST_PATH + "/messages"
+    require AST_PATH + "/literals"
+    require AST_PATH + "/variables"
   end
 end

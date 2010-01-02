@@ -7,7 +7,7 @@ module Carat::AST
     end
     
     def inspect
-      super + ": " + variable.inspect + " = \n" + indent(value.inspect)
+      type + ": " + variable.inspect + " = \n" + indent(value.inspect)
     end
   end
   
@@ -21,5 +21,8 @@ module Carat::AST
   end
   
   class Constant < NamedNode
+    def eval
+      constants[name]
+    end
   end
 end

@@ -17,8 +17,8 @@ module Carat::Data
     attr_accessor :klass
     
     extend Forwardable
-    def_delegators :runtime, :current_frame, :stack, :meta_convert
-    def_delegators :current_frame, :execute, :scope
+    def_delegators :runtime, :current_node, :stack, :meta_convert
+    def_delegators :current_node, :execute, :scope
     
     # All objects can have primitives
     extend PrimitiveHost
@@ -41,7 +41,7 @@ module Carat::Data
       lookup_instance_method(name) || raise(Carat::CaratError, "method '#{self}##{name}' not found")
     end
     
-    def call(method_name, args = [], block = nil)
+    def call(method_name, args = Carat::AST::ArgumentList.new, block = nil)
       # Look up the method or primitive
       callable = lookup_instance_method!(method_name)
       
@@ -51,7 +51,10 @@ module Carat::Data
       # arguments.
       arg_scope       = scope.extend
       arg_scope.block = scope.block
-      args = execute(args, arg_scope) if args.first == :arglist
+      
+      # Only execute the args if they are an AST node.
+      # Otherwise we assume it is an array of objects which don't need evaluation.
+      args = execute(args, arg_scope) if args.is_a?(Carat::AST::ArgumentList)
       
       # Create a new scope for the method body, with self as the receiving object
       method_scope = Carat::Runtime::SymbolTable.new(:self => self)
@@ -75,14 +78,9 @@ module Carat::Data
       result
     end
     
-    # The frame will not actually be executed, but it holds the scope which applies when
-    # we execute the primitive. Ideally a frame would take a sexp OR perhaps a block
-    # or something, which would represent what we are "executing".
     def call_primitive(scope, primitive, args)
-      stack.push(nil, scope)
-      result = meta_convert(send(primitive.name, *args))
-      stack.pop # Don't need the frame any more
-      result
+      node = Carat::AST::SendMethod.new(self, primitive.name, *args)
+      meta_convert(execute(node, scope))
     end
     
     def instance_variables
