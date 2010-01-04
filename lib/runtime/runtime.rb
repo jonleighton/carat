@@ -3,8 +3,8 @@ module Carat
     require RUNTIME_PATH + "/symbol_table"
     require RUNTIME_PATH + "/stack"
     require RUNTIME_PATH + "/frame"
-    
     require RUNTIME_PATH + "/environment"
+    require RUNTIME_PATH + "/call"
     
     attr_reader :stack, :constants, :top_level_scope
     

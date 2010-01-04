@@ -20,13 +20,13 @@ module Carat
     require DATA_PATH + '/meta_class'
     require DATA_PATH + '/include_class'
     
+    require DATA_PATH + '/lambda'
     require DATA_PATH + '/method'
     
     require DATA_PATH + '/kernel'
     require DATA_PATH + '/fixnum'
     require DATA_PATH + '/array'
     require DATA_PATH + '/string'
-    require DATA_PATH + '/proc'
     require DATA_PATH + '/nil_class'
     require DATA_PATH + '/true_class'
     require DATA_PATH + '/false_class'

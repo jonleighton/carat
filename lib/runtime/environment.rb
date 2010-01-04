@@ -37,7 +37,7 @@ class Carat::Runtime
     
     def load_kernel    
       constants[:Kernel] = Carat::Data::ModuleInstance.new(runtime, :Kernel)
-      create_classes(:Fixnum, :Array, :String, :Proc, :NilClass, :TrueClass, :FalseClass)
+      create_classes(:Fixnum, :Array, :String, :Lambda, :Method, :NilClass, :TrueClass, :FalseClass)
       
       # TODO: Implement require, and just call run on one file which requires the rest
       [:kernel, :object, :fixnum, :array, :nil_class, :true_class, :false_class].each do |file|

@@ -57,7 +57,7 @@ module Carat::AST
   
   class BlockPass < ExpressionNode
   end
-    
+  
   # This is a special node which allows a meta-language method to be called within a given
   # scope on the stack. It is used for executing primitives in the correct scope.
   class SendMethod < Node

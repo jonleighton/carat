@@ -74,25 +74,34 @@ module Carat::AST
       @receiver, @name, @argument_pattern, @contents = receiver, name, argument_pattern, contents
     end
     
+    def current_klass
+      # If the current 'self' is not a module or class (i.e. it is a normal object), get its class
+      # (this could happen, for example, if a method is defined within another method)
+      if scope[:self].is_a?(Carat::Data::ModuleInstance)
+        scope[:self]
+      else
+        scope[:self].real_klass
+      end
+    end
+    
     def klass
       if receiver
         # If there is a receiver this is a singleton method definition, so the method should
         # be placed in the method table of the singleton class of the receiver
         execute(receiver).singleton_class
       else
-        # Otherwise, if the current 'self' is not a module or class, get the class of 'self'
-        # (this could happen, for example, if a method is defined within another method)
-        if scope[:self].is_a?(Carat::Data::ModuleInstance)
-          scope[:self]
-        else
-          scope[:self].real_klass
-        end
+        # Otherwise get the class in the current scope
+        current_klass
       end
+    end
+    
+    def method_object
+      Carat::Data::MethodInstance.new(runtime, argument_pattern, contents)
     end
     
     # Define a method in the current scope
     def eval
-      klass.method_table[name] = Carat::Data::Method.new(argument_pattern, contents)
+      klass.method_table[name] = method_object
       nil
     end
     

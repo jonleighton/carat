@@ -17,7 +17,7 @@ module Carat::Data
     attr_accessor :klass
     
     extend Forwardable
-    def_delegators :runtime, :current_node, :stack, :meta_convert
+    def_delegators :runtime, :current_node, :stack, :meta_convert, :constants
     def_delegators :current_node, :execute, :scope
     
     # All objects can have primitives
@@ -41,10 +41,31 @@ module Carat::Data
       lookup_instance_method(name) || raise(Carat::CaratError, "method '#{self}##{name}' not found")
     end
     
-    def call(method_name, args = Carat::AST::ArgumentList.new, block = nil)
-      # Look up the method or primitive
-      callable = lookup_instance_method!(method_name)
+    def call(method_name, argument_list = Carat::AST::ArgumentList.new, block = nil)
+      method = lookup_instance_method!(method_name)
       
+      if method.is_a?(Primitive)
+        call_primitive(method, argument_list)
+      else
+        call = Carat::Runtime::Call.new(runtime, method, method_scope, argument_list)
+        call.send
+      end
+    end
+    
+    # TODO: Replace this with a primitive dispatch system which is driven from the object language
+    # side. Create a Carat object which will have a special call method such that
+    # Carat.primitive(:bla) will execute the relevant "primitive_bla" method. So to create a "bla"
+    # primitive, we define it normally and then invoke the actual primitive:
+    # 
+    #   class Foo
+    #     def bla
+    #       Carat.primitive(:bla)
+    #     end
+    #   end
+    # 
+    # This removes the need for Carat::AST::SendMethod too, as the scope is created by the original
+    # vanilla invocation of the bla method.
+    def call_primitive(primitive, args)
       # We want the arguments to be evaluated within the caller's scope. However, the arguments
       # may change the scope's block, if there is a :block_pass. We don't want this to persist
       # after the arguments are evaluated, so we create a child scope solely for evaluating the
@@ -61,26 +82,15 @@ module Carat::Data
       
       # Set the block which will be available inside the method. This is either a block passed
       # within the args, or a block which is explicitly given as an iterator.
-      method_scope.block = block || arg_scope.block
+      #method_scope.block = block || arg_scope.block
       
-      # Run the actual method or primitive
-      case callable
-        when Method
-          call_method(method_scope, callable, args)
-        when Primitive
-          call_primitive(method_scope, callable, args)
-      end
-    end
-    
-    def call_method(scope, method, args)
-      scope.merge!(method.assign_args(args, scope.block))
-      result = execute(method.contents, scope)
-      result
-    end
-    
-    def call_primitive(scope, primitive, args)
       node = Carat::AST::SendMethod.new(self, primitive.name, *args)
-      meta_convert(execute(node, scope))
+      meta_convert(execute(node, method_scope))
+    end
+    
+    # A scope for evaluating the method call, with this object as 'self'
+    def method_scope
+      Carat::Runtime::SymbolTable.new(:self => self)
     end
     
     def instance_variables
