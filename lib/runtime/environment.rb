@@ -3,7 +3,7 @@ class Carat::Runtime
     attr_reader :runtime
   
     extend Forwardable
-    def_delegators :runtime, :constants, :top_level_scope, :execute
+    def_delegators :runtime, :constants, :current_scope
     
     def initialize(runtime)
       @runtime = runtime
@@ -24,9 +24,6 @@ class Carat::Runtime
       
       # The superclass of the metaclass of Object is just Class
       @object.metaclass.superclass = @class
-      
-      # Do this manually as the superclass and klass pointers were incorrect before
-      [@object, @module, @class].each(&:add_primitives_to_method_table)
     end
     
     def create_classes(*names)
@@ -37,17 +34,20 @@ class Carat::Runtime
     
     def load_kernel    
       constants[:Kernel] = Carat::Data::ModuleInstance.new(runtime, :Kernel)
-      create_classes(:Fixnum, :Array, :String, :Lambda, :Method, :NilClass, :TrueClass, :FalseClass)
+      create_classes(:Carat, :Fixnum, :Array, :String, :Lambda, :Method,
+                     :NilClass, :TrueClass, :FalseClass)
       
-      # TODO: Implement require, and just call run on one file which requires the rest
-      [:kernel, :object, :fixnum, :array, :nil_class, :true_class, :false_class].each do |file|
-        data = File.read(Carat::KERNEL_PATH + "/#{file}.rb")
-        ast = Carat.parse(data)
-        ast.scope = top_level_scope
-        execute(ast)
+      old_debug = Carat.debug_enabled
+      Carat.debug_enabled = false
+      
+      # TODO: Implement require, and just call run one file which requires the rest
+      [:kernel, :module, :class, :object, :fixnum, :array, :string, :nil_class, :true_class, :false_class].each do |file|
+        runtime.run_file(Carat::KERNEL_PATH + "/#{file}.rb")
       end
       
-      top_level_scope[:self] = Carat::Data::ObjectInstance.new(runtime, @object)
+      Carat.debug_enabled = old_debug
+      
+      current_scope[:self] = Carat::Data::ObjectInstance.new(runtime, @object)
     end
   end
 end

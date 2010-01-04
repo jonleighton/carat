@@ -1,37 +1,63 @@
 class Carat::Runtime
   class Stack
-    attr_reader :runtime, :nodes
+    def initialize
+      @items = []
+    end
+    
+    # Return each item in turn
+    def each_item(&block)
+      @items.each(&block)
+    end
+    
+    # Add an item to the top of the stack
+    def <<(item)
+      @items << item
+    end
+    
+    # Get the item at the top of the stack
+    def peek
+      @items.last
+    end
+    
+    # Remove and return the item at the top of the stack
+    def pop
+      @items.pop
+    end
+    
+    # "Reduce" the stack in some way
+    def reduce
+      raise NotImplementedError
+    end
+    
+    # Push an item on to the stack and reduce immediately
+    def execute(item)
+      self << item
+      reduce
+    end
+  end
+  
+  class ExecutionStack < Stack
+    attr_reader :runtime
   
     def initialize(runtime)
       @runtime = runtime
-      @nodes = []
+      super()
     end
     
-    def <<(node)
-      @nodes << node
-    end
-    
-    # Execute the frame at the top of the stack, then pop it and return the result
+    # Execute the node at the top of the stack, then pop it and return the result
     def reduce
       result = peek.eval_in_runtime(runtime)
       pop
       result
     end
-    
-    # Push a node on to the stack and reduce immediately
-    def execute(node)
-      self << node
-      reduce
-    end
-    
-    # Get the last stack frame
-    def peek
-      @nodes.last
-    end
-    
-    # Remove and return the last stack frame
-    def pop
-      @nodes.pop
+  end
+  
+  class CallStack < Stack
+    # Send the call at the top of the stack, and then remove it
+    def reduce
+      result = peek.send
+      pop
+      result
     end
   end
 end

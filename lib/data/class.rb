@@ -6,7 +6,6 @@ module Carat::Data
     def initialize(runtime, supr, name = nil)
       self.super = supr
       super(runtime, name || inferred_name)
-      add_primitives_to_method_table if runtime.initialized?
     end
     
     # For a standard +Class+ (as opposed to a +SingletonClass+), we create a metaclass
@@ -77,19 +76,6 @@ module Carat::Data
       object = self.call(:allocate)
       object.call(:initialize, args)
       object
-    end
-    
-    def primitive_include(mod)
-      super
-      
-      # If the module being included has some primitives, then make them available by including
-      # the actual primitive methods in the instance class, and adding them to the method table
-      if mod.primitives_module
-        instance_class.send(:include, mod.primitives_module)
-        method_table.merge!(mod.primitives_module.primitives)
-      end
-      
-      mod
     end
   end
 end

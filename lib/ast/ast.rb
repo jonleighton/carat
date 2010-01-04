@@ -8,7 +8,7 @@ module Carat
       attr_reader :runtime
       
       extend Forwardable
-      def_delegators :runtime, :stack, :constants
+      def_delegators :runtime, :constants, :execute
       
       def eval_in_runtime(runtime)
         @runtime = runtime
@@ -18,18 +18,6 @@ module Carat
       
       def eval
         raise CaratError, "evaluation logic for #{type} not implemented"
-      end
-      
-      # Execute a node on the stack. Either use the given scope, or this node's scope otherwise.
-      def execute(node_or_object, scope = nil)
-        return nil if node_or_object.nil?
-        
-        if node_or_object.is_a?(Carat::Data::ObjectInstance)
-          node_or_object # We have an immediate value, no need to evaluate it
-        else
-          node_or_object.scope = scope || self.scope
-          stack.execute(node_or_object)
-        end
       end
       
       def type

@@ -9,10 +9,11 @@ module Carat::Data
     end
     
     def primitive_length
-      @contents.length
+      constants[:Fixnum].get(@contents.length)
     end
     
-    def primitive_each(*args)
+    # FIXME
+    def primitive_each
       @contents.each do |item|
         current_frame.eval_yield(item)
       end
@@ -22,11 +23,9 @@ module Carat::Data
       @contents << item
       self
     end
-    rename_primitive :push, :<<
     
     def primitive_at(i)
       @contents[i.value]
     end
-    rename_primitive :at, :[]
   end
 end

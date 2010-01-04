@@ -1,5 +1,9 @@
 module Carat::Data
   class StringClass < ClassInstance
+    def new(contents)
+      StringInstance.new(runtime, contents)
+    end
+  
     def primitive_allocate
       StringInstance.new(runtime, "")
     end
@@ -19,22 +23,16 @@ module Carat::Data
     
     # ***** PRIMITIVES ***** #
     
-    def primitive_to_s
-      self
-    end
-    
     def primitive_inspect
-      contents.inspect
+      real_klass.new(contents.inspect)
     end
     
     def primitive_plus(other)
-      contents + other.contents
+      real_klass.new(contents + other.contents)
     end
-    rename_primitive :plus, :+
     
     def primitive_push(other)
-      contents << other.contents
+      real_klass.new(contents << other.contents)
     end
-    rename_primitive :push, :<<
   end
 end

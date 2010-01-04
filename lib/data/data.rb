@@ -9,9 +9,7 @@ module Carat
     class ClassClass     < ClassInstance;  end
     
     # Now, require the actual code
-    require DATA_PATH + '/primitive'
-    require DATA_PATH + '/primitive_host'
-    
+    require DATA_PATH + '/kernel'
     require DATA_PATH + '/object'
     require DATA_PATH + '/module'
     require DATA_PATH + '/class'
@@ -22,8 +20,8 @@ module Carat
     
     require DATA_PATH + '/lambda'
     require DATA_PATH + '/method'
+    require DATA_PATH + '/carat'
     
-    require DATA_PATH + '/kernel'
     require DATA_PATH + '/fixnum'
     require DATA_PATH + '/array'
     require DATA_PATH + '/string'

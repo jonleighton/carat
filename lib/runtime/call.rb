@@ -64,12 +64,13 @@ class Carat::Runtime
       @arguments ||= begin
         result = {}
         
+        values = argument_objects.clone
         argument_pattern.items.each do |item|
           case item
             when Carat::AST::ArgumentPatternItem
-              result[item.name] = argument_objects.shift
+              result[item.name] = values.shift
             when Carat::AST::SplatArgumentPatternItem
-              result[item.name] = argument_objects
+              result[item.name] = values
           end
         end
         
