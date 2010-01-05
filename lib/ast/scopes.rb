@@ -13,11 +13,7 @@ module Carat::AST
     end
     
     def module_object
-      unless constants.has?(name)
-        constants[name] = Carat::Data::ModuleInstance.new(runtime, name)
-      end
-      
-      constants[name]
+      constants[name] ||= Carat::Data::ModuleInstance.new(runtime, name)
     end
     
     def contents_scope
@@ -45,11 +41,7 @@ module Carat::AST
     end
     
     def class_object
-      unless constants.has?(name)
-        constants[name] = Carat::Data::ClassInstance.new(runtime, superclass_object, name)
-      end
-      
-      constants[name]
+      constants[name] ||= Carat::Data::ClassInstance.new(runtime, superclass_object, name)
     end
     
     def contents_scope

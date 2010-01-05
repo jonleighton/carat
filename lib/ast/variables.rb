@@ -24,25 +24,25 @@ module Carat::AST
   
   class LocalVariableOrMethodCall < NamedNode
     def eval
-      if scope.has?(name)
-        scope[name]
+      scope[name] || call_or_error
+    end
+    
+    def call_or_error
+      if current_object.has_instance_method?(name)
+        current_object.call(name)
       else
-        scope[:self].call(name)
+        raise Carat::CaratError, "undefined local variable or method '#{name}'"
       end
     end
   end
   
   class InstanceVariable < NamedNode
-    def object
-      scope[:self]
-    end
-  
     def assign(value)
-      object.instance_variables[name] = value
+      current_object.instance_variables[name] = value
     end
     
     def eval
-      object.instance_variables[name] || constants[:NilClass].instance
+      current_object.instance_variables[name] || constants[:NilClass].instance
     end
   end
   

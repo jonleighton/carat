@@ -39,6 +39,10 @@ module Carat::Data
       lookup_instance_method(name) || raise(Carat::CaratError, "method '#{self}##{name}' not found")
     end
     
+    def has_instance_method?(name)
+      lookup_instance_method(name) && true || false
+    end
+    
     # Call the method with a given name, with the given AST argument list
     def call(method_name, argument_list = Carat::AST::ArgumentList.new)
       method = lookup_instance_method!(method_name)

@@ -16,6 +16,10 @@ module Carat
         eval
       end
       
+      def current_object
+        scope[:self]
+      end
+      
       def eval
         raise CaratError, "evaluation logic for #{type} not implemented"
       end
