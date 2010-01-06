@@ -37,15 +37,10 @@ class Carat::Runtime
       create_classes(:Carat, :Fixnum, :Array, :String, :Lambda, :Method,
                      :NilClass, :TrueClass, :FalseClass)
       
-      old_debug = Carat.debug_enabled
-      Carat.debug_enabled = false
-      
       # TODO: Implement require, and just call run one file which requires the rest
       [:kernel, :module, :class, :object, :fixnum, :array, :string, :nil_class, :true_class, :false_class].each do |file|
         runtime.run_file(Carat::KERNEL_PATH + "/#{file}.rb")
       end
-      
-      Carat.debug_enabled = old_debug
       
       current_scope[:self] = Carat::Data::ObjectInstance.new(runtime, @object)
     end

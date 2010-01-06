@@ -6,7 +6,7 @@ module Carat
     require RUNTIME_PATH + "/environment"
     require RUNTIME_PATH + "/call"
     
-    attr_reader :constants
+    attr_reader :constants, :call_stack, :execution_stack
     
     def initialize
       # The stack containing the AST nodes which are currently being executed
@@ -35,7 +35,7 @@ module Carat
     
     # The top-most AST node being executed
     def current_node
-      @execution_stack.peek
+      execution_stack.peek
     end
     
     # The scope in which the current node is executed
@@ -43,9 +43,13 @@ module Carat
       current_node && current_node.scope || @top_level_scope
     end
     
+    def current_object
+      current_scope[:self]
+    end
+    
     # The top-most item in the call stack
     def current_call
-      @call_stack.peek
+      call_stack.peek
     end
     
     # Execute a node on the stack. Either use the given scope, or the current scope otherwise.
@@ -57,28 +61,25 @@ module Carat
         node_or_object
       else
         node_or_object.scope = scope || current_scope
-        @execution_stack.execute(node_or_object)
+        execution_stack.execute(node_or_object)
       end
     end
     
     # Create a +Call+ and execute it on the call stack
     def call(callable, scope, argument_list)
       call = Call.new(self, callable, scope, argument_list)
-      @call_stack.execute(call)
+      call_stack.execute(call)
     end
     
     # Parse some code and then execute its AST
     def run(code)
       ast = Carat.parse(code)
-      Carat.debug "Abstract Syntax Tree:\n#{ast.inspect}\n\n"
       begin
         execute(ast)
       rescue StandardError => e
         puts "Error while running:\n#{current_node.inspect}"
         puts "Stack:"
-        @execution_stack.each_item do |node|
-          puts " * #{node}"
-        end
+        p execution_stack
         raise e
       end
     end

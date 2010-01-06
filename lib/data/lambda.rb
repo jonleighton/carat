@@ -12,5 +12,15 @@ module Carat::Data
       @argument_pattern, @contents, @scope = argument_pattern, contents, scope
       super(runtime, runtime.constants[:Lambda])
     end
+    
+    def evaluation_scope
+      scope.extend(:self => self)
+    end
+    
+    ##### PRIMITIVES #####
+    
+    def primitive_call(*args)
+      runtime.call(self, evaluation_scope, args)
+    end
   end
 end

@@ -1,7 +1,7 @@
 class Carat::Runtime
   class SymbolTable
-    attr_accessor :block
-    
+    attr_reader :symbols
+  
     # Can be initialized with or without a parent, and with a list of assignments. For example:
     # 
     #   SymbolTable.new
@@ -20,10 +20,10 @@ class Carat::Runtime
     
     # Assign a value to a symbol
     def []=(symbol, value)
-      if @symbols.has_key?(symbol)      # If it exists here, assign it here
+      if @symbols.has_key?(symbol)     # If it exists here, assign it here
         @symbols[symbol] = value
       elsif @parent && @parent[symbol] # If it exists in a parent, assign it there
-        @parent.set(symbol, value)
+        @parent[symbol] = value
       else                             # Otherwise initialise a fresh symbol here
         @symbols[symbol] = value
       end

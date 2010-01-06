@@ -28,9 +28,12 @@ class Carat::Runtime
     # The AST node representing the argument list, or just a flat array of pre-evalutated objects
     attr_reader :argument_list
     
+    # The lambda object created from the block, if there is one
+    attr_reader :block
+    
     extend Forwardable
     def_delegators :callable, :argument_pattern, :contents
-    def_delegators :runtime, :current_node
+    def_delegators :runtime, :current_node, :execution_stack
     
     def initialize(runtime, callable, scope, argument_list)
       @runtime, @callable    = runtime, callable
@@ -40,6 +43,11 @@ class Carat::Runtime
     # Merge the arguments into the execution scope, which becomes the scope for the contents, and
     # then execute it on the stack
     def send
+      # Execute the block, if there is one. This will create a lambda object.
+      if argument_list.is_a?(Carat::AST::ArgumentList)
+        @block = current_node.execute(argument_list.block)
+      end
+      
       scope.merge!(arguments)
       current_node.execute(contents, scope)
     end
@@ -76,6 +84,10 @@ class Carat::Runtime
         
         result
       end
+    end
+    
+    def inspect
+      "Call[#{callable}, #{argument_objects.map(&:to_s).join(', ')}]"
     end
   end
 end

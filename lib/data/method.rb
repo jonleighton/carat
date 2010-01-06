@@ -3,11 +3,15 @@ module Carat::Data
   end
   
   class MethodInstance < ObjectInstance
-    attr_reader :argument_pattern, :contents
+    attr_reader :name, :argument_pattern, :contents
     
-    def initialize(runtime, argument_pattern, contents)
-      @argument_pattern, @contents = argument_pattern, contents
+    def initialize(runtime, name, argument_pattern, contents)
+      @name, @argument_pattern, @contents = name, argument_pattern, contents
       super(runtime, runtime.constants[:Method])
+    end
+    
+    def to_s
+      "<method:#{name}>"
     end
   end
 end

@@ -17,7 +17,8 @@ module Carat::Data
     attr_accessor :klass
     
     extend Forwardable
-    def_delegators :runtime, :current_node, :current_call, :current_scope, :constants, :execute
+    def_delegators :runtime, :current_node, :current_call, :current_scope, :current_object,
+                             :constants, :execute, :call_stack, :execution_stack
     
     include KernelModule
     
@@ -98,6 +99,18 @@ module Carat::Data
     
     def primitive_object_id
       carat_object_id
+    end
+    
+    # Yield the caller's current block. We get the block from the call on the call stack which is
+    # second from top, because the call at the top is the call to 'yield', which is made without
+    # a block.
+    def primitive_yield(*args)
+      block = call_stack[1].block
+      if block
+        block.primitive_call(*args)
+      else
+        raise Carat::CaratError, "no block to yield in #{current_call.inspect}"
+      end
     end
   end
 end

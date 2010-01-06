@@ -24,6 +24,16 @@ class Carat::Runtime
       @items.pop
     end
     
+    # Get the height of the stack
+    def height
+      @items.length
+    end
+    
+    # Get an item at a certain stack depth. '0' is the top of the stack, '1' is second, etc.
+    def [](index)
+      @items[height - index - 1]
+    end
+    
     # "Reduce" the stack in some way
     def reduce
       raise NotImplementedError
@@ -33,6 +43,15 @@ class Carat::Runtime
     def execute(item)
       self << item
       reduce
+    end
+    
+    # Print out the stack
+    def inspect
+      result = []
+      @items.reverse.each_with_index do |item, i|
+        result << " #{i+1}. #{item.inspect}"
+      end
+      result.join("\n")
     end
   end
   

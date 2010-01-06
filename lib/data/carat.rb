@@ -13,7 +13,13 @@ module Carat::Data
     def call_primitive(argument_list)
       name = execute(argument_list)[0]
       raise Carat::CaratError, "invalid argument to Carat.primitive" unless name.is_a?(StringInstance)
-      current_scope[:self].send("primitive_#{name}", *current_call.argument_objects)
+      
+      method_name = "primitive_#{name}"
+      if current_object.respond_to?(method_name)
+        current_object.send(method_name, *current_call.argument_objects)
+      else
+        raise Carat::CaratError, "undefined primitive '#{name}' for #{current_object}"
+      end
     end
   end
 end

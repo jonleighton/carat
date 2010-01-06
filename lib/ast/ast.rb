@@ -89,7 +89,7 @@ module Carat
       
       def inspect
         if empty?
-          type + ":[Empty]"
+          type + ":\n" + indent("[Empty]")
         else
           type + ":\n" + indent(items.map(&:inspect).join("\n"))
         end

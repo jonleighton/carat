@@ -45,6 +45,10 @@ module Carat::AST
       @argument_pattern, @contents = argument_pattern, contents
     end
     
+    def eval
+      Carat::Data::LambdaInstance.new(runtime, argument_pattern, contents, scope)
+    end
+    
     def inspect
       type + ":\n" + 
       indent(argument_pattern.inspect) + "\n" +

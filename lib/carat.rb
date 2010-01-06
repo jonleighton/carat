@@ -23,30 +23,19 @@ module Carat
   # Currently use this for all errors, before implementing exceptions
   class CaratError < StandardError; end
   
-  class << self
-    attr_accessor :debug_enabled
+  def self.parse(code)
+    parser = Carat::LanguageParser.new
+    parse_tree = parser.parse(code)
     
-    def parse(code)
-      parser = Carat::LanguageParser.new
-      parse_tree = parser.parse(code)
-      
-      if parse_tree
-        parse_tree.to_ast
-      else
-        raise Carat::CaratError, "Syntax error:\n#{parser.failure_reason}"
-      end
+    if parse_tree
+      parse_tree.to_ast
+    else
+      raise Carat::CaratError, "Syntax error:\n#{parser.failure_reason}"
     end
-    
-    # Creates a new runtime object and tells it to run some code
-    def execute(code, debug = false)
-      self.debug_enabled = debug
-      Runtime.new.run(code).to_s
-    ensure
-      self.debug_enabled = false
-    end
-    
-    def debug(message)
-      puts message if debug_enabled
-    end
+  end
+  
+  # Create a new runtime object and tell it to run some code
+  def self.execute(code)
+    Runtime.new.run(code).to_s
   end
 end

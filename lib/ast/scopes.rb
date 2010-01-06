@@ -88,7 +88,7 @@ module Carat::AST
     end
     
     def method_object
-      Carat::Data::MethodInstance.new(runtime, argument_pattern, contents)
+      Carat::Data::MethodInstance.new(runtime, name, argument_pattern, contents)
     end
     
     # Define a method in the current scope
