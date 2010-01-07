@@ -48,8 +48,8 @@ class Carat::Runtime
     # Print out the stack
     def inspect
       result = []
-      @items.reverse.each_with_index do |item, i|
-        result << " #{i+1}. #{item.inspect}"
+      @items.each_with_index do |item, i|
+        result << " #{height - i}. #{item.inspect.gsub("\n", "\n    ")}"
       end
       result.join("\n")
     end

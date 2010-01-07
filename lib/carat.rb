@@ -28,7 +28,13 @@ module Carat
     parse_tree = parser.parse(code)
     
     if parse_tree
-      parse_tree.to_ast
+      begin
+        parse_tree.to_ast
+      rescue StandardError => e
+        p parse_tree
+        puts
+        raise e
+      end
     else
       raise Carat::CaratError, "Syntax error:\n#{parser.failure_reason}"
     end

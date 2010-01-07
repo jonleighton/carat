@@ -15,10 +15,9 @@ class Array
     Carat.primitive "push"
   end
   
-  # TODO: Make this parse
-  #def [](index)
-  #  Carat.primitive "at"
-  #end
+  def [](index)
+    Carat.primitive "at"
+  end
   
   def map
     ary = []

@@ -98,7 +98,33 @@ module Carat
     end
     
     rule method_call_chain_tail
-      ('.' multiline_space? method_name argument_list:argument_list?)+
+      method_call_segment+
+    end
+    
+    rule method_call_segment
+      dot_method_call /
+      array_assign /
+      array_access
+    end
+    
+    rule dot_method_call
+      '.' multiline_space? method_name argument_list:argument_list?
+    end
+    
+    rule array_access
+      '' array_brackets <ArrayAccess>
+    end
+    
+    rule array_assign
+      array_brackets space? '=' multiline_space? expression <ArrayAssign>
+    end
+    
+    rule array_brackets
+      space? '[' multiline_space? ']' <ArrayBrackets> /
+      space? '[' multiline_space?
+      head:argument_list_item
+      tail:(multiline_space? ',' multiline_space? argument_list_item)*
+      multiline_space? ']' <ArrayBrackets>
     end
     
     # Argument list - values which are passed during a method call
@@ -195,7 +221,7 @@ module Carat
     end
     
     rule method_name
-      basic_method_name / binary_operator
+      (basic_method_name / binary_operator / special_method_name) <MethodName>
     end
     
     # Keywords are allowed
@@ -207,9 +233,14 @@ module Carat
       '+' / '-' / '==' / '!=' / '<<'
     end
     
+    # Ones which don't match the basic method pattern, and aren't binary operators
+    rule special_method_name
+      '[]' / '[]='
+    end
+    
     # A general identifier must not start with a number and must not conflict with a keyword
     rule identifier
-      !keyword [a-zA-Z_] [a-zA-Z0-9_]*
+      !keyword [a-zA-Z_] [a-zA-Z0-9_]* <Identifier>
     end
     
     # A local identifier must start with an underscore or lowercase letter, and must not conflict

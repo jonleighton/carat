@@ -32,6 +32,10 @@ module Carat
         type
       end
       
+      def to_ast
+        self
+      end
+      
       protected
       
         def indent(text)

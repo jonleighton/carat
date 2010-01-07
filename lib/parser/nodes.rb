@@ -181,9 +181,7 @@ module Carat
           chain.first && chain.first.to_ast
         else
           call = chain.last
-          
           receiver = reduce(chain[0..-2])
-          method_name = call.method_name.text_value.to_sym
           
           if call.argument_list.empty?
             argument_list = Carat::AST::ArgumentList.new
@@ -191,12 +189,54 @@ module Carat
             argument_list = call.argument_list.to_ast
           end
           
-          Carat::AST::MethodCall.new(receiver, method_name, argument_list)
+          Carat::AST::MethodCall.new(receiver, call.method_name.to_sym, argument_list)
         end
       end
       
       def to_ast
         reduce(chain)
+      end
+    end
+    
+    class ArrayAccess < Treetop::Runtime::SyntaxNode
+      def method_name
+        :[]
+      end
+      
+      def argument_list
+        Carat::AST::ArgumentList.new(array_brackets.items)
+      end
+    end
+    
+    class ArrayAssign < Treetop::Runtime::SyntaxNode
+      def method_name
+        :[]=
+      end
+      
+      def argument_list
+        Carat::AST::ArgumentList.new(array_brackets.items + [expression.to_ast])
+      end
+    end
+    
+    class ArrayBrackets < Treetop::Runtime::SyntaxNode
+      def items
+        if respond_to?(:head)
+          [head.to_ast] + tail.elements.map(&:argument_list_item).map(&:to_ast)
+        else
+          []
+        end
+      end
+    end
+    
+    module MethodName
+      def to_sym
+        text_value.to_sym
+      end
+    end
+    
+    module Identifier
+      def to_sym
+        text_value.to_sym
       end
     end
     

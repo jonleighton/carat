@@ -15,7 +15,7 @@ module Carat::Data
     # FIXME
     def primitive_each
       @contents.each do |item|
-        current_frame.eval_yield(item)
+        primitive_yield(item)
       end
     end
     
