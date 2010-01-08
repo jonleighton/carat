@@ -2,7 +2,6 @@ module Carat
   class Runtime
     require RUNTIME_PATH + "/scope"
     require RUNTIME_PATH + "/stack"
-    require RUNTIME_PATH + "/frame"
     require RUNTIME_PATH + "/environment"
     require RUNTIME_PATH + "/call"
     

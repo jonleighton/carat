@@ -127,21 +127,6 @@ class CaratTest < Test::Unit::TestCase
     CODE
     
     assert_equal("3\n", execute(code))
-    
-    code = <<-CODE
-      class Class
-        def self.a
-          2
-        end
-      end
-      
-      class Foo
-      end
-      
-      Foo.a
-    CODE
-    
-    assert_raises(Carat::CaratError) { execute(code) }
   end
   
   def test_module_including
@@ -291,16 +276,6 @@ class CaratTest < Test::Unit::TestCase
     CODE
     
     assert_equal("1\n2\n3\n2\n1\n", execute(code))
-    
-    code = <<-CODE
-      a = 1
-      
-      class Foo
-        puts a
-      end
-    CODE
-    
-    assert_raises(Carat::CaratError) { execute(code) }
   end
   
   def test_array_block_operations
