@@ -28,7 +28,7 @@ module Carat::Data
     end
     
     def primitive_plus(other)
-      real_klass.new(contents + other.contents)
+      real_klass.new(contents + other.call(:to_s).contents)
     end
     
     def primitive_push(other)

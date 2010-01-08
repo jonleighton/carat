@@ -24,18 +24,22 @@ class Array
     each { |item| ary << yield(item) }
     ary
   end
-
+  
   def inspect
     "[" + map { |item| item.inspect }.join(", ") + "]"
   end
   
   def join(joiner)
     result = ""
-    i = 0
+    i = 1
     each do |item|
-      i = i + 1
       result << item
-      result << joiner if i != length
+      
+      if i != length
+        result << joiner
+      end
+      
+      i = i + 1
     end
     result
   end

@@ -17,7 +17,7 @@ module Carat::AST
     end
     
     def contents_scope
-      Carat::Runtime::SymbolTable.new(:self => module_object)
+      Carat::Runtime::Scope.new(module_object)
     end
     
     def eval
@@ -45,7 +45,7 @@ module Carat::AST
     end
     
     def contents_scope
-      Carat::Runtime::SymbolTable.new(:self => class_object)
+      Carat::Runtime::Scope.new(class_object)
     end
     
     def eval
@@ -106,30 +106,17 @@ module Carat::AST
   end
   
   class ArgumentPattern < NodeList
-    attr_reader :block_pass
-    
-    def initialize(items = [], block_pass = nil)
-      super(items)
-      @block_pass = block_pass
-    end
-    
-    def inspect
-      super + (block_pass && "\n" + indent("Block Pass: #{block_pass}") || "")
-    end
   end
   
   class ArgumentPatternItem < Node
-    attr_reader :name, :default
+    attr_reader :name, :pattern_type, :default
     
-    def initialize(name, default)
-      @name, @default = name, default
+    def initialize(name, pattern_type, default = nil)
+      @name, @pattern_type, @default = name, pattern_type, default
     end
     
     def inspect
-      type + "[#{name}]" + (default && " = \n" + indent(default.inspect) || '')
+      type + "[#{name}, #{pattern_type.inspect}]" + (default && " = \n" + indent(default.inspect) || '')
     end
-  end
-  
-  class SplatArgumentPatternItem < NamedNode
   end
 end

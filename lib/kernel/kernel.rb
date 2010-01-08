@@ -7,7 +7,7 @@ module Kernel
     puts obj.inspect
   end
   
-  def proc(&block)
-    Proc.new(&block)
+  def lambda(&block)
+    Lambda.new(&block)
   end
 end

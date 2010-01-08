@@ -5,6 +5,14 @@ class Object
     # Do nothing by default
   end
   
+  def !=(other)
+    if self == other
+      false
+    else
+      true
+    end
+  end
+  
   def ==(other)
     Carat.primitive "equality_op"
   end

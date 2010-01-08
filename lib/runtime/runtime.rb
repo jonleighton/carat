@@ -1,6 +1,6 @@
 module Carat
   class Runtime
-    require RUNTIME_PATH + "/symbol_table"
+    require RUNTIME_PATH + "/scope"
     require RUNTIME_PATH + "/stack"
     require RUNTIME_PATH + "/frame"
     require RUNTIME_PATH + "/environment"
@@ -15,12 +15,11 @@ module Carat
       # The stack containing Call objects representing the current chain of method calls
       @call_stack      = CallStack.new
       
-      # The SymbolTable containing the top level variables
-      @top_level_scope = SymbolTable.new
+      # The scope containing the top level variables
+      @top_level_scope = Scope.new(nil)
       
-      # The SymbolTable containing all the constants in the runtime. (Constants are defined
-      # globally)
-      @constants       = SymbolTable.new
+      # Constants are defined globally
+      @constants       = {}
       
       @environment = Environment.new(self)
       @environment.setup
@@ -54,7 +53,7 @@ module Carat
     
     # Execute a node on the stack. Either use the given scope, or the current scope otherwise.
     def execute(node_or_object, scope = nil)
-      return nil if node_or_object.nil?
+      return constants[:NilClass].instance if node_or_object.nil?
       
       if node_or_object.is_a?(Carat::Data::ObjectInstance)
         # We have an immediate value, no need to evaluate it
@@ -77,10 +76,11 @@ module Carat
       begin
         execute(ast)
       rescue StandardError => e
-        puts "Error while running:\n#{current_node.inspect}"
+        puts "Error: #{e.message}"
+        puts e.backtrace[0..10].join("\n")
+        puts
         puts "Stack:"
         p execution_stack
-        raise e
       end
     end
     

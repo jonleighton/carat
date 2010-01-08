@@ -8,7 +8,7 @@ module Carat
       attr_reader :runtime
       
       extend Forwardable
-      def_delegators :runtime, :constants, :execute
+      def_delegators :runtime, :constants, :execute, :current_call
       
       def eval_in_runtime(runtime)
         @runtime = runtime
@@ -106,5 +106,6 @@ module Carat
     require AST_PATH + "/messages"
     require AST_PATH + "/literals"
     require AST_PATH + "/variables"
+    require AST_PATH + "/control"
   end
 end

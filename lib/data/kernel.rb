@@ -8,6 +8,8 @@ module Carat::Data
         # to_s actually gets the string.
         Kernel.puts(object.call(:to_s).to_s)
       end
+      
+      constants[:NilClass].instance
     end
   end
 end

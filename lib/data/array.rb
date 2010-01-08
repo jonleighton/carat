@@ -12,11 +12,11 @@ module Carat::Data
       constants[:Fixnum].get(@contents.length)
     end
     
-    # FIXME
     def primitive_each
       @contents.each do |item|
-        primitive_yield(item)
+        call(:yield, [item])
       end
+      self
     end
     
     def primitive_push(item)
@@ -25,7 +25,7 @@ module Carat::Data
     end
     
     def primitive_at(i)
-      @contents[i.value]
+      @contents[i.value] || constants[:NilClass].instance
     end
   end
 end

@@ -198,7 +198,7 @@ class CaratTest < Test::Unit::TestCase
       end
 
       foo = 2
-      block = proc do
+      block = lambda do
         puts foo
         foo = 3
       end

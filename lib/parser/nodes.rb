@@ -65,22 +65,42 @@ module Carat
       end
     end
     
+    class IfExpression < Treetop::Runtime::SyntaxNode
+      def false_expression_ast
+        false_block.expression_list.to_ast unless false_block.empty?
+      end
+      
+      def true_expression_ast
+        true_block.expression_list.to_ast
+      end
+    
+      def to_ast
+        Carat::AST::IfExpression.new(condition.to_ast, true_expression_ast, false_expression_ast)
+      end
+    end
+    
     class ArgumentPattern < Treetop::Runtime::SyntaxNode
       def items
         if contents.respond_to?(:head)
-          [contents.head] + contents.tail.elements.map(&:item)
+          items = [contents.head] + contents.tail.elements.map(&:item) + [block_pass]
         else
-          []
+          items = [block_pass]
         end
+        items.compact.map(&:to_ast)
       end
       
       def block_pass
-        contents.block_pass.local_identifier.text_value unless contents.block_pass.empty?
+        unless contents.block_pass.empty?
+          Carat::AST::ArgumentPatternItem.new(
+            contents.block_pass.local_identifier.text_value.to_sym,
+            :block_pass
+          )
+        end
       end
       
       def to_ast
         if respond_to?(:contents)
-          Carat::AST::ArgumentPattern.new(items.map(&:to_ast), block_pass)
+          Carat::AST::ArgumentPattern.new(items)
         else
           Carat::AST::ArgumentPattern.new
         end
@@ -92,14 +112,22 @@ module Carat
         default.expression.to_ast unless default.empty?
       end
       
+      def name
+        local_identifier.text_value.to_sym
+      end
+      
       def to_ast
-        Carat::AST::ArgumentPatternItem.new(local_identifier.text_value.to_sym, default_value)
+        Carat::AST::ArgumentPatternItem.new(name, :normal, default_value)
       end
     end
     
     class SplatArgumentPatternItem < Treetop::Runtime::SyntaxNode
+      def name
+        local_identifier.text_value.to_sym
+      end
+    
       def to_ast
-        Carat::AST::SplatArgumentPatternItem.new(local_identifier.text_value.to_sym)
+        Carat::AST::ArgumentPatternItem.new(name, :splat)
       end
     end
     
@@ -283,7 +311,7 @@ module Carat
     
     class BlockPass < Treetop::Runtime::SyntaxNode
       def to_ast
-        Carat::AST::BlockPass.new(expression.to_ast)
+        expression.to_ast
       end
     end
     

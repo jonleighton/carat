@@ -1,7 +1,7 @@
 module Carat::Data
   class LambdaClass < ClassInstance
     def primitive_new
-      scope.block
+      current_call.block
     end
   end
   
@@ -13,8 +13,14 @@ module Carat::Data
       super(runtime, runtime.constants[:Lambda])
     end
     
+    # Extend the scope in which the block was created. The reason for extending the scope is that 
+    # it means any fresh variables within the lambda will stay local to the lambda.
     def evaluation_scope
-      scope.extend(:self => self)
+      scope.extend
+    end
+    
+    def to_s
+      "<lambda>"
     end
     
     ##### PRIMITIVES #####

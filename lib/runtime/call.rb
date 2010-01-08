@@ -23,33 +23,32 @@ class Carat::Runtime
     
     # The scope in which the arguments should be assigned, and the contents of the callable should
     # be executed
-    attr_reader :scope
+    attr_reader :execution_scope
+    
+    # The scope in which the Call was created, used for evaluating arguments
+    attr_reader :caller_scope
     
     # The AST node representing the argument list, or just a flat array of pre-evalutated objects
     attr_reader :argument_list
     
-    # The lambda object created from the block, if there is one
-    attr_reader :block
-    
     extend Forwardable
     def_delegators :callable, :argument_pattern, :contents
-    def_delegators :runtime, :current_node, :execution_stack
+    def_delegators :execution_scope, :block
     
-    def initialize(runtime, callable, scope, argument_list)
-      @runtime, @callable    = runtime, callable
-      @scope, @argument_list = scope, argument_list
+    def initialize(runtime, callable, execution_scope, argument_list)
+      @runtime, @callable              = runtime, callable
+      @execution_scope, @argument_list = execution_scope, argument_list
+      
+      @caller_scope = runtime.current_scope
     end
     
     # Merge the arguments into the execution scope, which becomes the scope for the contents, and
     # then execute it on the stack
     def send
-      # Execute the block, if there is one. This will create a lambda object.
-      if argument_list.is_a?(Carat::AST::ArgumentList)
-        @block = current_node.execute(argument_list.block)
-      end
+      execution_scope.block = block_from_arguments unless block_from_arguments.nil?
+      execution_scope.merge!(arguments)
       
-      scope.merge!(arguments)
-      current_node.execute(contents, scope)
+      runtime.execute(contents, execution_scope)
     end
     
     # If we have anything other than an ArgumentList AST node, we assume the argument list is an 
@@ -57,7 +56,7 @@ class Carat::Runtime
     def argument_objects
       @argument_objects ||= begin
         if argument_list.is_a?(Carat::AST::ArgumentList)
-          current_node.execute(argument_list)
+          runtime.execute(argument_list, caller_scope)
         else
           argument_list
         end
@@ -71,23 +70,46 @@ class Carat::Runtime
     def arguments
       @arguments ||= begin
         result = {}
-        
         values = argument_objects.clone
+        
         argument_pattern.items.each do |item|
-          case item
-            when Carat::AST::ArgumentPatternItem
-              result[item.name] = values.shift
-            when Carat::AST::SplatArgumentPatternItem
-              result[item.name] = values
-          end
+          result[item.name] =
+            case item.pattern_type
+              when :splat
+                values
+              when :block_pass
+                block
+              else
+                values.shift
+            end
         end
         
         result
       end
     end
     
+    # Gets the block from the arguments. This can be one of two things:
+    # 
+    #   1. Carat::AST::Block - when the block has been specified literally:
+    #      items.map { ... }
+    #   2. Any other AST node - when the block is passed in as an expression:
+    #      items.map(&block)
+    def block_from_arguments
+      if argument_list.is_a?(Carat::AST::ArgumentList)
+        @block_from_arguments ||= runtime.execute(argument_list.block, caller_scope)
+      end
+    end
+    
     def inspect
-      "Call[#{callable}, #{argument_objects.map(&:to_s).join(', ')}]"
+      result = "Call[#{callable}"
+      if @argument_objects
+        result << ", " unless @argument_objects.empty?
+        result << @argument_objects.map(&:to_s).join(', ')
+      else
+        result << ", <unevaluated args>"
+      end
+      result << "]"
+      result
     end
   end
 end

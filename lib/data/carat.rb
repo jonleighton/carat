@@ -16,7 +16,13 @@ module Carat::Data
       
       method_name = "primitive_#{name}"
       if current_object.respond_to?(method_name)
-        current_object.send(method_name, *current_call.argument_objects)
+        result = current_object.send(method_name, *current_call.argument_objects)
+        
+        unless result.is_a?(Carat::Data::ObjectInstance)
+          raise Carat::CaratError, "primitive '#{name}' did not return an ObjectInstance: #{result.inspect}"
+        end
+        
+        result
       else
         raise Carat::CaratError, "undefined primitive '#{name}' for #{current_object}"
       end

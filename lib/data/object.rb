@@ -52,7 +52,7 @@ module Carat::Data
     
     # A scope for evaluating the method call, with this object as 'self'
     def method_scope
-      Carat::Runtime::SymbolTable.new(:self => self)
+      Carat::Runtime::Scope.new(self)
     end
     
     def instance_variables
@@ -94,18 +94,21 @@ module Carat::Data
     # ***** PRIMITIVES ***** #
     
     def primitive_equality_op(other)
-      carat_object_id == other.carat_object_id
+      if carat_object_id == other.carat_object_id
+        constants[:TrueClass].instance
+      else
+        constants[:FalseClass].instance
+      end
     end
     
     def primitive_object_id
-      carat_object_id
+      constants[:Fixnum].get(carat_object_id)
     end
     
-    # Yield the caller's current block. We get the block from the call on the call stack which is
-    # second from top, because the call at the top is the call to 'yield', which is made without
-    # a block.
+    # Yield the caller's current block
+    # TODO: Move to Kernel
     def primitive_yield(*args)
-      block = call_stack[1].block
+      block = current_call.caller_scope.block
       if block
         block.primitive_call(*args)
       else

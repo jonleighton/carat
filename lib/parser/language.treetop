@@ -13,7 +13,7 @@ module Carat
     
     # An expression is the basic 'thing'
     rule expression
-      item:(binary_method / primary) comment? <Expression> /
+      item:(binary_method / primary) space? comment? <Expression> /
       comment
     end
     
@@ -25,6 +25,7 @@ module Carat
       module_definition /
       class_definition /
       method_definition /
+      control_structure /
       assignment /
       literal /
       instance_variable /
@@ -50,6 +51,17 @@ module Carat
     
     rule definition_body
       multiline_space expression_list 'end'
+    end
+    
+    rule control_structure
+      if_expression
+    end
+    
+    rule if_expression
+      'if' space condition:expression space? terminator
+      true_block:(multiline_space? expression_list)
+      false_block:('else' multiline_space? expression_list)?
+      'end' <IfExpression>
     end
     
     # The arguments defined as part of a method definition
@@ -217,7 +229,7 @@ module Carat
     end
     
     rule keyword
-      'class' / 'module' / 'def' / 'do' / 'end'
+      'class' / 'module' / 'def' / 'do' / 'end' / 'if' / 'else'
     end
     
     rule method_name
