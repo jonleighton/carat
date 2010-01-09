@@ -7,7 +7,7 @@ module Carat::AST
     end
     
     def receiver_object
-      receiver && execute(receiver) || runtime.self
+      receiver && execute(receiver) || scope[:self]
     end
     
     def eval

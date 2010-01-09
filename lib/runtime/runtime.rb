@@ -99,9 +99,5 @@ module Carat
     def nil
       constants[:NilClass].instance
     end
-    
-    def self
-      current_scope[:self]
-    end
   end
 end
