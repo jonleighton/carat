@@ -10,4 +10,8 @@ module Kernel
   def lambda(&block)
     Lambda.new(&block)
   end
+  
+  def yield
+    Carat.primitive "yield"
+  end
 end

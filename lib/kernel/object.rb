@@ -20,8 +20,4 @@ class Object
   def object_id
     Carat.primitive "object_id"
   end
-  
-  def yield
-    Carat.primitive "yield"
-  end
 end

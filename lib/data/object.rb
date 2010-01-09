@@ -104,16 +104,5 @@ module Carat::Data
     def primitive_object_id
       constants[:Fixnum].get(carat_object_id)
     end
-    
-    # Yield the caller's current block
-    # TODO: Move to Kernel
-    def primitive_yield(*args)
-      block = current_call.caller_scope.block
-      if block
-        block.primitive_call(*args)
-      else
-        raise Carat::CaratError, "no block to yield in #{current_call.inspect}"
-      end
-    end
   end
 end

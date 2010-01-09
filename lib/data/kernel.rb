@@ -11,5 +11,15 @@ module Carat::Data
       
       runtime.nil
     end
+    
+    # Yield the caller's current block
+    def primitive_yield(*args)
+      block = current_call.caller_scope.block
+      if block
+        block.primitive_call(*args)
+      else
+        raise Carat::CaratError, "no block to yield in #{current_call.inspect}"
+      end
+    end
   end
 end
