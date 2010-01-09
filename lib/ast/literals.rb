@@ -1,19 +1,19 @@
 module Carat::AST
   class True < Node
     def eval
-      constants[:TrueClass].instance
+      runtime.true
     end
   end
   
   class False < Node
     def eval
-      constants[:FalseClass].instance
+      runtime.false
     end
   end
   
   class Nil < Node
     def eval
-      constants[:NilClass].instance
+      runtime.nil
     end
   end
   

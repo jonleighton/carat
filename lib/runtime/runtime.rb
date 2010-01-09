@@ -52,7 +52,7 @@ module Carat
     
     # Execute a node on the stack. Either use the given scope, or the current scope otherwise.
     def execute(node_or_object, scope = nil)
-      return constants[:NilClass].instance if node_or_object.nil?
+      return self.nil if node_or_object.nil?
       
       if node_or_object.is_a?(Carat::Data::ObjectInstance)
         # We have an immediate value, no need to evaluate it
@@ -86,6 +86,22 @@ module Carat
     # Read the contents of a file and run it
     def run_file(file_name)
       run(File.read(file_name))
+    end
+    
+    def false
+      constants[:FalseClass].instance
+    end
+    
+    def true
+      constants[:TrueClass].instance
+    end
+    
+    def nil
+      constants[:NilClass].instance
+    end
+    
+    def self
+      current_scope[:self]
     end
   end
 end

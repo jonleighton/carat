@@ -95,9 +95,9 @@ module Carat::Data
     
     def primitive_equality_op(other)
       if carat_object_id == other.carat_object_id
-        constants[:TrueClass].instance
+        runtime.true
       else
-        constants[:FalseClass].instance
+        runtime.false
       end
     end
     

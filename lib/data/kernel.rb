@@ -1,7 +1,7 @@
 module Carat::Data
   module KernelModule
     def primitive_puts(object)
-      if object.is_a?(NilClassInstance)
+      if object == runtime.nil
         Kernel.puts("nil")
       else
         # object.call(:to_s) gets the StringInstance representing the object, and then calling
@@ -9,7 +9,7 @@ module Carat::Data
         Kernel.puts(object.call(:to_s).to_s)
       end
       
-      constants[:NilClass].instance
+      runtime.nil
     end
   end
 end

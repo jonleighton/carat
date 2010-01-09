@@ -69,10 +69,10 @@ module Carat::AST
     def current_klass
       # If the current 'self' is not a module or class (i.e. it is a normal object), get its class
       # (this could happen, for example, if a method is defined within another method)
-      if scope[:self].is_a?(Carat::Data::ModuleInstance)
-        scope[:self]
+      if runtime.self.is_a?(Carat::Data::ModuleInstance)
+        runtime.self
       else
-        scope[:self].real_klass
+        runtime.self.real_klass
       end
     end
     

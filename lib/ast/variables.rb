@@ -42,7 +42,7 @@ module Carat::AST
     end
     
     def eval
-      current_object.instance_variables[name] || constants[:NilClass].instance
+      current_object.instance_variables[name] || runtime.nil
     end
   end
   

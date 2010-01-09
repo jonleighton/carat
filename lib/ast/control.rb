@@ -8,7 +8,7 @@ module Carat::AST
     
     def condition?
       result = execute(condition)
-      result != constants[:FalseClass].instance && result != constants[:NilClass].instance
+      result != runtime.false && result != runtime.nil
     end
     
     def eval

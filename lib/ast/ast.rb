@@ -17,7 +17,7 @@ module Carat
       end
       
       def current_object
-        scope[:self]
+        runtime.self
       end
       
       def eval

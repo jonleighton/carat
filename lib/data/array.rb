@@ -25,7 +25,7 @@ module Carat::Data
     end
     
     def primitive_at(i)
-      @contents[i.value] || constants[:NilClass].instance
+      @contents[i.value] || runtime.nil
     end
   end
 end
