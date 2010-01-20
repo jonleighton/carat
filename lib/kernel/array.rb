@@ -19,6 +19,10 @@ class Array
     Carat.primitive "at"
   end
   
+  def to_a
+    self
+  end
+  
   def map
     ary = []
     each { |item| ary << yield(item) }

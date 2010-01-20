@@ -66,28 +66,29 @@ module Carat
     
     # The arguments defined as part of a method definition
     rule method_argument_pattern
-      space? '(' contents:argument_pattern_contents ')' <ArgumentPattern> /
+      space? '(' multiline_space?
+      contents:argument_pattern_contents
+      multiline_space? ')' <ArgumentPattern> /
       '' <ArgumentPattern>
     end
     
     # The arguments defined as part of a block definition
     rule block_argument_pattern
-      space? '|' contents:argument_pattern_contents '|' <ArgumentPattern> /
+      space? '|' multiline_space?
+      contents:argument_pattern_contents
+      multiline_space? '|' <ArgumentPattern> /
       '' <ArgumentPattern>
     end
     
     rule argument_pattern_contents
       head:argument_pattern_item
-      tail:(multiline_space? ',' multiline_space? item:argument_pattern_item)*
-      block_pass:(',' multiline_space? '&' multiline_space? local_identifier)?
-      multiline_space?
-      /
-      block_pass:('&' multiline_space? local_identifier)? multiline_space?
+      tail:(multiline_space? ',' multiline_space? item:argument_pattern_item)* /
+      ''
     end
     
     rule argument_pattern_item
       local_identifier default:(multiline_space? '=' multiline_space expression)? <ArgumentPatternItem> /
-      '*' multiline_space? local_identifier <SplatArgumentPatternItem>
+      ('*' / '&') multiline_space? local_identifier <ArgumentPatternItem>
     end
     
     rule assignment
@@ -128,12 +129,12 @@ module Carat
     end
     
     rule array_assign
-      array_brackets space? '=' multiline_space? expression <ArrayAssign>
+      array_brackets space? '=' multiline_space? value:argument_list_item <ArrayAssign>
     end
     
     rule array_brackets
-      space? '[' multiline_space? ']' <ArrayBrackets> /
-      space? '[' multiline_space?
+      '[' multiline_space? ']' <ArrayBrackets> /
+      '[' multiline_space?
       head:argument_list_item
       tail:(multiline_space? ',' multiline_space? argument_list_item)*
       multiline_space? ']' <ArrayBrackets>
@@ -147,53 +148,39 @@ module Carat
     #
     # A block is also considered to be a part of the argument list
     rule argument_list
-      # Parentheses containing no proper arguments, but maybe a block pass, or maybe a literal block
+      argument_list_parens / argument_list_no_parens
+    end
+    
+    # Any number of items inside parentheses, with an optional block
+    rule argument_list_parens
       space? '(' multiline_space?
-      block:(
-        ')' item:block? /
-        item:block_pass multiline_space? ')'
-      )
-      <ArgumentList>
+      head:argument_list_item
+      tail:(multiline_space? ',' multiline_space? argument_list_item)*
+      multiline_space? ')' block_node:block? <ArgumentList>
       /
-      # Parentheses containing at least one item, optional block
-      space? '(' multiline_space?
-      items:(
-        head:argument_list_item
-        tail:(multiline_space? ',' multiline_space? argument_list_item)*
-      )
-      block:(
-        multiline_space? ')' item:block? /
-        multiline_space? ',' multiline_space? item:block_pass multiline_space? ')'
-      )
-      <ArgumentList>
-      /
-      # No parentheses, but at least one item, optional block
-      # Also no + or - in front of first item, so as not to confuse "x+1" and "x(+1)"
+      space? '(' multiline_space? ')' block_node:block? <ArgumentList>
+    end
+    
+    # No parentheses, so in order for it to definitely be an argument list we need:
+    #
+    #   1. EITHER 1 or more items
+    #   2. OR no items, but a block
+    #
+    # Note that a block isn't included in option 1, as it would just bind to the last argument
+    # anyway. If the block should bind to the method call, parentheses must be used.
+    # 
+    # The argument list may not start with + or -, so as not to confuse "x+1" with "x(+1)"
+    rule argument_list_no_parens
       space !('+' / '-')
-      items:(
-        head:argument_list_item
-        tail:(space? ',' multiline_space? argument_list_item)*
-      )
-      block:(
-        '' item:block /
-        '' item:block_pass
-      )?
-      <ArgumentList>
+      head:argument_list_item
+      tail:(space? ',' multiline_space? argument_list_item)* <ArgumentList>
       /
-      # No parentheses and no argument items, but a mandatory block
-      '' block:('' item:block) <ArgumentList>
+      '' block_node:block <ArgumentList>
     end
     
+    # A splat, a block pass, or a normal expression
     rule argument_list_item
-      splat / expression
-    end
-    
-    rule splat
-      '*' expression <Splat>
-    end
-    
-    rule block_pass
-      '&' multiline_space? expression <BlockPass>
+      ('*' / '&')? multiline_space? expression <ArgumentListItem>
     end
     
     rule block

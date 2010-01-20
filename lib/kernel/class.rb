@@ -3,7 +3,9 @@ class Class < Module
     Carat.primitive "allocate"
   end
   
-  def new
-    Carat.primitive "new"
+  def new(*args, &block)
+    object = self.allocate
+    object.initialize(*args, &block)
+    object
   end
 end

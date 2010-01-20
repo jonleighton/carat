@@ -1,8 +1,15 @@
 module Carat::Data
   class ArrayClass < ClassInstance
+    def new(items)
+      object = ArrayInstance.new(runtime, self)
+      object.primitive_initialize(*items)
+      object
+    end
   end
   
   class ArrayInstance < ObjectInstance
+    attr_reader :contents
+    
     def primitive_initialize(*contents)
       @contents = contents
       self

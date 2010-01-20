@@ -65,8 +65,6 @@ class Carat::Runtime
     
     # Return a hash where the argument names of this method are assigned the given values. This
     # method makes sure the "splat" is dealt with correctly
-    # TODO: Deal with blocks
-    # TODO: Splat is broken because it creates a Ruby array, not a Carat array object
     def arguments
       @arguments ||= begin
         result = {}
@@ -76,7 +74,7 @@ class Carat::Runtime
           result[item.name] =
             case item.pattern_type
               when :splat
-                values
+                runtime.constants[:Array].new(values)
               when :block_pass
                 block
               else

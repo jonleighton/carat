@@ -22,22 +22,50 @@ module Carat::AST
   end
   
   class ArgumentList < NodeList
-    attr_accessor :block
+    class Item < Node
+      attr_accessor :expression, :argument_type
+      
+      def initialize(expression, argument_type = :normal)
+        @expression, @argument_type = expression, argument_type
+      end
+      
+      def inspect
+        type + "[#{argument_type}]:\n" + indent(expression.inspect)
+      end
+    end
     
-    def initialize(items = [], block = nil)
+    def initialize(items = [])
       super(items)
-      @block = block
+    end
+    
+    def block
+      if items.last && (items.last.argument_type == :block ||
+                        items.last.argument_type == :block_pass)
+        items.last.expression
+      end
+    end
+    
+    def non_block_items
+      if block.nil?
+        items
+      else
+        items[0..-2]
+      end
     end
     
     def eval
-      items.map { |expression| execute(expression) }
-    end
-    
-    def inspect
-      super + (block && "\n#{indent(block.inspect)}" || '')
+      non_block_items.inject([]) do |argument_objects, item|
+        if item.argument_type == :splat
+          argument_objects += execute(item.expression).call(:to_a).contents
+        else
+          argument_objects << execute(item.expression)
+        end
+      end
     end
   end
   
+  # This is a literal block, i.e. "foo do .. end" or "foo { ... }"
+  # When evaluated it is converted to a lambda
   class Block < Node
     attr_reader :argument_pattern, :contents
     
@@ -56,24 +84,19 @@ module Carat::AST
     end
   end
   
-  class Splat < ExpressionNode
-  end
-  
-  # This is a special node which allows a meta-language method to be called within a given
-  # scope on the stack. It is used for executing primitives in the correct scope.
-  class SendMethod < Node
-    attr_reader :object, :method_name, :args
-  
-    def initialize(object, method_name, *args)
-      @object, @method_name, @args = object, method_name, args
+  class Splat < Node
+    attr_reader :expression
+      
+    def initialize(expression)
+      @expression = expression
     end
     
-    def eval
-      object.send(method_name, *args)
+    def items
+      execute(expression).call(:to_a)
     end
-    
+      
     def inspect
-      type + "[#{object}.#{method_name}(#{args.join(', ')})]"
+      type + ":\n" + indent(expression.inspect)
     end
   end
 end

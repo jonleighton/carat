@@ -106,17 +106,19 @@ module Carat::AST
   end
   
   class ArgumentPattern < NodeList
-  end
-  
-  class ArgumentPatternItem < Node
-    attr_reader :name, :pattern_type, :default
+    # TODO: This shouldn't really be a Node because it is never really evalutated on its own. It
+    # should really just be a normal object which is used to store some information. However,
+    # to do this I need to extract the AST printing from "inspect" methods into a separate class.
+    class Item < Node
+      attr_reader :name, :pattern_type, :default
+      
+      def initialize(name, pattern_type, default = nil)
+        @name, @pattern_type, @default = name, pattern_type, default
+      end
     
-    def initialize(name, pattern_type, default = nil)
-      @name, @pattern_type, @default = name, pattern_type, default
-    end
-    
-    def inspect
-      type + "[#{name}, #{pattern_type.inspect}]" + (default && " = \n" + indent(default.inspect) || '')
+      def inspect
+        type + "[#{name}, #{pattern_type.inspect}]" + (default && " = \n" + indent(default.inspect) || '')
+      end
     end
   end
 end

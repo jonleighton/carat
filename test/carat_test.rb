@@ -290,6 +290,26 @@ class CaratTest < Test::Unit::TestCase
     assert_equal("[4, 6, 3]\n", execute(code))
   end
   
+  def test_splat
+    code = <<-CODE
+      def foo(a, *b)
+        puts a
+        p b
+      end
+      
+      foo(1, 2, 3, 4)
+      
+      def bar(a, b)
+        puts a
+        puts b
+      end
+      
+      bar(*[4, 2])
+    CODE
+    
+    assert_equal("1\n[2, 3, 4]\n4\n2\n", execute(code))
+  end
+  
   def test_environment
     runtime = Carat::Runtime.new
     constants = runtime.constants

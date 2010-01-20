@@ -61,7 +61,10 @@ module Carat
       end
       
       def to_ast
-        Carat::AST::MethodDefinition.new(receiver_ast, method_name.text_value.to_sym, method_argument_pattern.to_ast, contents)
+        Carat::AST::MethodDefinition.new(
+          receiver_ast, method_name.text_value.to_sym,
+          method_argument_pattern.to_ast, contents
+        )
       end
     end
     
@@ -75,31 +78,51 @@ module Carat
       end
     
       def to_ast
-        Carat::AST::IfExpression.new(condition.to_ast, true_expression_ast, false_expression_ast)
+        Carat::AST::IfExpression.new(
+          condition.to_ast,
+          true_expression_ast,
+          false_expression_ast
+        )
       end
     end
     
     class ArgumentPattern < Treetop::Runtime::SyntaxNode
       def items
-        if contents.respond_to?(:head)
-          items = [contents.head] + contents.tail.elements.map(&:item) + [block_pass]
-        else
-          items = [block_pass]
+        @items ||= begin
+          if contents.respond_to?(:head)
+            items = [contents.head] + contents.tail.elements.map(&:item)
+            items.compact.map(&:to_ast)
+          else
+            []
+          end
         end
-        items.compact.map(&:to_ast)
+      end
+      
+      def splat_count
+        items.find_all { |item| item.pattern_type == :splat }.length
       end
       
       def block_pass
-        unless contents.block_pass.empty?
-          Carat::AST::ArgumentPatternItem.new(
-            contents.block_pass.local_identifier.text_value.to_sym,
-            :block_pass
-          )
+        items.find { |item| item.pattern_type == :block_pass }
+      end
+      
+      def validate_items
+        # There can only be one splat, otherwise there could be multiple ways to map arguments onto
+        # the pattern
+        if splat_count > 1
+          raise Carat::CaratError, "only one splat allowed per method definition"
+        end
+        
+        # A block pass can only occur at the end of the pattern (this also implies there is only
+        # one block pass)
+        if block_pass && block_pass != items.last
+          raise Carat::CaratError, "a block pass may only occur at the end of the argument list in a method definition"
         end
       end
       
       def to_ast
         if respond_to?(:contents)
+          validate_items
           Carat::AST::ArgumentPattern.new(items)
         else
           Carat::AST::ArgumentPattern.new
@@ -108,26 +131,27 @@ module Carat
     end
     
     class ArgumentPatternItem < Treetop::Runtime::SyntaxNode
-      def default_value
-        default.expression.to_ast unless default.empty?
+      def default_value_ast
+        default.expression.to_ast if respond_to?(:default) && !default.empty?
       end
       
       def name
         local_identifier.text_value.to_sym
       end
       
-      def to_ast
-        Carat::AST::ArgumentPatternItem.new(name, :normal, default_value)
+      def type
+        case text_value.chars.first
+          when '*'
+            :splat
+          when '&'
+            :block_pass
+          else
+            :normal
+        end
       end
-    end
-    
-    class SplatArgumentPatternItem < Treetop::Runtime::SyntaxNode
-      def name
-        local_identifier.text_value.to_sym
-      end
-    
+      
       def to_ast
-        Carat::AST::ArgumentPatternItem.new(name, :splat)
+        Carat::AST::ArgumentPattern::Item.new(name, type, default_value_ast)
       end
     end
     
@@ -204,6 +228,10 @@ module Carat
         [receiver] + tail.elements
       end
       
+      # This basically resolves the associativity of a method call chain. During parsing, the chain
+      # is matched based on right-bracketing, i.e. foo.[bar.[baz]]. However, the call to baz should
+      # actually be the outermost node in the AST, and foo.bar is its receiver. So the bracketing
+      # in the AST needs to be [[foo].bar].baz
       def reduce(chain)
         if chain.length == 1
           chain.first && chain.first.to_ast
@@ -231,8 +259,12 @@ module Carat
         :[]
       end
       
+      def items
+        array_brackets.items
+      end
+      
       def argument_list
-        Carat::AST::ArgumentList.new(array_brackets.items)
+        Carat::AST::ArgumentList.new(items)
       end
     end
     
@@ -241,8 +273,12 @@ module Carat
         :[]=
       end
       
+      def items
+        array_brackets.items << value.to_ast
+      end
+      
       def argument_list
-        Carat::AST::ArgumentList.new(array_brackets.items + [expression.to_ast])
+        Carat::AST::ArgumentList.new(items)
       end
     end
     
@@ -283,47 +319,86 @@ module Carat
     end
     
     class BinaryOperation < Treetop::Runtime::SyntaxNode
+      def arguments
+        [Carat::AST::ArgumentList::Item.new(right.to_ast)]
+      end
+      
       def to_ast
         Carat::AST::MethodCall.new(
           left.to_ast, name.text_value.to_sym,
-          Carat::AST::ArgumentList.new([right.to_ast])
+          Carat::AST::ArgumentList.new(arguments)
         )
       end
     end
     
     class ArgumentList < Treetop::Runtime::SyntaxNode
-      def values
-        if !respond_to?(:items) || items.empty?
-          []
-        else
-          [items.head] + items.tail.elements.map(&:argument_list_item)
+      def items
+        @items ||= begin
+          items = []
+          items += [head] + tail.elements.map(&:argument_list_item) if respond_to?(:head)
+          items << block_node if respond_to?(:block_node) && !block_node.empty?
+          items.map(&:to_ast)
         end
       end
       
-      def block_ast
-        block.item.to_ast if respond_to?(:block) && !(block.empty? || block.item.empty?)
+      def block_pass
+        items.find { |item| item.argument_type == :block_pass }
+      end
+      
+      def block
+        items.last if items.last.argument_type == :block
+      end
+      
+      # Note that multiple splats are allowed, when *calling* a method, because there is no
+      # ambiguity about how they will be expanded (the n items in the splat's expression will
+      # become the next n items in the argument list). This is different to when defining a method
+      # because a splat there means a certain variable will take an unbounded number of arguments
+      # as a single array.
+      def validate_items
+        # Either a block may be passed, or a literal block may be created, but not both
+        if block_pass && block
+          raise Carat::CaratError, "cannot pass a block in the arguments and give a literal block at the same time"
+        end
+        
+        # Block pass only valid at end of args. Note this also implies that multiple block passes
+        # are invalid.
+        if block_pass && block_pass != items.last
+          raise Carat::CaratError, "a block pass must only occur at the end of the argument list"
+        end
       end
       
       def to_ast
-        Carat::AST::ArgumentList.new(values.map(&:to_ast), block_ast)
+        validate_items
+        Carat::AST::ArgumentList.new(items)
       end
     end
     
-    class BlockPass < Treetop::Runtime::SyntaxNode
-      def to_ast
-        expression.to_ast
+    class ArgumentListItem < Treetop::Runtime::SyntaxNode
+      def type
+        case text_value.chars.first
+          when '*'
+            :splat
+          when '&'
+            :block_pass
+          else
+            :normal
+        end
       end
-    end
-    
-    class Splat < Treetop::Runtime::SyntaxNode
+      
       def to_ast
-        Carat::AST::Splat.new(expression.to_ast)
+        Carat::AST::ArgumentList::Item.new(expression.to_ast, type)
       end
     end
     
     class Block < Treetop::Runtime::SyntaxNode
       def to_ast
-        Carat::AST::Block.new(block_argument_pattern.to_ast, expression_list.to_ast)
+        Carat::AST::ArgumentList::Item.new(
+          Carat::AST::Block.new(
+            block_argument_pattern.to_ast,
+            expression_list.to_ast
+          ),
+          :block
+        )
       end
     end
     

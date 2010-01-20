@@ -35,7 +35,7 @@ module Carat::AST
     end
     
     def eval
-      constants[:Array].call(:new, item_objects)
+      constants[:Array].new(item_objects)
     end
   end
 end
