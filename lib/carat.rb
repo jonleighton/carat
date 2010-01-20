@@ -15,33 +15,23 @@ module Carat
   PARSER_PATH  = ROOT_PATH + "/parser"
   AST_PATH     = ROOT_PATH + "/ast"
   
+  # TODO: Replace all occurances with something more specific
+  class CaratError < StandardError; end
+  
   require RUNTIME_PATH + "/runtime"
   require DATA_PATH    + "/data"
   require PARSER_PATH  + "/parser"
   require AST_PATH     + "/ast"
   
-  # Currently use this for all errors, before implementing exceptions
-  class CaratError < StandardError; end
-  
-  def self.parse(code)
-    parser = Carat::LanguageParser.new
-    parse_tree = parser.parse(code)
-    
-    if parse_tree
-      begin
-        parse_tree.to_ast
-      rescue StandardError => e
-        p parse_tree
-        puts
-        raise e
-      end
-    else
-      raise Carat::CaratError, "Syntax error:\n#{parser.failure_reason}"
-    end
+  def self.parse(input, file_name = nil)
+    LanguageParser.new(input, file_name).run!
   end
   
-  # Create a new runtime object and tell it to run some code
-  def self.execute(code)
-    Runtime.new.run(code).to_s
+  def self.run(input)
+    Runtime.new.run(input)
+  end
+  
+  def self.run_file(name)
+    Runtime.new.run_file(name)
   end
 end

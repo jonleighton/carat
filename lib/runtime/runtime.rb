@@ -50,6 +50,18 @@ module Carat
       call_stack.peek
     end
     
+    def false
+      constants[:FalseClass].instance
+    end
+    
+    def true
+      constants[:TrueClass].instance
+    end
+    
+    def nil
+      constants[:NilClass].instance
+    end
+    
     # Execute a node on the stack. Either use the given scope, or the current scope otherwise.
     def execute(node_or_object, scope = nil)
       return self.nil if node_or_object.nil?
@@ -70,34 +82,29 @@ module Carat
     end
     
     # Parse some code and then execute its AST
-    def run(code)
-      ast = Carat.parse(code)
-      begin
-        execute(ast)
-      rescue StandardError => e
-        puts "Error: #{e.message}"
-        puts e.backtrace[0..10].join("\n")
-        puts
-        puts "Stack:"
-        p execution_stack
-      end
+    def run(input, file_name = nil)
+      execute Carat.parse(input, file_name)
+    rescue StandardError => e
+      handle_error(e)
     end
     
     # Read the contents of a file and run it
-    def run_file(file_name)
-      run(File.read(file_name))
+    def run_file(name)
+      run(File.read(name), name)
     end
     
-    def false
-      constants[:FalseClass].instance
-    end
-    
-    def true
-      constants[:TrueClass].instance
-    end
-    
-    def nil
-      constants[:NilClass].instance
+    def handle_error(exception)
+      case exception
+        when SyntaxError
+          puts exception.full_message
+        else
+          puts "Error: #{exception.message}"
+          puts exception.backtrace[0..10].join("\n")
+          puts
+          puts "Stack:"
+          p execution_stack
+      end
+      exit 1
     end
   end
 end

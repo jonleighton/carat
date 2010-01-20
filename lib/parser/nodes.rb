@@ -1,12 +1,34 @@
 module Carat
   module Language
-    class Program < Treetop::Runtime::SyntaxNode
+    class Node < Treetop::Runtime::SyntaxNode
+      # The file is stored by the root node, so we delegate by to the parent by default and then
+      # override this in Program
+      def file_name
+        parent.file_name
+      end
+      
+      def line
+        input.line_of(interval.first)
+      end
+      
+      def column
+        input.column_of(interval.first) + 1
+      end
+      
+      def error(message)
+        raise Carat::SyntaxError.new(input, message, file_name, line, column)
+      end
+    end
+    
+    class Program < Node
+      attr_accessor :file_name
+      
       def to_ast
         expression_list.to_ast
       end
     end
   
-    class ExpressionList < Treetop::Runtime::SyntaxNode
+    class ExpressionList < Node
       # An array of nodes representing the expressions in the block
       def expressions
         [first] + rest.elements.map(&:expression)
@@ -17,19 +39,19 @@ module Carat
       end
     end
     
-    class EmptyExpressionList < Treetop::Runtime::SyntaxNode
+    class EmptyExpressionList < Node
       def to_ast
         nil
       end
     end
     
-    class Expression < Treetop::Runtime::SyntaxNode
+    class Expression < Node
       def to_ast
         item.to_ast
       end
     end
     
-    class DefinitionNode < Treetop::Runtime::SyntaxNode
+    class DefinitionNode < Node
       def contents
         definition_body.expression_list.to_ast
       end
@@ -68,7 +90,7 @@ module Carat
       end
     end
     
-    class IfExpression < Treetop::Runtime::SyntaxNode
+    class IfExpression < Node
       def false_expression_ast
         false_block.expression_list.to_ast unless false_block.empty?
       end
@@ -86,7 +108,7 @@ module Carat
       end
     end
     
-    class ArgumentPattern < Treetop::Runtime::SyntaxNode
+    class ArgumentPattern < Node
       def items
         @items ||= begin
           if contents.respond_to?(:head)
@@ -110,13 +132,13 @@ module Carat
         # There can only be one splat, otherwise there could be multiple ways to map arguments onto
         # the pattern
         if splat_count > 1
-          raise Carat::CaratError, "only one splat allowed per method definition"
+          error "only one splat allowed per method definition"
         end
         
         # A block pass can only occur at the end of the pattern (this also implies there is only
         # one block pass)
         if block_pass && block_pass != items.last
-          raise Carat::CaratError, "a block pass may only occur at the end of the argument list in a method definition"
+          error "a block pass may only occur at the end of the argument list in a method definition"
         end
       end
       
@@ -130,7 +152,7 @@ module Carat
       end
     end
     
-    class ArgumentPatternItem < Treetop::Runtime::SyntaxNode
+    class ArgumentPatternItem < Node
       def default_value_ast
         default.expression.to_ast if respond_to?(:default) && !default.empty?
       end
@@ -155,7 +177,7 @@ module Carat
       end
     end
     
-    class Array < Treetop::Runtime::SyntaxNode
+    class Array < Node
       def items
         if respond_to?(:head)
           [head] + tail.elements.map(&:expression)
@@ -169,37 +191,37 @@ module Carat
       end
     end
     
-    class String < Treetop::Runtime::SyntaxNode
+    class String < Node
       def to_ast
         Carat::AST::String.new(value.text_value)
       end
     end
     
-    class True < Treetop::Runtime::SyntaxNode
+    class True < Node
       def to_ast
         Carat::AST::True.new
       end
     end
     
-    class False < Treetop::Runtime::SyntaxNode
+    class False < Node
       def to_ast
         Carat::AST::False.new
       end
     end
     
-    class Nil < Treetop::Runtime::SyntaxNode
+    class Nil < Node
       def to_ast
         Carat::AST::Nil.new
       end
     end
     
-    class Integer < Treetop::Runtime::SyntaxNode
+    class Integer < Node
       def to_ast
         Carat::AST::Integer.new(text_value.to_i)
       end
     end
     
-    class Assignment < Treetop::Runtime::SyntaxNode
+    class Assignment < Node
       def to_ast
         Carat::AST::Assignment.new(variable.to_ast, expression.to_ast)
       end
@@ -217,13 +239,13 @@ module Carat
       end
     end
     
-    class InstanceVariable < Treetop::Runtime::SyntaxNode
+    class InstanceVariable < Node
       def to_ast
         Carat::AST::InstanceVariable.new(identifier.text_value.to_sym)
       end
     end
     
-    class MethodCallChain < Treetop::Runtime::SyntaxNode
+    class MethodCallChain < Node
       def chain
         [receiver] + tail.elements
       end
@@ -254,7 +276,7 @@ module Carat
       end
     end
     
-    class ArrayAccess < Treetop::Runtime::SyntaxNode
+    class ArrayAccess < Node
       def method_name
         :[]
       end
@@ -268,7 +290,7 @@ module Carat
       end
     end
     
-    class ArrayAssign < Treetop::Runtime::SyntaxNode
+    class ArrayAssign < Node
       def method_name
         :[]=
       end
@@ -282,7 +304,7 @@ module Carat
       end
     end
     
-    class ArrayBrackets < Treetop::Runtime::SyntaxNode
+    class ArrayBrackets < Node
       def items
         if respond_to?(:head)
           [head.to_ast] + tail.elements.map(&:argument_list_item).map(&:to_ast)
@@ -318,7 +340,7 @@ module Carat
       end
     end
     
-    class BinaryOperation < Treetop::Runtime::SyntaxNode
+    class BinaryOperation < Node
       def arguments
         [Carat::AST::ArgumentList::Item.new(right.to_ast)]
       end
@@ -331,7 +353,7 @@ module Carat
       end
     end
     
-    class ArgumentList < Treetop::Runtime::SyntaxNode
+    class ArgumentList < Node
       def items
         @items ||= begin
           items = []
@@ -357,13 +379,13 @@ module Carat
       def validate_items
         # Either a block may be passed, or a literal block may be created, but not both
         if block_pass && block
-          raise Carat::CaratError, "cannot pass a block in the arguments and give a literal block at the same time"
+          error "cannot pass a block in the arguments and give a literal block at the same time"
         end
         
         # Block pass only valid at end of args. Note this also implies that multiple block passes
         # are invalid.
         if block_pass && block_pass != items.last
-          raise Carat::CaratError, "a block pass must only occur at the end of the argument list"
+          error "a block pass must only occur at the end of the argument list"
         end
       end
       
@@ -373,7 +395,7 @@ module Carat
       end
     end
     
-    class ArgumentListItem < Treetop::Runtime::SyntaxNode
+    class ArgumentListItem < Node
       def type
         case text_value.chars.first
           when '*'
@@ -390,7 +412,7 @@ module Carat
       end
     end
     
-    class Block < Treetop::Runtime::SyntaxNode
+    class Block < Node
       def to_ast
         Carat::AST::ArgumentList::Item.new(
           Carat::AST::Block.new(
@@ -402,13 +424,13 @@ module Carat
       end
     end
     
-    class Constant < Treetop::Runtime::SyntaxNode
+    class Constant < Node
       def to_ast
         Carat::AST::Constant.new(text_value.to_sym)
       end
     end
     
-    class Nothing < Treetop::Runtime::SyntaxNode
+    class Nothing < Node
       def to_ast
         nil
       end

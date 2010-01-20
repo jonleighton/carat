@@ -9,7 +9,7 @@ class CaratTest < Test::Unit::TestCase
     old_stdout = $stdout
     output = StringIO.new
     $stdout = output
-    Carat.execute(code)
+    Carat.run(code)
     $stdout = old_stdout
     output.string
   end
