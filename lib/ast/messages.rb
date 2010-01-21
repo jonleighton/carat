@@ -6,12 +6,18 @@ module Carat::AST
       @receiver, @name, @arguments = receiver, name, arguments
     end
     
-    def receiver_object
-      receiver && execute(receiver) || scope[:self]
+    def eval_receiver(&continuation)
+      if receiver
+        eval_child(receiver, &continuation)
+      else
+        yield scope[:self]
+      end
     end
     
-    def eval
-      receiver_object.call(name, arguments)
+    def eval(&continuation)
+      eval_receiver do |receiver_object|
+        receiver_object.call(name, arguments, &continuation)
+      end
     end
     
     def inspect
@@ -27,6 +33,10 @@ module Carat::AST
       
       def initialize(expression, argument_type = :normal)
         @expression, @argument_type = expression, argument_type
+      end
+      
+      def eval(&continuation)
+        eval_child(expression, &continuation)
       end
       
       def inspect
@@ -53,14 +63,20 @@ module Carat::AST
       end
     end
     
-    def eval
-      non_block_items.inject([]) do |argument_objects, item|
-        if item.argument_type == :splat
-          argument_objects += execute(item.expression).call(:to_a).contents
+    def append_operation
+      lambda do |object, accumulation, node|
+        if node.argument_type == :splat
+          object.call(:to_a) do |object_as_array|
+            objects += object_as_array.contents
+          end
         else
-          argument_objects << execute(item.expression)
+          accumulation << object
         end
       end
+    end
+    
+    def eval(&continuation)
+      fold(non_block_items, [], append_operation, &continuation)
     end
   end
   
@@ -74,29 +90,13 @@ module Carat::AST
     end
     
     def eval
-      Carat::Data::LambdaInstance.new(runtime, argument_pattern, contents, scope)
+      yield Carat::Data::LambdaInstance.new(runtime, argument_pattern, contents, scope)
     end
     
     def inspect
       type + ":\n" + 
       indent(argument_pattern.inspect) + "\n" +
       indent(contents.inspect)
-    end
-  end
-  
-  class Splat < Node
-    attr_reader :expression
-      
-    def initialize(expression)
-      @expression = expression
-    end
-    
-    def items
-      execute(expression).call(:to_a)
-    end
-      
-    def inspect
-      type + ":\n" + indent(expression.inspect)
     end
   end
 end

@@ -1,41 +1,39 @@
 module Carat::AST
   class True < Node
     def eval
-      runtime.true
+      yield runtime.true
     end
   end
   
   class False < Node
     def eval
-      runtime.false
+      yield runtime.false
     end
   end
   
   class Nil < Node
     def eval
-      runtime.nil
+      yield runtime.nil
     end
   end
   
   class String < ValueNode
     def eval
-      Carat::Data::StringInstance.new(runtime, value)
+      yield Carat::Data::StringInstance.new(runtime, value)
     end
   end
   
   class Integer < ValueNode
     def eval
-      constants[:Fixnum].get(value)
+      yield constants[:Fixnum].get(value)
     end
   end
   
   class Array < NodeList
-    def item_objects
-      items.map { |item| execute(item) }
-    end
-    
     def eval
-      constants[:Array].new(item_objects)
+      eval_array(items) do |item_objects|
+        yield constants[:Array].new(item_objects)
+      end
     end
   end
 end

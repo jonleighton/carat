@@ -6,16 +6,20 @@ module Carat::AST
       @condition, @true_node, @false_node = condition, true_node, false_node
     end
     
-    def condition?
-      result = execute(condition)
-      result != runtime.false && result != runtime.nil
+    def eval_condition
+      eval_child(condition) do |condition_value|
+        yield condition_value != runtime.false &&
+              condition_value != runtime.nil
+      end
     end
     
     def eval
-      if condition?
-        execute(true_node)
-      else
-        execute(false_node)
+      eval_condition do |value|
+        if value
+          eval_child(true_node)
+        else
+          eval_child(false_node)
+        end
       end
     end
     

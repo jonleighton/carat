@@ -4,16 +4,27 @@ module Carat
     
     # The superclass of all AST nodes
     class Node
-      attr_accessor :scope
-      attr_reader :runtime
+      attr_reader :runtime, :scope
       
       extend Forwardable
-      def_delegators :runtime, :constants, :execute, :current_call
+      def_delegators :runtime, :constants, :current_call
       
-      def eval_in_runtime(runtime)
+      # TODO: Nodes shouldn't really hold the scope, as this can change when they are evaluated at
+      #       different times. It would be better if the runtime held the scope. [Is this really 
+      #       true? Is there a case where the runtime scope might change but the previous scope
+      #       should be retained?]
+      def eval_in_runtime(runtime, scope, &continuation)
+        raise Carat::CaratError, "no continuation given" unless block_given?
         @runtime = runtime
-        raise CaratError, "scope not set" if scope.nil?
-        eval
+        @scope = scope
+        eval(&continuation)
+      ensure
+        @runtime = @scope = nil
+      end
+      
+      def eval_child(node, scope = nil, &continuation)
+        raise Carat::CaratError, "no continuation given" unless block_given?
+        node.eval_in_runtime(runtime, scope || self.scope, &continuation)
       end
       
       def current_object
@@ -77,6 +88,27 @@ module Carat
       
       def empty?
         items.empty?
+      end
+      
+      # This is similar to a 'foldr' or 'inject' function, but written for this specific context
+      # where we are using continuation passing style
+      def fold(nodes, base, operation, &continuation)
+        if nodes.empty?
+          yield base
+        else
+          node = nodes.first
+          eval_child(node) do |object|
+            fold(nodes.drop(1), base, operation) do |accumulation|
+              yield operation.call(object, accumulation, node)
+            end
+          end
+        end
+      end
+      
+      # Evaluate each item in the array and return a new array with the answers
+      def eval_array(nodes, &continuation)
+        append = Proc.new { |object, accumulation| accumulation << object }
+        fold(nodes, [], append, &continuation)
       end
       
       def inspect

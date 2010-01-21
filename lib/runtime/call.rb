@@ -31,47 +31,59 @@ class Carat::Runtime
     # The AST node representing the argument list, or just a flat array of pre-evalutated objects
     attr_reader :argument_list
     
+    # The continuation we should pass the answer of this call to
+    attr_reader :continuation
+    
+    attr_reader :arguments, :argument_objects, :block_from_arguments
+    
     extend Forwardable
     def_delegators :callable, :argument_pattern, :contents
     def_delegators :execution_scope, :block
     
-    def initialize(runtime, callable, execution_scope, argument_list)
+    def initialize(runtime, callable, execution_scope, argument_list, &continuation)
       @runtime, @callable              = runtime, callable
       @execution_scope, @argument_list = execution_scope, argument_list
       
+      @continuation = continuation
       @caller_scope = runtime.current_scope
     end
     
     # Merge the arguments into the execution scope, which becomes the scope for the contents, and
     # then execute it on the stack
     def send
-      execution_scope.block = block_from_arguments unless block_from_arguments.nil?
-      execution_scope.merge!(arguments)
-      
-      runtime.execute(contents, execution_scope)
+      eval_arguments do |arguments|
+        eval_block_from_arguments do |block_from_arguments|
+          execution_scope.block = block_from_arguments unless block_from_arguments.nil?
+          execution_scope.merge!(arguments)
+          
+          contents.eval_in_runtime(runtime, execution_scope, &continuation)
+        end
+      end
     end
     
     # If we have anything other than an ArgumentList AST node, we assume the argument list is an 
     # array that does not need evaluating.
-    def argument_objects
-      @argument_objects ||= begin
-        if argument_list.is_a?(Carat::AST::ArgumentList)
-          runtime.execute(argument_list, caller_scope)
-        else
-          argument_list
+    def eval_argument_objects(&continuation)
+      if argument_list.is_a?(Carat::AST::ArgumentList)
+        argument_list.eval_in_runtime(runtime, caller_scope) do |argument_objects|
+          @argument_objects = argument_objects
+          yield @argument_objects
         end
+      else
+        @argument_objects = argument_list
+        yield argument_list
       end
     end
     
     # Return a hash where the argument names of this method are assigned the given values. This
     # method makes sure the "splat" is dealt with correctly
-    def arguments
-      @arguments ||= begin
-        result = {}
+    def eval_arguments
+      eval_argument_objects do |argument_objects|
+        @arguments = {}
         values = argument_objects.clone
         
         argument_pattern.items.each do |item|
-          result[item.name] =
+          @arguments[item.name] =
             case item.pattern_type
               when :splat
                 runtime.constants[:Array].new(values)
@@ -82,7 +94,7 @@ class Carat::Runtime
             end
         end
         
-        result
+        @arguments
       end
     end
     
@@ -92,9 +104,14 @@ class Carat::Runtime
     #      items.map { ... }
     #   2. Any other AST node - when the block is passed in as an expression:
     #      items.map(&block)
-    def block_from_arguments
+    def eval_block_from_arguments
       if argument_list.is_a?(Carat::AST::ArgumentList)
-        @block_from_arguments ||= runtime.execute(argument_list.block, caller_scope)
+        argument_list.block.eval_in_runtime(runtime, caller_scope) do |block_from_arguments|
+          @block_from_arguments = block_from_arguments
+          yield block_from_arguments
+        end
+      else
+        yield nil
       end
     end
     

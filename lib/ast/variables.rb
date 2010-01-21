@@ -7,8 +7,10 @@ module Carat::AST
     end
     
     def eval
-      variable.scope = scope
-      variable.assign(execute(value))
+      eval_child(value) do |value_object|
+        variable.scope = scope
+        yield variable.assign(value_object)
+      end
     end
     
     def inspect
@@ -23,13 +25,11 @@ module Carat::AST
   end
   
   class LocalVariableOrMethodCall < NamedNode
-    def eval
-      scope[name] || call_or_error
-    end
-    
-    def call_or_error
-      if current_object.has_instance_method?(name)
-        current_object.call(name)
+    def eval(&continuation)
+      if scope[name]
+        yield scope[name]
+      elsif current_object.has_instance_method?(name)
+        current_object.call(name, &continuation)
       else
         raise Carat::CaratError, "undefined local variable or method '#{name}'"
       end
@@ -42,13 +42,13 @@ module Carat::AST
     end
     
     def eval
-      current_object.instance_variables[name] || runtime.nil
+      yield(current_object.instance_variables[name] || runtime.nil)
     end
   end
   
   class Constant < NamedNode
     def eval
-      constants[name]
+      yield constants[name]
     end
   end
 end

@@ -1,7 +1,8 @@
 module Carat::AST
   class ExpressionList < NodeList
-    def eval
-      items.reduce(nil) { |last_result, expression| execute(expression) }
+    def eval(&continuation)
+      operation = lambda { |object, accumulation, node| object }
+      fold(items, runtime.nil, operation, &continuation)
     end
   end
   
@@ -20,8 +21,8 @@ module Carat::AST
       Carat::Runtime::Scope.new(module_object)
     end
     
-    def eval
-      execute(contents, contents_scope)
+    def eval(&continuation)
+      eval_child(contents, contents_scope, &continuation)
     end
     
     def inspect
@@ -36,20 +37,30 @@ module Carat::AST
       @name, @superclass, @contents = name, superclass, contents
     end
     
-    def superclass_object
-      superclass && execute(superclass) || constants[:Object]
+    def eval_superclass_object(&continuation)
+      if superclass
+        eval_child(superclass, &continuation)
+      else
+        yield constants[:Object]
+      end
     end
     
-    def class_object
-      constants[name] ||= Carat::Data::ClassInstance.new(runtime, superclass_object, name)
+    def eval_class_object
+      eval_superclass_object do |superclass_object|
+        yield constants[name] ||= Carat::Data::ClassInstance.new(runtime, superclass_object, name)
+      end
     end
     
-    def contents_scope
-      Carat::Runtime::Scope.new(class_object)
+    def eval_contents_scope
+      eval_class_object do |class_object|
+        yield Carat::Runtime::Scope.new(class_object)
+      end
     end
     
-    def eval
-      execute(contents, contents_scope)
+    def eval(&continuation)
+      eval_contents_scope do |contents_scope|
+        eval_child(contents, contents_scope, &continuation)
+      end
     end
     
     def inspect
@@ -66,6 +77,10 @@ module Carat::AST
       @receiver, @name, @argument_pattern, @contents = receiver, name, argument_pattern, contents
     end
     
+    def method_object
+      Carat::Data::MethodInstance.new(runtime, name, argument_pattern, contents)
+    end
+    
     def current_klass
       # If the current object is not a module or class (i.e. it is a normal object), get its class
       # (this could happen, for example, if a method is defined within another method)
@@ -76,25 +91,25 @@ module Carat::AST
       end
     end
     
-    def klass
+    def eval_klass(&continuation)
       if receiver
         # If there is a receiver this is a singleton method definition, so the method should
         # be placed in the method table of the singleton class of the receiver
-        execute(receiver).singleton_class
+        eval_child(receiver) do |receiver_object|
+          yield receiver_object.singleton_class
+        end
       else
         # Otherwise get the class in the current scope
-        current_klass
+        yield current_klass
       end
-    end
-    
-    def method_object
-      Carat::Data::MethodInstance.new(runtime, name, argument_pattern, contents)
     end
     
     # Define a method in the current scope
     def eval
-      klass.method_table[name] = method_object
-      nil
+      eval_klass do |klass|
+        klass.method_table[name] = method_object
+        yield runtime.nil
+      end
     end
     
     def inspect
