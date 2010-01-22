@@ -1,20 +1,13 @@
 module Carat
   class Runtime
     require RUNTIME_PATH + "/scope"
-    require RUNTIME_PATH + "/stack"
     require RUNTIME_PATH + "/environment"
     require RUNTIME_PATH + "/call"
     
-    attr_reader   :constants, :call_stack, :execution_stack
+    attr_reader   :constants, :current_call
     attr_accessor :current_scope, :current_ast
     
     def initialize
-      # The stack containing the AST nodes which are currently being executed
-      @execution_stack = ExecutionStack.new(self)
-      
-      # The stack containing Call objects representing the current chain of method calls
-      @call_stack      = CallStack.new
-      
       # The scope containing the top level variables
       @current_scope = @top_level_scope = Scope.new(nil)
       
@@ -36,11 +29,6 @@ module Carat
       current_scope[:self]
     end
     
-    # The top-most item in the call stack
-    def current_call
-      call_stack.peek
-    end
-    
     def false
       constants[:FalseClass].instance
     end
@@ -53,18 +41,20 @@ module Carat
       constants[:NilClass].instance
     end
     
-    # Create a +Call+ and execute it on the call stack
+    # Create a +Call+ and send it
     def call(callable, scope, argument_list, &continuation)
-      call = Call.new(self, callable, scope, argument_list, &continuation)
-      call_stack.execute(call)
+      previous_call = @current_call
+      @current_call = Call.new(self, callable, scope, argument_list)
+      @current_call.send do |result|
+        @current_call = previous_call
+        yield result
+      end
     end
     
     def execute(root_node)
       @current_ast = root_node
       root_node.runtime = self
-      root_node.eval do |value|
-        puts "Finished: #{value}"
-      end
+      root_node.eval { |final_result| nil }
       @current_ast = nil
     end
     

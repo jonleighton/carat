@@ -10,7 +10,7 @@ class Carat::Runtime
   # 
   # Therefore when a Call instance is created, we take as an argument the scope which the callable
   # should be executed within, but take care of evaluating arguments and assigning them to this
-  # scope, before pushing the method/lambda contents on the stack.
+  # scope, evaluating the contents of the lambda/method.
   # 
   # TODO: It is my intention to add the functionality for methods to be converted to lambdas (with
   # an empty scope) and for lambdas to be able to dynamically change their scope.
@@ -31,42 +31,37 @@ class Carat::Runtime
     # The AST node representing the argument list, or just a flat array of pre-evalutated objects
     attr_reader :argument_list
     
-    # The continuation we should pass the answer of this call to
-    attr_reader :continuation
-    
     attr_reader :arguments, :argument_objects, :block_from_arguments
     
     extend Forwardable
     def_delegators :callable, :argument_pattern, :contents
     def_delegators :execution_scope, :block
     
-    def initialize(runtime, callable, execution_scope, argument_list, &continuation)
-      raise ArgumentError, "no continuation given" unless block_given?
-      
+    def initialize(runtime, callable, execution_scope, argument_list)
       @runtime, @callable              = runtime, callable
       @execution_scope, @argument_list = execution_scope, argument_list
       
-      @continuation = continuation
       @caller_scope = runtime.current_scope
     end
     
     # Merge the arguments into the execution scope, which becomes the scope for the contents, and
-    # then execute it on the stack
-    def send
+    # then evaluate it
+    def send(&continuation)
+      raise ArgumentError, "no continuation given" unless block_given?
+      
       eval_arguments do |arguments|
         eval_block_from_arguments do |block_from_arguments|
           execution_scope.block = block_from_arguments unless block_from_arguments.nil?
           execution_scope.merge!(arguments)
           
+          # TODO: Remove this once the trampoline is implemented - then the runtime can be solely
+          # responsible for keeping track of the currently executing AST
           previous_ast = runtime.current_ast
           runtime.current_ast = contents
           
           contents.eval_in_scope(execution_scope) do |result|
-            #p contents
-            #p arguments
-            #p result
             runtime.current_ast = previous_ast
-            continuation.call(result)
+            yield result
           end
         end
       end
