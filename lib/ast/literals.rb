@@ -1,31 +1,31 @@
 module Carat::AST
-  class True < Node
-    def eval
-      yield runtime.true
+  class True < ValueNode
+    def value_object
+      runtime.true
     end
   end
   
-  class False < Node
-    def eval
-      yield runtime.false
+  class False < ValueNode
+    def value_object
+      runtime.false
     end
   end
   
-  class Nil < Node
-    def eval
-      yield runtime.nil
+  class Nil < ValueNode
+    def value_object
+      runtime.nil
     end
   end
   
-  class String < ValueNode
-    def eval
-      yield Carat::Data::StringInstance.new(runtime, value)
+  class String < MultipleValueNode
+    def value_object
+      Carat::Data::StringInstance.new(runtime, value)
     end
   end
   
-  class Integer < ValueNode
-    def eval
-      yield constants[:Fixnum].get(value)
+  class Integer < MultipleValueNode
+    def value_object
+      constants[:Fixnum].get(value)
     end
   end
   

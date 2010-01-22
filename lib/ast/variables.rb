@@ -6,6 +6,10 @@ module Carat::AST
       @variable, @value = variable, value
     end
     
+    def children
+      [variable, value]
+    end
+    
     def eval
       eval_child(value) do |value_object|
         variable.scope = scope

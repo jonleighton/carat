@@ -69,6 +69,7 @@ module Carat
     end
     
     def execute(root_node)
+      root_node.runtime = self
       root_node.eval_in_runtime(self, @top_level_scope, &final_continuation)
     end
     

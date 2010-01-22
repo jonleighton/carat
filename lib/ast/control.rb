@@ -6,6 +6,10 @@ module Carat::AST
       @condition, @true_node, @false_node = condition, true_node, false_node
     end
     
+    def children
+      [condition, true_node, false_node]
+    end
+    
     def eval_condition
       eval_child(condition) do |condition_value|
         yield condition_value != runtime.false &&

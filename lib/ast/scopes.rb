@@ -13,6 +13,10 @@ module Carat::AST
       @name, @contents = name, contents
     end
     
+    def children
+      [contents]
+    end
+    
     def module_object
       constants[name] ||= Carat::Data::ModuleInstance.new(runtime, name)
     end
@@ -35,6 +39,10 @@ module Carat::AST
     
     def initialize(name, superclass, contents)
       @name, @superclass, @contents = name, superclass, contents
+    end
+    
+    def children
+      [superclass, contents]
     end
     
     def eval_superclass_object(&continuation)
@@ -75,6 +83,10 @@ module Carat::AST
     
     def initialize(receiver, name, argument_pattern, contents)
       @receiver, @name, @argument_pattern, @contents = receiver, name, argument_pattern, contents
+    end
+    
+    def children
+      [receiver, argument_pattern, contents]
     end
     
     def method_object
@@ -121,16 +133,17 @@ module Carat::AST
   end
   
   class ArgumentPattern < NodeList
-    # TODO: This shouldn't really be a Node because it is never really evalutated on its own. It
-    # should really just be a normal object which is used to store some information. However,
-    # to do this I need to extract the AST printing from "inspect" methods into a separate class.
     class Item < Node
       attr_reader :name, :pattern_type, :default
       
       def initialize(name, pattern_type, default = nil)
         @name, @pattern_type, @default = name, pattern_type, default
       end
-    
+      
+      def children
+        [default]
+      end
+      
       def inspect
         type + "[#{name}, #{pattern_type.inspect}]" + (default && " = \n" + indent(default.inspect) || '')
       end

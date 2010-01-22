@@ -6,6 +6,10 @@ module Carat::AST
       @receiver, @name, @arguments = receiver, name, arguments
     end
     
+    def children
+      [receiver, arguments]
+    end
+    
     def eval_receiver(&continuation)
       if receiver
         eval_child(receiver, &continuation)
@@ -33,6 +37,10 @@ module Carat::AST
       
       def initialize(expression, argument_type = :normal)
         @expression, @argument_type = expression, argument_type
+      end
+      
+      def children
+        [expression]
       end
       
       def eval(&continuation)
@@ -87,6 +95,10 @@ module Carat::AST
     
     def initialize(argument_pattern, contents)
       @argument_pattern, @contents = argument_pattern, contents
+    end
+    
+    def children
+      [argument_pattern, contents]
     end
     
     def eval
