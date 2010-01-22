@@ -1,5 +1,5 @@
 module Kernel
-  def puts
+  def puts(obj)
     Carat.primitive "puts"
   end
 

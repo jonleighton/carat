@@ -17,12 +17,12 @@ module Carat::AST
       end
     end
     
-    def eval
+    def eval(&continuation)
       eval_condition do |value|
         if value
-          eval_child(true_node)
+          eval_child(true_node, &continuation)
         else
-          eval_child(false_node)
+          eval_child(false_node, &continuation)
         end
       end
     end

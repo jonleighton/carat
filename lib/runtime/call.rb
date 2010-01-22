@@ -41,6 +41,8 @@ class Carat::Runtime
     def_delegators :execution_scope, :block
     
     def initialize(runtime, callable, execution_scope, argument_list, &continuation)
+      raise ArgumentError, "no continuation given" unless block_given?
+      
       @runtime, @callable              = runtime, callable
       @execution_scope, @argument_list = execution_scope, argument_list
       
@@ -56,7 +58,16 @@ class Carat::Runtime
           execution_scope.block = block_from_arguments unless block_from_arguments.nil?
           execution_scope.merge!(arguments)
           
-          contents.eval_in_scope(execution_scope, &continuation)
+          previous_ast = runtime.current_ast
+          runtime.current_ast = contents
+          
+          contents.eval_in_scope(execution_scope) do |result|
+            #p contents
+            #p arguments
+            #p result
+            runtime.current_ast = previous_ast
+            continuation.call(result)
+          end
         end
       end
     end

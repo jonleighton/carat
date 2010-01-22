@@ -6,10 +6,12 @@ module Carat::Data
       else
         # object.call(:to_s) gets the StringInstance representing the object, and then calling
         # to_s actually gets the string.
-        Kernel.puts(object.call(:to_s).to_s)
+        object.call(:to_s) do |object_as_string|
+          Kernel.puts(object_as_string.to_s)
+        end
       end
       
-      runtime.nil
+      yield runtime.nil
     end
     
     # Yield the caller's current block

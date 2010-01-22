@@ -6,7 +6,7 @@ module Carat
     require RUNTIME_PATH + "/call"
     
     attr_reader   :constants, :call_stack, :execution_stack
-    attr_accessor :current_scope
+    attr_accessor :current_scope, :current_ast
     
     def initialize
       # The stack containing the AST nodes which are currently being executed
@@ -53,17 +53,19 @@ module Carat
       constants[:NilClass].instance
     end
     
-    def execute(root_node)
-      root_node.runtime = self
-      root_node.eval do |value|
-        puts "Finished: #{value}"
-      end
-    end
-    
     # Create a +Call+ and execute it on the call stack
     def call(callable, scope, argument_list, &continuation)
       call = Call.new(self, callable, scope, argument_list, &continuation)
       call_stack.execute(call)
+    end
+    
+    def execute(root_node)
+      @current_ast = root_node
+      root_node.runtime = self
+      root_node.eval do |value|
+        puts "Finished: #{value}"
+      end
+      @current_ast = nil
     end
     
     # Parse some code and then execute its AST
@@ -84,10 +86,11 @@ module Carat
           puts exception.full_message
         else
           puts "Error: #{exception.message}"
-          puts exception.backtrace.join("\n")
+          puts exception.backtrace[0..40].join("\n")
+          puts "[Backtrace truncated]" if exception.backtrace.length > 40
           puts
-          puts "Stack:"
-          p execution_stack
+          puts "AST:"
+          p @current_ast
       end
       exit 1
     end

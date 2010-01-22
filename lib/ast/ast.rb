@@ -20,7 +20,7 @@ module Carat
       end
       
       def eval_in_scope(scope, &continuation)
-        raise Carat::CaratError, "no continuation given" unless block_given?
+        raise ArgumentError, "no continuation given" unless block_given?
         
         # Store the current scope, and then update the current scope to be the scope needed when
         # evaluating the child node
@@ -36,7 +36,11 @@ module Carat
       end
       
       def eval_child(node, new_scope = nil, &continuation)
-        node.eval_in_scope(new_scope || current_scope, &continuation)
+        if node.nil?
+          yield runtime.nil
+        else
+          node.eval_in_scope(new_scope || current_scope, &continuation)
+        end
       end
       
       def eval
@@ -121,15 +125,15 @@ module Carat
         items.empty?
       end
       
-      # This is similar to a 'foldr' or 'inject' function, but written for this specific context
+      # This is similar to a 'foldl' or 'inject' function, but written for this specific context
       # where we are using continuation passing style
       def fold(nodes, base, operation, &continuation)
         if nodes.empty?
           yield base
         else
-          node = nodes.first
-          eval_child(node) do |object|
-            fold(nodes.drop(1), base, operation) do |accumulation|
+          fold(nodes[0..-2], base, operation) do |accumulation|
+            node = nodes.last
+            eval_child(node) do |object|
               yield operation.call(object, accumulation, node)
             end
           end

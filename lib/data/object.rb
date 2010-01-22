@@ -44,10 +44,16 @@ module Carat::Data
       lookup_instance_method(name) && true || false
     end
     
+    def empty_argument_list
+      argument_list = Carat::AST::ArgumentList.new
+      argument_list.runtime = runtime
+      argument_list
+    end
+    
     # Call the method with a given name, with the given AST argument list
-    def call(method_name, argument_list = Carat::AST::ArgumentList.new, &continuation)
+    def call(method_name, argument_list = nil, &continuation)
       method = lookup_instance_method!(method_name)
-      runtime.call(method, method_scope, argument_list, &continuation)
+      runtime.call(method, method_scope, argument_list || empty_argument_list, &continuation)
     end
     
     # A scope for evaluating the method call, with this object as 'self'

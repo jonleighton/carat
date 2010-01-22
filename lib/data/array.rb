@@ -12,27 +12,27 @@ module Carat::Data
     
     def primitive_initialize(*contents)
       @contents = contents
-      self
+      yield self
     end
     
     def primitive_length
-      constants[:Fixnum].get(@contents.length)
+      yield constants[:Fixnum].get(@contents.length)
     end
     
     def primitive_each
       @contents.each do |item|
         call(:yield, [item])
       end
-      self
+      yield self
     end
     
     def primitive_push(item)
       @contents << item
-      self
+      yield self
     end
     
     def primitive_at(i)
-      @contents[i.value] || runtime.nil
+      yield @contents[i.value] || runtime.nil
     end
   end
 end

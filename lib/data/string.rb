@@ -24,15 +24,15 @@ module Carat::Data
     # ***** PRIMITIVES ***** #
     
     def primitive_inspect
-      real_klass.new(contents.inspect)
+      yield real_klass.new(contents.inspect)
     end
     
     def primitive_plus(other)
-      real_klass.new(contents + other.call(:to_s).contents)
+      yield real_klass.new(contents + other.call(:to_s).contents)
     end
     
     def primitive_push(other)
-      real_klass.new(contents << other.contents)
+      yield real_klass.new(contents << other.contents)
     end
   end
 end

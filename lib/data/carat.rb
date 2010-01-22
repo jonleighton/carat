@@ -2,9 +2,9 @@ module Carat::Data
   class CaratClass < ClassInstance
     # This is a special version of call which applies only to the Carat object, and is capable
     # of invoking primitives when Carat.primitive is called.
-    def call(method_name, argument_list = Carat::AST::ArgumentList.new, &continuation)
+    def call(method_name, argument_list = nil, &continuation)
       if method_name == :primitive
-        call_primitive(argument_list, &continuation)
+        call_primitive(argument_list || empty_argument_list, &continuation)
       else
         super
       end
@@ -17,13 +17,13 @@ module Carat::Data
         
         method_name = "primitive_#{name}"
         if current_object.respond_to?(method_name)
-          result = current_object.send(method_name, *current_call.argument_objects)
-          
-          unless result.is_a?(Carat::Data::ObjectInstance)
-            raise Carat::CaratError, "primitive '#{name}' did not return an ObjectInstance: #{result.inspect}"
+          current_object.send(method_name, *current_call.argument_objects) do |result|
+            unless result.is_a?(Carat::Data::ObjectInstance)
+              raise Carat::CaratError, "primitive '#{name}' did not return an ObjectInstance: #{result.inspect}"
+            end
+            
+            yield result
           end
-          
-          yield result
         else
           raise Carat::CaratError, "undefined primitive '#{name}' for #{current_object}"
         end

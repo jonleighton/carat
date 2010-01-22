@@ -22,15 +22,15 @@ module Carat::Data
     end
     
     def primitive_plus(other)
-      klass.get(value + other.value)
+      yield klass.get(value + other.value)
     end
     
     def primitive_minus(other)
-      klass.get(value - other.value)
+      yield klass.get(value - other.value)
     end
     
     def primitive_to_s
-      constants[:String].new(value.to_s)
+      yield constants[:String].new(value.to_s)
     end
   end
 end
