@@ -94,7 +94,7 @@ class Carat::Runtime
             end
         end
         
-        @arguments
+        yield @arguments
       end
     end
     
@@ -105,7 +105,7 @@ class Carat::Runtime
     #   2. Any other AST node - when the block is passed in as an expression:
     #      items.map(&block)
     def eval_block_from_arguments
-      if argument_list.is_a?(Carat::AST::ArgumentList)
+      if argument_list.is_a?(Carat::AST::ArgumentList) && argument_list.block
         argument_list.block.eval_in_runtime(runtime, caller_scope) do |block_from_arguments|
           @block_from_arguments = block_from_arguments
           yield block_from_arguments
