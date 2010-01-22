@@ -56,7 +56,7 @@ class Carat::Runtime
           execution_scope.block = block_from_arguments unless block_from_arguments.nil?
           execution_scope.merge!(arguments)
           
-          contents.eval_in_runtime(runtime, execution_scope, &continuation)
+          contents.eval_in_scope(execution_scope, &continuation)
         end
       end
     end
@@ -65,7 +65,7 @@ class Carat::Runtime
     # array that does not need evaluating.
     def eval_argument_objects(&continuation)
       if argument_list.is_a?(Carat::AST::ArgumentList)
-        argument_list.eval_in_runtime(runtime, caller_scope) do |argument_objects|
+        argument_list.eval_in_scope(caller_scope) do |argument_objects|
           @argument_objects = argument_objects
           yield @argument_objects
         end
@@ -106,7 +106,7 @@ class Carat::Runtime
     #      items.map(&block)
     def eval_block_from_arguments
       if argument_list.is_a?(Carat::AST::ArgumentList) && argument_list.block
-        argument_list.block.eval_in_runtime(runtime, caller_scope) do |block_from_arguments|
+        argument_list.block.eval_in_scope(caller_scope) do |block_from_arguments|
           @block_from_arguments = block_from_arguments
           yield block_from_arguments
         end

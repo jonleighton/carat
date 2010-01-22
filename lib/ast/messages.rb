@@ -14,7 +14,7 @@ module Carat::AST
       if receiver
         eval_child(receiver, &continuation)
       else
-        yield scope[:self]
+        yield current_object
       end
     end
     
@@ -102,7 +102,7 @@ module Carat::AST
     end
     
     def eval
-      yield Carat::Data::LambdaInstance.new(runtime, argument_pattern, contents, scope)
+      yield Carat::Data::LambdaInstance.new(runtime, argument_pattern, contents, current_scope)
     end
     
     def inspect

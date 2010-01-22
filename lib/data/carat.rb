@@ -11,7 +11,7 @@ module Carat::Data
     end
     
     def call_primitive(argument_list)
-      argument_list.eval_in_runtime(runtime) do |argument_list_object|
+      argument_list.eval_in_scope(current_scope) do |argument_list_object|
         name = argument_list_object[0]
         raise Carat::CaratError, "invalid argument to Carat.primitive" unless name.is_a?(StringInstance)
         
@@ -23,7 +23,7 @@ module Carat::Data
             raise Carat::CaratError, "primitive '#{name}' did not return an ObjectInstance: #{result.inspect}"
           end
           
-          result
+          yield result
         else
           raise Carat::CaratError, "undefined primitive '#{name}' for #{current_object}"
         end

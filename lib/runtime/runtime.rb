@@ -5,7 +5,8 @@ module Carat
     require RUNTIME_PATH + "/environment"
     require RUNTIME_PATH + "/call"
     
-    attr_reader :constants, :call_stack, :execution_stack
+    attr_reader   :constants, :call_stack, :execution_stack
+    attr_accessor :current_scope
     
     def initialize
       # The stack containing the AST nodes which are currently being executed
@@ -15,7 +16,7 @@ module Carat
       @call_stack      = CallStack.new
       
       # The scope containing the top level variables
-      @top_level_scope = Scope.new(nil)
+      @current_scope = @top_level_scope = Scope.new(nil)
       
       # Constants are defined globally
       @constants       = {}
@@ -29,16 +30,6 @@ module Carat
     # The runtime is initialized when the environment has been set up
     def initialized?
       @initialized == true
-    end
-    
-    # The top-most AST node being executed
-    def current_node
-      execution_stack.peek
-    end
-    
-    # The scope in which the current node is executed
-    def current_scope
-      current_node && current_node.scope || @top_level_scope
     end
     
     def current_object
@@ -62,15 +53,11 @@ module Carat
       constants[:NilClass].instance
     end
     
-    def final_continuation
-      lambda do |value|
-        puts "Finished: #{value}"
-      end
-    end
-    
     def execute(root_node)
       root_node.runtime = self
-      root_node.eval_in_runtime(self, @top_level_scope, &final_continuation)
+      root_node.eval do |value|
+        puts "Finished: #{value}"
+      end
     end
     
     # Create a +Call+ and execute it on the call stack

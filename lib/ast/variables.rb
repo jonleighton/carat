@@ -12,7 +12,6 @@ module Carat::AST
     
     def eval
       eval_child(value) do |value_object|
-        variable.scope = scope
         yield variable.assign(value_object)
       end
     end
@@ -24,14 +23,14 @@ module Carat::AST
   
   class LocalVariable < NamedNode
     def assign(value)
-      scope[name] = value
+      current_scope[name] = value
     end
   end
   
   class LocalVariableOrMethodCall < NamedNode
     def eval(&continuation)
-      if scope[name]
-        yield scope[name]
+      if current_scope[name]
+        yield current_scope[name]
       elsif current_object.has_instance_method?(name)
         current_object.call(name, &continuation)
       else
