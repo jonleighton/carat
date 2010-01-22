@@ -71,8 +71,8 @@ module Carat::AST
       end
     end
     
-    def append_operation
-      lambda do |object, accumulation, node|
+    def eval(&continuation)
+      append = lambda do |object, accumulation, node|
         if node.argument_type == :splat
           object.call(:to_a) do |object_as_array|
             objects += object_as_array.contents
@@ -81,10 +81,8 @@ module Carat::AST
           accumulation << object
         end
       end
-    end
-    
-    def eval(&continuation)
-      fold(non_block_items, [], append_operation, &continuation)
+      
+      eval_fold([], append, non_block_items, &continuation)
     end
   end
   

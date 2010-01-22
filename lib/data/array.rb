@@ -2,8 +2,9 @@ module Carat::Data
   class ArrayClass < ClassInstance
     def new(items)
       object = ArrayInstance.new(runtime, self)
-      object.primitive_initialize(*items)
-      object
+      object.primitive_initialize(*items) do |result|
+        yield object
+      end
     end
   end
   
@@ -19,11 +20,15 @@ module Carat::Data
       yield constants[:Fixnum].get(@contents.length)
     end
     
-    def primitive_each
-      @contents.each do |item|
-        call(:yield, [item])
+    def primitive_each(&continuation)
+      yield_operation = lambda do |item, accumulation, &inner_continuation|
+        call(:yield, [item], &inner_continuation)
       end
-      yield self
+      
+      runtime.fold(nil, yield_operation, @contents) do |result|
+        # Throw away result and return the array
+        yield self
+      end
     end
     
     def primitive_push(item)

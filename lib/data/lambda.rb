@@ -25,8 +25,8 @@ module Carat::Data
     
     ##### PRIMITIVES #####
     
-    def primitive_call(*args)
-      runtime.call(self, evaluation_scope, args)
+    def primitive_call(*args, &continuation)
+      runtime.call(self, evaluation_scope, args, &continuation)
     end
   end
 end

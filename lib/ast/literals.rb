@@ -30,9 +30,13 @@ module Carat::AST
   end
   
   class Array < NodeList
-    def eval
-      eval_array(items) do |item_objects|
-        yield constants[:Array].new(item_objects)
+    def eval(&continuation)
+      append = lambda do |object, accumulation, node|
+        accumulation << object
+      end
+      
+      eval_fold([], append) do |item_objects|
+        constants[:Array].new(item_objects, &continuation)
       end
     end
   end

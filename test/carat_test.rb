@@ -10,8 +10,11 @@ class CaratTest < Test::Unit::TestCase
     output = StringIO.new
     $stdout = output
     Carat.run(code)
-    $stdout = old_stdout
     output.string
+  rescue SystemExit
+    output.string
+  ensure
+    $stdout = old_stdout
   end
   
   def test_lit

@@ -2,7 +2,7 @@ module Carat::AST
   class ExpressionList < NodeList
     def eval(&continuation)
       operation = lambda { |object, accumulation, node| object }
-      fold(items, runtime.nil, operation, &continuation)
+      eval_fold(runtime.nil, operation, &continuation)
     end
   end
   

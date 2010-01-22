@@ -41,6 +41,24 @@ module Carat
       constants[:NilClass].instance
     end
     
+    # This is similar to a 'foldl' or 'inject' function, but written for this specific context
+    # where we are using continuation passing style
+    def fold(base, operation, items, limit = nil, &continuation)
+      # Set the limit. We will process the items in the range items[0...limit]
+      limit ||= items.length
+      
+      if limit == 0
+        # Base case: there are no items to process
+        yield base
+      else
+        # Inductive case: process all the items up to the limit, except the last one. Then combine
+        # the last one with the rest according to the 'operation' function provided.
+        fold(base, operation, items, limit - 1) do |accumulation|
+          operation.call(items[limit - 1], accumulation, &continuation)
+        end
+      end
+    end
+    
     # Create a +Call+ and send it
     def call(callable, scope, argument_list, &continuation)
       previous_call = @current_call

@@ -125,25 +125,16 @@ module Carat
         items.empty?
       end
       
-      # This is similar to a 'foldl' or 'inject' function, but written for this specific context
-      # where we are using continuation passing style
-      def fold(nodes, base, operation, &continuation)
-        if nodes.empty?
-          yield base
-        else
-          fold(nodes[0..-2], base, operation) do |accumulation|
-            node = nodes.last
-            eval_child(node) do |object|
-              yield operation.call(object, accumulation, node)
-            end
+      # Fold the items by evaluating each one in turn and then passing the evaluated object to an
+      # operation function
+      def eval_fold(base, operation, items = self.items, &continuation)
+        fold_operation = lambda do |node, accumulation, &inner_continuation|
+          eval_child(node) do |object|
+            inner_continuation.call operation.call(object, accumulation, node)
           end
         end
-      end
-      
-      # Evaluate each item in the array and return a new array with the answers
-      def eval_array(nodes, &continuation)
-        append = Proc.new { |object, accumulation| accumulation << object }
-        fold(nodes, [], append, &continuation)
+        
+        runtime.fold(base, fold_operation, items, &continuation)
       end
       
       def inspect
