@@ -72,13 +72,14 @@ module Carat::AST
     end
     
     def eval(&continuation)
-      append = lambda do |object, accumulation, node|
+      append = lambda do |object, arguments, node, &append_continuation|
         if node.argument_type == :splat
           object.call(:to_a) do |object_as_array|
-            accumulation += object_as_array.contents
+            arguments += object_as_array.contents
+            append_continuation.call(arguments)
           end
         else
-          accumulation << object
+          append_continuation.call(arguments << object)
         end
       end
       

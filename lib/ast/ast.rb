@@ -129,12 +129,11 @@ module Carat
       # operation function
       def eval_fold(base_answer, operation, items = self.items, &continuation)
         # This lambda evaluates the AST node it is passed, and then computes the next answer for the
-        # fold by combining the result with the current answer, using the operation provided. It 
-        # then passes this next answer to the continuation of the fold operation.
+        # fold by combining the result with the current answer, using the operation provided, which
+        # then yields to the fold_continuation
         fold_operation = lambda do |node, current_answer, &fold_continuation|
           eval_child(node) do |result|
-            next_answer = operation.call(result, current_answer, node)
-            fold_continuation.call(next_answer)
+            operation.call(result, current_answer, node, &fold_continuation)
           end
         end
         
