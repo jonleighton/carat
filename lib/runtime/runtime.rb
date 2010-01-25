@@ -1,6 +1,7 @@
 module Carat
   class Runtime
     require RUNTIME_PATH + "/scope"
+    require RUNTIME_PATH + "/partial_answer"
     require RUNTIME_PATH + "/environment"
     require RUNTIME_PATH + "/call"
     
@@ -86,7 +87,10 @@ module Carat
     def execute(root_node)
       @current_ast = root_node
       root_node.runtime = self
-      root_node.eval { |final_result| nil }
+      current_result = root_node.eval { |final_result| nil }
+      while current_result.is_a?(PartialAnswer)
+        current_result = current_result.eval
+      end
       @current_ast = nil
     end
     

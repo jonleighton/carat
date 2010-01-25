@@ -60,9 +60,11 @@ class Carat::Runtime
           previous_ast = runtime.current_ast
           runtime.current_ast = contents
           
-          contents.eval_in_scope(execution_scope) do |result|
-            runtime.current_ast = previous_ast
-            yield result
+          PartialAnswer.new(contents) do |contents|
+            contents.eval_in_scope(execution_scope) do |result|
+              runtime.current_ast = previous_ast
+              yield result
+            end
           end
         end
       end
