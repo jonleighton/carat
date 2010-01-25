@@ -37,10 +37,10 @@ class Array
     result = ""
     i = 1
     each do |item|
-      result << item
+      result << item.to_s
       
       if i != length
-        result << joiner
+        result << joiner.to_s
       end
       
       i = i + 1

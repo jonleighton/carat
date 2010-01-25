@@ -127,14 +127,18 @@ module Carat
       
       # Fold the items by evaluating each one in turn and then passing the evaluated object to an
       # operation function
-      def eval_fold(base, operation, items = self.items, &continuation)
-        fold_operation = lambda do |node, accumulation, &inner_continuation|
-          eval_child(node) do |object|
-            inner_continuation.call operation.call(object, accumulation, node)
+      def eval_fold(base_answer, operation, items = self.items, &continuation)
+        # This lambda evaluates the AST node it is passed, and then computes the next answer for the
+        # fold by combining the result with the current answer, using the operation provided. It 
+        # then passes this next answer to the continuation of the fold operation.
+        fold_operation = lambda do |node, current_answer, &fold_continuation|
+          eval_child(node) do |result|
+            next_answer = operation.call(result, current_answer, node)
+            fold_continuation.call(next_answer)
           end
         end
         
-        runtime.fold(base, fold_operation, items, &continuation)
+        runtime.fold(base_answer, fold_operation, items, &continuation)
       end
       
       def inspect

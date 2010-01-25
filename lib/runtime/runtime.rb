@@ -43,18 +43,30 @@ module Carat
     
     # This is similar to a 'foldl' or 'inject' function, but written for this specific context
     # where we are using continuation passing style
-    def fold(base, operation, items, limit = nil, &continuation)
-      # Set the limit. We will process the items in the range items[0...limit]
-      limit ||= items.length
-      
-      if limit == 0
-        # Base case: there are no items to process
-        yield base
+    def fold(current_answer, operation, items, start = 0, &continuation)
+      if start == items.length
+        # ** Base Case ** #
+        # There are no items to process because we have got to the end of the array, so yield the
+        # current answer to the continuation, taking us out of the fold operation
+        yield current_answer
       else
-        # Inductive case: process all the items up to the limit, except the last one. Then combine
-        # the last one with the rest according to the 'operation' function provided.
-        fold(base, operation, items, limit - 1) do |accumulation|
-          operation.call(items[limit - 1], accumulation, &continuation)
+        # ** Inductive Case ** #
+        # Pass the first item in items[start...items.length], along with the current answer, to the
+        # operation. The operation should combine them in some way to form the next answer, before
+        # yielding to its continuation, which will then fold items[(start+1)...items.length].
+        operation.call(items[start], current_answer) do |next_answer|
+          fold(next_answer, operation, items, start + 1, &continuation)
+        end
+      end
+    end
+    
+    # This is an 'each' function written in continuation passing style
+    def each(operation, items, final_answer, start = 0, &continuation)
+      if start == items.length
+        yield final_answer
+      else
+        operation.call(items[start]) do
+          each(operation, items, final_answer, start + 1, &continuation)
         end
       end
     end

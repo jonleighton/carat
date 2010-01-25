@@ -23,14 +23,11 @@ module Carat::Data
     end
     
     def primitive_each(&continuation)
-      yield_operation = lambda do |item, accumulation, &inner_continuation|
-        call(:yield, [item], &inner_continuation)
+      yield_operation = lambda do |item, &each_continuation|
+        call(:yield, [item], &each_continuation)
       end
       
-      runtime.fold(nil, yield_operation, @contents) do |result|
-        # Throw away result and return the array
-        yield self
-      end
+      runtime.each(yield_operation, @contents, self, &continuation)
     end
     
     def primitive_push(item)
