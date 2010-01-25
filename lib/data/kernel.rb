@@ -3,15 +3,15 @@ module Carat::Data
     def primitive_puts(object)
       if object == runtime.nil
         Kernel.puts("nil")
+        yield runtime.nil
       else
         # object.call(:to_s) gets the StringInstance representing the object, and then calling
         # to_s actually gets the string.
         object.call(:to_s) do |object_as_string|
           Kernel.puts(object_as_string.to_s)
+          yield runtime.nil
         end
       end
-      
-      yield runtime.nil
     end
     
     # Yield the caller's current block

@@ -21,6 +21,8 @@ module Carat::Data
       value && value.to_s || super
     end
     
+    # ***** Primitives ***** #
+    
     def primitive_plus(other)
       yield klass.get(value + other.value)
     end

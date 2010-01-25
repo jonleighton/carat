@@ -96,18 +96,18 @@ module Carat::Data
       ":to_s=#{to_s}>"
     end
     
-    # ***** PRIMITIVES ***** #
+    # ***** Primitives ***** #
     
     def primitive_equality_op(other)
       if carat_object_id == other.carat_object_id
-        runtime.true
+        yield runtime.true
       else
-        runtime.false
+        yield runtime.false
       end
     end
     
     def primitive_object_id
-      constants[:Fixnum].get(carat_object_id)
+      yield constants[:Fixnum].get(carat_object_id)
     end
   end
 end

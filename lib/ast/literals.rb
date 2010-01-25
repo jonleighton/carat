@@ -36,7 +36,7 @@ module Carat::AST
       end
       
       eval_fold([], append) do |item_objects|
-        constants[:Array].new(item_objects, &continuation)
+        yield constants[:Array].new(item_objects)
       end
     end
   end

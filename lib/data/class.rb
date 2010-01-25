@@ -69,7 +69,7 @@ module Carat::Data
     # ***** Primitives ***** #
     
     def primitive_allocate
-      instance_class.new(runtime, self)
+      yield instance_class.new(runtime, self)
     end
   end
 end

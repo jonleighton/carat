@@ -75,7 +75,7 @@ module Carat::AST
       append = lambda do |object, accumulation, node|
         if node.argument_type == :splat
           object.call(:to_a) do |object_as_array|
-            objects += object_as_array.contents
+            accumulation += object_as_array.contents
           end
         else
           accumulation << object

@@ -1,19 +1,21 @@
 module Carat::Data
   class ArrayClass < ClassInstance
     def new(items)
-      object = ArrayInstance.new(runtime, self)
-      object.primitive_initialize(*items) do |result|
-        yield object
-      end
+      ArrayInstance.new(runtime, self, items)
     end
   end
   
   class ArrayInstance < ObjectInstance
     attr_reader :contents
     
+    def initialize(runtime, klass, contents = [])
+      super(runtime, klass)
+      @contents = contents
+    end
+    
     def primitive_initialize(*contents)
       @contents = contents
-      yield self
+      yield runtime.nil
     end
     
     def primitive_length

@@ -49,9 +49,10 @@ class Carat::Runtime
     def send(&continuation)
       raise ArgumentError, "no continuation given" unless block_given?
       
-      eval_arguments do |arguments|
-        eval_block_from_arguments do |block_from_arguments|
-          execution_scope.block = block_from_arguments unless block_from_arguments.nil?
+      eval_block_from_arguments do |block_from_arguments|
+        execution_scope.block = block_from_arguments unless block_from_arguments.nil?
+        
+        eval_arguments do |arguments|
           execution_scope.merge!(arguments)
           
           # TODO: Remove this once the trampoline is implemented - then the runtime can be solely
@@ -94,7 +95,7 @@ class Carat::Runtime
               when :splat
                 runtime.constants[:Array].new(values)
               when :block_pass
-                block
+                block || runtime.nil
               else
                 values.shift
             end

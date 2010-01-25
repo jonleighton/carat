@@ -21,7 +21,7 @@ module Carat::Data
       contents
     end
     
-    # ***** PRIMITIVES ***** #
+    # ***** Primitives ***** #
     
     def primitive_inspect
       yield real_klass.new(contents.inspect)

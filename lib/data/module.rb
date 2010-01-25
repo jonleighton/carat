@@ -66,13 +66,11 @@ module Carat::Data
     
     def primitive_include(mod)
       self.super = IncludeClassInstance.new(runtime, mod, self.super)
-      mod
+      yield mod
     end
     
-    alias_method :primitive_ancestors, :ancestors
-    
     def primitive_name
-      name.to_s
+      yield name.to_s
     end
     
     alias_method :primitive_inspect, :primitive_name
