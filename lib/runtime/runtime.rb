@@ -61,6 +61,8 @@ module Carat
     
     # Create a +Call+ and send it
     def call(callable, scope, argument_list, &continuation)
+      raise ArgumentError, "no continuation given" unless block_given?
+      
       previous_call = @current_call
       @current_call = Call.new(self, callable, scope, argument_list)
       @current_call.send do |result|

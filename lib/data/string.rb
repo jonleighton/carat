@@ -5,7 +5,7 @@ module Carat::Data
     end
   
     def primitive_allocate
-      StringInstance.new(runtime, "")
+      yield StringInstance.new(runtime, "")
     end
   end
   
@@ -28,7 +28,9 @@ module Carat::Data
     end
     
     def primitive_plus(other)
-      yield real_klass.new(contents + other.call(:to_s).contents)
+      other.call(:to_s) do |other_as_string|
+        yield real_klass.new(contents + other_as_string.contents)
+      end
     end
     
     def primitive_push(other)

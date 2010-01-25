@@ -1,7 +1,7 @@
 module Carat::Data
   class LambdaClass < ClassInstance
     def primitive_new
-      current_call.block
+      yield current_call.block
     end
   end
   
