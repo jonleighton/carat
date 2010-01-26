@@ -55,14 +55,11 @@ class Carat::Runtime
         eval_arguments do |arguments|
           execution_scope.merge!(arguments)
           
-          # TODO: Remove this once the trampoline is implemented - then the runtime can be solely
-          # responsible for keeping track of the currently executing AST
-          previous_ast = runtime.current_ast
-          runtime.current_ast = contents
-          
           lambda do
+            runtime.ast_stack << contents
+            
             contents.eval_in_scope(execution_scope) do |result|
-              runtime.current_ast = previous_ast
+              runtime.ast_stack.pop
               yield result
             end
           end

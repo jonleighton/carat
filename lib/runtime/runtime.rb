@@ -1,12 +1,11 @@
 module Carat
   class Runtime
     require RUNTIME_PATH + "/scope"
-    require RUNTIME_PATH + "/partial_answer"
     require RUNTIME_PATH + "/environment"
     require RUNTIME_PATH + "/call"
     
-    attr_reader   :constants, :current_call
-    attr_accessor :current_scope, :current_ast
+    attr_reader   :constants, :current_call, :ast_stack
+    attr_accessor :current_scope
     
     def initialize
       # The scope containing the top level variables
@@ -85,13 +84,13 @@ module Carat
     end
     
     def execute(root_node)
-      @current_ast = root_node
+      @ast_stack = [root_node]
       root_node.runtime = self
       current_result = root_node.eval { |final_result| nil }
       while current_result.is_a?(Proc)
         current_result = current_result.call
       end
-      @current_ast = nil
+      @ast_stack = []
     end
     
     # Parse some code and then execute its AST
@@ -115,8 +114,11 @@ module Carat
           puts exception.backtrace[0..40].join("\n")
           puts "[Backtrace truncated]" if exception.backtrace.length > 40
           puts
-          puts "AST:"
-          p @current_ast
+          puts "AST stack:"
+          ast_stack.each do |ast|
+            p ast
+            puts
+          end
       end
       exit 1
     end
