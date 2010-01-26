@@ -23,5 +23,10 @@ module Carat::Data
         raise Carat::CaratError, "no block to yield in #{current_call.inspect}"
       end
     end
+    
+    # Throw away the current continuation and call the failure continuation
+    def primitive_raise(&continuation)
+      runtime.failure_continuation.call
+    end
   end
 end

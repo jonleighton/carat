@@ -5,7 +5,7 @@ module Carat
     require RUNTIME_PATH + "/call"
     
     attr_reader   :constants, :current_call, :ast_stack
-    attr_accessor :current_scope
+    attr_accessor :current_scope, :failure_continuation
     
     def initialize
       # The scope containing the top level variables
@@ -14,6 +14,7 @@ module Carat
       # Constants are defined globally
       @constants       = {}
       
+      # Set up basic environment - default set of classes & objects, etc
       @environment = Environment.new(self)
       @environment.setup
       @initialized = true
@@ -103,10 +104,15 @@ module Carat
     def execute(root_node)
       @ast_stack = [root_node]
       root_node.runtime = self
+      self.failure_continuation = lambda do
+        puts "Exception raised"
+      end
+      
       current_result = root_node.eval { |final_result| nil }
       while current_result.is_a?(Proc)
         current_result = current_result.call
       end
+      
       @ast_stack = []
     end
     
