@@ -83,6 +83,23 @@ module Carat
       end
     end
     
+    # This is the starting point for executing an AST. Every time we decend into a method call, we
+    # are executing a new AST before returning to the previous one. We track this in @ast_stack for
+    # debugging.
+    # 
+    # AST nodes need a reference to the runtime in order to be evaluated. We set the runtime on the
+    # root node, and it handles recursively setting the runtime on all decendent nodes.
+    # 
+    # Normally, in Continuation Passing Style, a stack of continuations is built up right until the
+    # end of the program when they all collapse in to provide the result. In languages without tail
+    # call optimisation (such as Ruby 1.8), this quickly leads to an enourmous stack, and it's not
+    # hard to create programs which cause the interpreter to run out of stack space.
+    # 
+    # Therefore, instead of waiting until right at the end of the program to return the answer,
+    # we can at any point return a "partial answer" which is just a lambda which can be called to
+    # continue the execution of the program. This collapses the call stack right back down, so
+    # solves the problem of tail call recursion. This is what the while loop is doing. This
+    # technique is called "trampolining".
     def execute(root_node)
       @ast_stack = [root_node]
       root_node.runtime = self
