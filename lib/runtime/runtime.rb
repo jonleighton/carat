@@ -88,8 +88,8 @@ module Carat
       @current_ast = root_node
       root_node.runtime = self
       current_result = root_node.eval { |final_result| nil }
-      while current_result.is_a?(PartialAnswer)
-        current_result = current_result.eval
+      while current_result.is_a?(Proc)
+        current_result = current_result.call
       end
       @current_ast = nil
     end
