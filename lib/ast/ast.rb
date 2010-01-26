@@ -149,6 +149,24 @@ module Carat
       end
     end
     
+    class BinaryNode < Node
+      attr_reader :left, :right
+      
+      def initialize(left, right)
+        @left, @right = left, right
+      end
+      
+      def children
+        [left, right]
+      end
+      
+      def inspect
+        type + ":\n" +
+          "Left:\n" + indent(left.inspect) + "\n" +
+          "Right:\n" + indent(right.inspect)
+      end
+    end
+    
     # ***** CONCRETE CLASSES ***** #
     
     require AST_PATH + "/scopes"

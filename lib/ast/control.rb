@@ -10,16 +10,9 @@ module Carat::AST
       [condition, true_node, false_node]
     end
     
-    def eval_condition
-      eval_child(condition) do |condition_value|
-        yield condition_value != runtime.false &&
-              condition_value != runtime.nil
-      end
-    end
-    
     def eval(&continuation)
-      eval_condition do |value|
-        if value
+      eval_child(condition) do |condition_value|
+        if condition_value.false_or_nil?
           eval_child(true_node, &continuation)
         else
           eval_child(false_node, &continuation)
@@ -32,6 +25,30 @@ module Carat::AST
         "Condition:\n" + indent(condition.inspect) + "\n" +
         "True Branch:\n" + indent(true_node.inspect) + "\n" +
         "False Branch:\n" + indent(false_node.inspect)
+    end
+  end
+  
+  class And < BinaryNode
+    def eval(&continuation)
+      eval_child(left) do |left_value|
+        if left_value.false_or_nil?
+          yield left_value
+        else
+          eval_child(right, &continuation)
+        end
+      end
+    end
+  end
+  
+  class Or < BinaryNode
+    def eval(&continuation)
+      eval_child(left) do |left_value|
+        if left_value.false_or_nil?
+          eval_child(right, &continuation)
+        else
+          yield left_value
+        end
+      end
     end
   end
 end

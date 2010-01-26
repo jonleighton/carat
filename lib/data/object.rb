@@ -85,6 +85,10 @@ module Carat::Data
       @instance_variables ||= {}
     end
     
+    def false_or_nil?
+      false
+    end
+    
     def to_s
       "<object:#{klass}>"
     end

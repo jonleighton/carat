@@ -12,16 +12,16 @@ module Carat
   RUNTIME_PATH = ROOT_PATH + "/runtime"
   DATA_PATH    = ROOT_PATH + "/data"
   KERNEL_PATH  = ROOT_PATH + "/kernel"
-  PARSER_PATH  = ROOT_PATH + "/parser"
   AST_PATH     = ROOT_PATH + "/ast"
+  PARSER_PATH  = ROOT_PATH + "/parser"
   
   # TODO: Replace all occurances with something more specific
   class CaratError < StandardError; end
   
   require RUNTIME_PATH + "/runtime"
   require DATA_PATH    + "/data"
-  require PARSER_PATH  + "/parser"
   require AST_PATH     + "/ast"
+  require PARSER_PATH  + "/parser"
   
   def self.parse(input, file_name = nil)
     LanguageParser.new(input, file_name).run!

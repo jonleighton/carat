@@ -6,5 +6,8 @@ module Carat::Data
   end
   
   class FalseClassInstance < ObjectInstance
+    def false_or_nil?
+      true
+    end
   end
 end

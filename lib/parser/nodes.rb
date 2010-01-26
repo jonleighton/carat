@@ -51,6 +51,12 @@ module Carat
       end
     end
     
+    class SubExpression < Node
+      def to_ast
+        expression.to_ast
+      end
+    end
+    
     class DefinitionNode < Node
       def contents
         definition_body.expression_list.to_ast
@@ -340,7 +346,7 @@ module Carat
       end
     end
     
-    class BinaryOperation < Node
+    class BinaryMethodCall < Node
       def arguments
         [Carat::AST::ArgumentList::Item.new(right.to_ast)]
       end
@@ -350,6 +356,17 @@ module Carat
           left.to_ast, name.text_value.to_sym,
           Carat::AST::ArgumentList.new(arguments)
         )
+      end
+    end
+    
+    class BinaryOperation < Node
+      OPERATIONS = {
+        "&&" => Carat::AST::And,
+        "||" => Carat::AST::Or
+      }
+      
+      def to_ast
+        OPERATIONS[name.text_value].new(left.to_ast, right.to_ast)
       end
     end
     
