@@ -13,9 +13,9 @@ module Carat::AST
     def eval(&continuation)
       eval_child(condition) do |condition_value|
         if condition_value.false_or_nil?
-          eval_child(true_node, &continuation)
-        else
           eval_child(false_node, &continuation)
+        else
+          eval_child(true_node, &continuation)
         end
       end
     end
