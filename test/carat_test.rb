@@ -373,6 +373,20 @@ class CaratTest < Test::Unit::TestCase
     assert_equal("PASS\nPASS\nPASS\n", execute(code))
   end
   
+  def test_binary_assignment
+    code = <<-CODE
+      i = 1
+      i += 1
+      puts i
+
+      i = true
+      i &&= false
+      puts i
+    CODE
+    
+    assert_equal("2\nfalse\n", execute(code))
+  end
+  
   def test_environment
     runtime = Carat::Runtime.new
     constants = runtime.constants

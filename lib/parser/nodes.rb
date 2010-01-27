@@ -227,12 +227,6 @@ module Carat
       end
     end
     
-    class Assignment < Node
-      def to_ast
-        Carat::AST::Assignment.new(left.to_ast, right.to_ast)
-      end
-    end
-    
     module LocalVariable
       def to_ast
         Carat::AST::LocalVariable.new(text_value.to_sym)
@@ -355,16 +349,74 @@ module Carat
       end
     end
     
-    class BinaryMethodCall < Node
-      def arguments
-        [Carat::AST::ArgumentList::Item.new(right.to_ast)]
+=begin
+    class Assignment < Node
+      def right_ast
+        operation_name = operation.text_value
+        case operation_name
+          when '='
+            right.to_ast
+          when *(BinaryOperation::OPERATIONS.keys)
+            BinaryOperation::OPERATIONS[operation_name].new(left_ast, right.to_ast)
+          else
+            Carat::AST::MethodCall.new(
+              left_ast, operation_name.to_sym,
+              Carat::AST::ArgumentList.new(
+                [Carat::AST::ArgumentList::Item.new(right.to_ast)]
+              )
+            )
+        end
+      end
+      
+      def shortcut_binary_name
+      
+      def left_ast
+        @left_ast ||= left.to_ast
       end
       
       def to_ast
+        Carat::AST::Assignment.new(left_ast, right_ast)
+      end
+    end
+=end
+    class Assignment < Node
+      def receiver_ast
+        @receiver_ast ||= receiver.to_ast
+      end
+      
+      def value_ast
+        value.to_ast
+      end
+      
+      def to_ast
+        Carat::AST::Assignment.new(receiver_ast, value_ast)
+      end
+    end
+    
+    module BinaryMethodHelper
+      def method_call(left, name, right)
         Carat::AST::MethodCall.new(
           left.to_ast, name.text_value.to_sym,
-          Carat::AST::ArgumentList.new(arguments)
+          Carat::AST::ArgumentList.new(
+            [Carat::AST::ArgumentList::Item.new(right.to_ast)]
+          )
         )
+      end
+    end
+    
+    class BinaryMethodCall < Node
+      include BinaryMethodHelper
+      
+      def to_ast
+        method_call(left, name, right)
+      end
+    end
+    
+    class BinaryMethodAssignment < Assignment
+      include BinaryMethodHelper
+      
+      def value_ast
+        method_call(receiver, name, value)
       end
     end
     
@@ -376,6 +428,12 @@ module Carat
       
       def to_ast
         OPERATIONS[name.text_value].new(left.to_ast, right.to_ast)
+      end
+    end
+    
+    class BinaryOperationAssignment < Assignment
+      def value_ast
+        BinaryOperation::OPERATIONS[name.text_value].new(receiver_ast, value.to_ast)
       end
     end
     

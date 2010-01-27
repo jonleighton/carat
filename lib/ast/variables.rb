@@ -25,6 +25,14 @@ module Carat::AST
     def assign(value)
       current_scope[name] = value
     end
+    
+    def eval(&continuation)
+      if current_scope[name]
+        yield current_scope[name]
+      else
+        raise Carat::CaratError, "undefined local variable '#{name}'"
+      end
+    end
   end
   
   class LocalVariableOrMethodCall < NamedNode

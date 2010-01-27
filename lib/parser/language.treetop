@@ -19,11 +19,28 @@ module Carat
     end
     
     rule assignment_expression
-      left:variable space?
-      '=' multiline_space?
-      right:assignment_expression <Assignment>
-      /
+      simple_assignment /
+      binary_method_assignment /
+      binary_operation_assignment /
       or_expression
+    end
+    
+    rule simple_assignment
+      receiver:variable space?
+      '=' multiline_space?
+      value:assignment_expression <Assignment>
+    end
+    
+    rule binary_method_assignment
+      receiver:variable space?
+      name:('<<' / '>>' / '+' / '-' / '*' / '/') '=' multiline_space?
+      value:assignment_expression <BinaryMethodAssignment>
+    end
+    
+    rule binary_operation_assignment
+      receiver:variable space?
+      name:('||' / '&&') '=' multiline_space?
+      value:assignment_expression <BinaryOperationAssignment>
     end
     
     rule or_expression
