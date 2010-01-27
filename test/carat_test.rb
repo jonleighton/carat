@@ -399,6 +399,19 @@ class CaratTest < Test::Unit::TestCase
     assert_equal("1\n2\n3\n4\n5\n", execute(code))
   end
   
+  def test_return
+    code = <<-CODE
+      def foo
+        return "PASS"
+        "FAIL"
+      end
+
+      puts foo
+    CODE
+    
+    assert_equal("PASS\n", execute(code))
+  end
+  
   def test_environment
     runtime = Carat::Runtime.new
     constants = runtime.constants

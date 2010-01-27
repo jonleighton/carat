@@ -28,5 +28,12 @@ module Carat::Data
     def primitive_raise(&continuation)
       runtime.failure_continuation.call
     end
+    
+    # Throw away the current continuation and call the previous call's return continuation. (We
+    # don't use the return continuation for the current call, as that will be the call to 
+    # Carat.primitive which invoked the primitive.)
+    def primitive_return(value, &continuation)
+      call_stack[-2].return_continuation.call(value)
+    end
   end
 end

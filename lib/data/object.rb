@@ -17,7 +17,7 @@ module Carat::Data
     attr_accessor :klass
     
     extend Forwardable
-    def_delegators :runtime, :current_call, :current_scope, :current_object, :constants
+    def_delegators :runtime, :current_call, :current_scope, :current_object, :constants, :call_stack
     
     include KernelModule
     

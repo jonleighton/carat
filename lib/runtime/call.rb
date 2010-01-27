@@ -31,7 +31,7 @@ class Carat::Runtime
     # The AST node representing the argument list, or just a flat array of pre-evalutated objects
     attr_reader :argument_list
     
-    attr_reader :arguments, :argument_objects, :block_from_arguments
+    attr_reader :arguments, :argument_objects, :block_from_arguments, :return_continuation
     
     extend Forwardable
     def_delegators :callable, :argument_pattern, :contents
@@ -55,13 +55,14 @@ class Carat::Runtime
         eval_arguments do |arguments|
           execution_scope.merge!(arguments)
           
+          @return_continuation = lambda do |result|
+            runtime.call_stack.pop
+            yield result
+          end
+          
           lambda do
-            runtime.ast_stack << contents
-            
-            contents.eval_in_scope(execution_scope) do |result|
-              runtime.ast_stack.pop
-              yield result
-            end
+            runtime.call_stack << self
+            contents.eval_in_scope(execution_scope, &return_continuation)
           end
         end
       end
@@ -116,7 +117,8 @@ class Carat::Runtime
       else
         result << ", <unevaluated args>"
       end
-      result << "]"
+      result << "] => \n"
+      result << contents.inspect
       result
     end
   end

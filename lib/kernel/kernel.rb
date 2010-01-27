@@ -18,4 +18,8 @@ module Kernel
   def yield
     Carat.primitive "yield"
   end
+  
+  def return
+    Carat.primitive "return"
+  end
 end

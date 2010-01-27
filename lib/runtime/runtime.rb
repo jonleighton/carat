@@ -4,7 +4,7 @@ module Carat
     require RUNTIME_PATH + "/environment"
     require RUNTIME_PATH + "/call"
     
-    attr_reader   :constants, :current_call, :ast_stack
+    attr_reader   :constants, :current_call, :call_stack
     attr_accessor :current_scope, :failure_continuation
     
     def initialize
@@ -28,6 +28,10 @@ module Carat
     
     def current_object
       current_scope[:self]
+    end
+    
+    def current_call
+      call_stack.last
     end
     
     def false
@@ -76,12 +80,8 @@ module Carat
     def call(callable, scope, argument_list, &continuation)
       raise ArgumentError, "no continuation given" unless block_given?
       
-      previous_call = @current_call
-      @current_call = Call.new(self, callable, scope, argument_list)
-      @current_call.send do |result|
-        @current_call = previous_call
-        yield result
-      end
+      call = Call.new(self, callable, scope, argument_list)
+      call.send(&continuation)
     end
     
     # This is the starting point for executing an AST. Every time we decend into a method call, we
@@ -102,8 +102,9 @@ module Carat
     # solves the problem of tail call recursion. This is what the while loop is doing. This
     # technique is called "trampolining".
     def execute(root_node)
-      @ast_stack = [root_node]
+      @call_stack = []
       root_node.runtime = self
+      
       self.failure_continuation = lambda do
         puts "Exception raised"
       end
@@ -112,8 +113,6 @@ module Carat
       while current_result.is_a?(Proc)
         current_result = current_result.call
       end
-      
-      @ast_stack = []
     end
     
     # Parse some code and then execute its AST
@@ -137,11 +136,10 @@ module Carat
           puts exception.backtrace[0..40].join("\n")
           puts "[Backtrace truncated]" if exception.backtrace.length > 40
           puts
-          puts "AST stack:"
-          ast_stack.each do |ast|
-            p ast
-            puts
-          end
+          puts "Call Stack"
+          puts "=========="
+          puts
+          puts call_stack.reverse.map(&:inspect).join("\n\n")
       end
       exit 1
     end
