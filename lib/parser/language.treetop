@@ -154,10 +154,20 @@ module Carat
     end
     
     rule if_expression
-      'if' space condition:expression space? terminator
-      true_block:(multiline_space? expression_list)
-      false_block:('else' multiline_space? expression_list)?
+      'if' multiline_space condition:expression space? terminator
+      true_block:expression_list
+      false_block:(nested_if_expression / else_expression)?
       'end' <IfExpression>
+    end
+    
+    rule nested_if_expression
+      'elsif' multiline_space condition:expression space? terminator
+      true_block:expression_list
+      false_block:(nested_if_expression / else_expression)? <IfExpression>
+    end
+    
+    rule else_expression
+      'else' multiline_space expression_list <ElseExpression>
     end
     
     rule while_expression
@@ -316,7 +326,7 @@ module Carat
     end
     
     rule keyword
-      'class' / 'module' / 'def' / 'do' / 'end' / 'if' / 'else' / 'while'
+      'class' / 'module' / 'def' / 'do' / 'end' / 'if' / 'else' / 'elsif' / 'while'
     end
     
     rule method_name

@@ -98,7 +98,7 @@ module Carat
     
     class IfExpression < Node
       def false_expression_ast
-        false_block.expression_list.to_ast unless false_block.empty?
+        false_block.to_ast unless false_block.empty?
       end
       
       def true_expression_ast
@@ -106,7 +106,13 @@ module Carat
       end
     
       def to_ast
-        Carat::AST::If.new(condition.to_ast, true_expression_ast, false_expression_ast)
+        Carat::AST::If.new(condition.to_ast, true_block.to_ast, false_expression_ast)
+      end
+    end
+    
+    class ElseExpression < Node
+      def to_ast
+        expression_list.to_ast
       end
     end
     
