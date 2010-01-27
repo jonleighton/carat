@@ -51,7 +51,7 @@ module Carat
       end
     end
     
-    class SubExpression < Node
+    class BracketedExpression < Node
       def to_ast
         expression.to_ast
       end
@@ -85,7 +85,7 @@ module Carat
     
     class MethodDefinition < DefinitionNode
       def receiver_ast
-        !receiver.empty? && receiver.secondary.to_ast || nil
+        !receiver.empty? && receiver.primary.to_ast || nil
       end
       
       def to_ast
@@ -229,7 +229,7 @@ module Carat
     
     class Assignment < Node
       def to_ast
-        Carat::AST::Assignment.new(variable.to_ast, expression.to_ast)
+        Carat::AST::Assignment.new(left.to_ast, right.to_ast)
       end
     end
     
@@ -343,6 +343,15 @@ module Carat
     
       def chain
         [nil, head] + tail_elements
+      end
+    end
+    
+    class UnaryMethodCall < Node
+      def to_ast
+        Carat::AST::MethodCall.new(
+          receiver.to_ast, (name.text_value * 2).to_sym,
+          Carat::AST::ArgumentList.new
+        )
       end
     end
     

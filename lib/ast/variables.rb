@@ -51,7 +51,11 @@ module Carat::AST
   
   class Constant < NamedNode
     def eval
-      yield constants[name]
+      if constants[name]
+        yield constants[name]
+      else
+        raise Carat::CaratError, "constant '#{name}' not found"
+      end
     end
   end
 end

@@ -1,3 +1,17 @@
 #!/usr/bin/ruby
 require File.dirname(__FILE__) + '/../lib/carat'
-p Carat.parse(File.read(ARGV[0]))
+
+parser = Carat::LanguageParser.new(File.read(ARGV[0]), ARGV[0])
+
+begin
+  p parser.parse_tree
+  puts
+  p parser.ast
+rescue Carat::SyntaxError => e
+  unless e.is_a?(Carat::ParseError)
+    p parser.parse_tree
+    puts
+  end
+  
+  puts e.full_message
+end

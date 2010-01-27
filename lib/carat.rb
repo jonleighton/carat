@@ -24,7 +24,7 @@ module Carat
   require PARSER_PATH  + "/parser"
   
   def self.parse(input, file_name = nil)
-    LanguageParser.new(input, file_name).run!
+    LanguageParser.new(input, file_name).ast
   end
   
   def self.run(input)

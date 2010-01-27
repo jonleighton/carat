@@ -23,6 +23,10 @@ module Carat::Data
     
     # ***** Primitives ***** #
     
+    def primitive_spaceship(other)
+      yield klass.get(value <=> other.value)
+    end
+    
     def primitive_plus(other)
       yield klass.get(value + other.value)
     end

@@ -13,54 +13,118 @@ module Carat
     
     # An expression is the basic 'thing'
     rule expression
-      item:(
-        sub_expression /
-        binary_method /
-        binary_operator /
-        primary
-      ) space? comment? <Expression>
+      item:assignment_expression space? comment? <Expression>
       /
       comment
     end
     
-    rule primary
-      method_call_chain / secondary
+    rule assignment_expression
+      left:variable space?
+      '=' multiline_space?
+      right:assignment_expression <Assignment>
+      /
+      or_expression
     end
     
-    rule secondary
+    rule or_expression
+      left:and_expression space?
+      name:'||' multiline_space?
+      right:or_expression <BinaryOperation>
+      /
+      and_expression
+    end
+    
+    rule and_expression
+      left:comparison_expression space?
+      name:'&&' multiline_space?
+      right:and_expression <BinaryOperation>
+      /
+      comparison_expression
+    end
+    
+    rule comparison_expression
+      left:inequality_expression space?
+      name:('==' / '!=' / '===' / '<=>') multiline_space?
+      right:comparison_expression <BinaryMethodCall>
+      /
+      inequality_expression
+    end
+    
+    rule inequality_expression
+      left:shift_expression space?
+      name:('<=' / '>=' / '<' / '>') multiline_space?
+      right:inequality_expression <BinaryMethodCall>
+      /
+      shift_expression
+    end
+    
+    rule shift_expression
+      left:add_subtract_expression space?
+      name:('<<' / '>>') multiline_space?
+      right:shift_expression <BinaryMethodCall>
+      /
+      add_subtract_expression
+    end
+    
+    rule add_subtract_expression
+      left:times_divide_expression space?
+      name:('+' / '-') multiline_space?
+      right:add_subtract_expression <BinaryMethodCall>
+      /
+      times_divide_expression
+    end
+    
+    rule times_divide_expression
+      left:unary_expression space?
+      name:('*' / '/') multiline_space?
+      right:times_divide_expression <BinaryMethodCall>
+      /
+      unary_expression
+    end
+    
+    rule unary_expression
+      name:('-' / '+' / '!') multiline_space? receiver:unary_expression <UnaryMethodCall> /
+      method_call_expression
+    end
+    
+    rule method_call_expression
+      method_call_chain / primary
+    end
+    
+    rule primary
       module_definition /
       class_definition /
       method_definition /
       control_structure /
-      assignment /
       literal /
       instance_variable /
       constant /
-      local_variable_or_method_call
+      local_variable_or_method_call /
+      bracketed_expression
     end
     
-    rule sub_expression
-      '(' expression ')' <SubExpression>
-    end
-    
-    rule binary_method
-      left:primary space? name:binary_method_name multiline_space? right:expression <BinaryMethodCall>
-    end
-    
-    rule binary_operator
-      left:primary space? name:binary_operator_name multiline_space? right:expression <BinaryOperation>
+    rule bracketed_expression
+      '(' expression ')' <BracketedExpression>
     end
     
     rule module_definition
-      'module' space constant definition_body <ModuleDefinition>
+      'module' multiline_space
+      constant
+      definition_body <ModuleDefinition>
     end
     
     rule class_definition
-      'class' space constant space? superclass:('<' multiline_space? primary)? definition_body <ClassDefinition>
+      'class' multiline_space
+      constant space?
+      superclass:('<' multiline_space? primary)?
+      definition_body <ClassDefinition>
     end
     
     rule method_definition
-      'def' space receiver:(secondary space? '.')? space? method_name method_argument_pattern definition_body <MethodDefinition>
+      'def' multiline_space
+      receiver:(primary space? '.' multiline_space?)?
+      method_name method_argument_pattern
+      definition_body <MethodDefinition>
     end
     
     rule definition_body
@@ -105,10 +169,6 @@ module Carat
       ('*' / '&') multiline_space? local_identifier <ArgumentPatternItem>
     end
     
-    rule assignment
-      variable space? '=' space? expression <Assignment>
-    end
-    
     # A literal object, e.g. a number, string, true, false, etc
     rule literal
       number / array / string / boolean / nil
@@ -120,7 +180,7 @@ module Carat
     # the form "foo.bar(...).baz(...)" and we have to convert this to several MethodCall instances
     # when creating the AST.
     rule method_call_chain
-      receiver:secondary tail:method_call_chain_tail <MethodCallChain> /
+      receiver:primary tail:method_call_chain_tail <MethodCallChain> /
       head:(method_name:identifier argument_list) tail:method_call_chain_tail? <ImplicitMethodCallChain>
     end
     
@@ -162,11 +222,12 @@ module Carat
     #
     # A block is also considered to be a part of the argument list
     rule argument_list
-      argument_list_parens / argument_list_no_parens
+      bracketed_argument_list /
+      unbracketed_argument_list
     end
     
     # Any number of items inside parentheses, with an optional block
-    rule argument_list_parens
+    rule bracketed_argument_list
       space? '(' multiline_space?
       head:argument_list_item
       tail:(multiline_space? ',' multiline_space? argument_list_item)*
@@ -183,8 +244,9 @@ module Carat
     # Note that a block isn't included in option 1, as it would just bind to the last argument
     # anyway. If the block should bind to the method call, parentheses must be used.
     # 
-    # The argument list may not start with + or -, so as not to confuse "x+1" with "x(+1)"
-    rule argument_list_no_parens
+    # The argument list may not start with + or -, so as not to confuse "x +1" with "x(+1)"
+    # TODO: Is the this solved by precedence?
+    rule unbracketed_argument_list
       space !('+' / '-')
       head:argument_list_item
       tail:(space? ',' multiline_space? argument_list_item)* <ArgumentList>
@@ -234,25 +296,32 @@ module Carat
     end
     
     rule method_name
-      (basic_method_name / binary_method_name / special_method_name) <MethodName>
+      (basic_method_name / special_method_name) <MethodName>
     end
     
     # Keywords are allowed
     rule basic_method_name
-      [a-zA-Z_] [a-zA-Z0-9_]* ('?' / '!')?
+      [a-zA-Z_] [a-zA-Z0-9_]* ('?' / '!' / '=')?
     end
     
-    rule binary_method_name
-      '+' / '-' / '==' / '!=' / '<<'
-    end
-    
-    # Ones which don't match the basic method pattern, and aren't binary operators
+    # Match in order of number of characters so we don't get conflict, e.g. if '<' is tested before
+    # '<='
     rule special_method_name
-      '[]' / '[]='
-    end
-    
-    rule binary_operator_name
-      '&&' / '||'
+      # Three characters
+      '===' / '<=>' /
+      '[]=' /
+      
+      # Two characters
+      '==' / '!=' /
+      '<=' / '>=' /
+      '<<' / '>>' /
+      '--' / '++' / '!!' /
+      '[]' /
+      
+      # One character
+      '<' / '>' /
+      '+' / '-' /
+      '*' / '/'
     end
     
     # A general identifier must not start with a number and must not conflict with a keyword
@@ -272,7 +341,7 @@ module Carat
     end
     
     rule number
-      ('+' / '-')? multiline_space? [0-9]+ <Integer>
+      [0-9]+ <Integer>
     end
     
     rule array

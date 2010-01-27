@@ -341,6 +341,38 @@ class CaratTest < Test::Unit::TestCase
     assert_equal("PASS\n", execute(code))
   end
   
+  def test_comparison
+    code = <<-CODE
+      if 1 < 2 &&
+         2 > 1 &&
+         1 <= 2 &&
+         1 <= 1 &&
+         2 >= 1 &&
+         2 >= 2
+        puts "PASS"
+      else
+        puts "FAIL"
+      end
+
+      if 1 > 2 ||
+         2 < 1 ||
+         1 >= 2 ||
+         2 <= 1
+        puts "FAIL"
+      else
+        puts "PASS"
+      end
+
+      if (1 <=> 2) == -1
+        puts "PASS"
+      else
+        puts "FAIL"
+      end
+    CODE
+    
+    assert_equal("PASS\nPASS\nPASS\n", execute(code))
+  end
+  
   def test_environment
     runtime = Carat::Runtime.new
     constants = runtime.constants

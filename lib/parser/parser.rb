@@ -26,6 +26,8 @@ module Carat
     end
   end
   
+  class ParseError < SyntaxError; end
+  
   # Adapts the parser to store the code and the file name. This means we can break up the process of
   # parsing a bit more easily.
   class LanguageParser < Treetop::Runtime::CompiledParser
@@ -37,24 +39,18 @@ module Carat
     end
     
     # Parses the code converts it to an AST, raising syntax errors along the way if necessary
-    def run!
-      parse_tree.file_name = file_name
-      parse_tree.to_ast
-    rescue StandardError => e
-      # SyntaxErrors are okay, but anything else shouldn't really happen, so we want to output the
-      # parse tree for debugging in that case
-      unless e.is_a?(SyntaxError)
-        p parse_tree
-        puts
+    def ast
+      @ast ||= begin
+        parse_tree.file_name = file_name
+        parse_tree.to_ast
       end
-      raise e
     end
     
     def parse_tree
       @parse_tree ||= begin
         tree = parse(input)
         if tree.nil?
-          raise Carat::SyntaxError.new(input, expected_message, file_name, failure_line, failure_column)
+          raise Carat::ParseError.new(input, expected_message, file_name, failure_line, failure_column)
         end
         tree
       end
