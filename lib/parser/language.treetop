@@ -149,7 +149,8 @@ module Carat
     end
     
     rule control_structure
-      if_expression
+      if_expression /
+      while_expression
     end
     
     rule if_expression
@@ -157,6 +158,12 @@ module Carat
       true_block:(multiline_space? expression_list)
       false_block:('else' multiline_space? expression_list)?
       'end' <IfExpression>
+    end
+    
+    rule while_expression
+      'while' space condition:expression space? terminator
+      contents:expression_list
+      'end' <WhileExpression>
     end
     
     # The arguments defined as part of a method definition
@@ -309,7 +316,7 @@ module Carat
     end
     
     rule keyword
-      'class' / 'module' / 'def' / 'do' / 'end' / 'if' / 'else'
+      'class' / 'module' / 'def' / 'do' / 'end' / 'if' / 'else' / 'while'
     end
     
     rule method_name

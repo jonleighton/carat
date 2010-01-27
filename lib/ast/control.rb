@@ -1,5 +1,5 @@
 module Carat::AST
-  class IfExpression < Node
+  class If < Node
     attr_reader :condition, :true_node, :false_node
     
     def initialize(condition, true_node, false_node)
@@ -25,6 +25,40 @@ module Carat::AST
         "Condition:\n" + indent(condition.inspect) + "\n" +
         "True Branch:\n" + indent(true_node.inspect) + "\n" +
         "False Branch:\n" + indent(false_node.inspect)
+    end
+  end
+  
+  class While < Node
+    attr_reader :condition, :contents
+    
+    def initialize(condition, contents)
+      @condition, @contents = condition, contents
+    end
+    
+    def children
+      [condition, contents]
+    end
+    
+    def eval(&continuation)
+      loop = lambda do
+        eval_child(condition) do |condition_value|
+          if condition_value.false_or_nil?
+            yield runtime.nil
+          else
+            eval_child(contents) do |contents_value|
+              loop.call
+            end
+          end
+        end
+      end
+      
+      loop.call
+    end
+    
+    def inspect
+      type + ":\n" +
+        "Condition:\n" + indent(condition.inspect) + "\n" +
+        "Contents:\n" + indent(contents.inspect) + "\n"
     end
   end
   

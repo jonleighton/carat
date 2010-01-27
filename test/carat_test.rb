@@ -387,6 +387,18 @@ class CaratTest < Test::Unit::TestCase
     assert_equal("2\nfalse\n", execute(code))
   end
   
+  def test_while
+    code = <<-CODE
+      i = 1
+      while i <= 5
+        puts i
+        i += 1
+      end
+    CODE
+    
+    assert_equal("1\n2\n3\n4\n5\n", execute(code))
+  end
+  
   def test_environment
     runtime = Carat::Runtime.new
     constants = runtime.constants

@@ -106,11 +106,13 @@ module Carat
       end
     
       def to_ast
-        Carat::AST::IfExpression.new(
-          condition.to_ast,
-          true_expression_ast,
-          false_expression_ast
-        )
+        Carat::AST::If.new(condition.to_ast, true_expression_ast, false_expression_ast)
+      end
+    end
+    
+    class WhileExpression < Node
+      def to_ast
+        Carat::AST::While.new(condition.to_ast, contents.to_ast)
       end
     end
     
