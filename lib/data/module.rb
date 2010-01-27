@@ -70,7 +70,7 @@ module Carat::Data
     end
     
     def primitive_name
-      yield name.to_s
+      yield constants[:String].new(name)
     end
     
     alias_method :primitive_inspect, :primitive_name

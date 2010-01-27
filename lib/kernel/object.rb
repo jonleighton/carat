@@ -20,4 +20,8 @@ class Object
   def object_id
     Carat.primitive "object_id"
   end
+  
+  def class
+    Carat.primitive "class"
+  end
 end

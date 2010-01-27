@@ -113,5 +113,9 @@ module Carat::Data
     def primitive_object_id
       yield constants[:Fixnum].get(carat_object_id)
     end
+    
+    def primitive_class
+      yield real_klass
+    end
   end
 end
