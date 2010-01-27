@@ -313,6 +313,34 @@ class CaratTest < Test::Unit::TestCase
     assert_equal("1\n[2, 3, 4]\n4\n2\n", execute(code))
   end
   
+  def test_argument_defaults
+    code = <<-CODE
+      def foo(a = "hi")
+        puts a
+      end
+
+      foo
+    CODE
+    
+    assert_equal("hi\n", execute(code))
+  end
+  
+  def test_and
+    code = <<-CODE
+      puts "FAIL" && "PASS"
+    CODE
+    
+    assert_equal("PASS\n", execute(code))
+  end
+  
+  def test_or
+    code = <<-CODE
+      puts "PASS" || "FAIL"
+    CODE
+    
+    assert_equal("PASS\n", execute(code))
+  end
+  
   def test_environment
     runtime = Carat::Runtime.new
     constants = runtime.constants

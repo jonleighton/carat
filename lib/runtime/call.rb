@@ -81,26 +81,13 @@ class Carat::Runtime
       end
     end
     
-    # Return a hash where the argument names of this method are assigned the given values. This
-    # method makes sure the "splat" is dealt with correctly
+    # Return a hash where the argument names of this method are assigned the given values
     def eval_arguments
       eval_argument_objects do |argument_objects|
-        @arguments = {}
-        values = argument_objects.clone
-        
-        argument_pattern.items.each do |item|
-          @arguments[item.name] =
-            case item.pattern_type
-              when :splat
-                runtime.constants[:Array].new(values)
-              when :block_pass
-                block || runtime.nil
-              else
-                values.shift
-            end
+        argument_pattern.match_to(argument_objects.clone, block) do |arguments|
+          @arguments = arguments
+          yield @arguments
         end
-        
-        yield @arguments
       end
     end
     

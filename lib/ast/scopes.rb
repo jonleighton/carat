@@ -147,9 +147,38 @@ module Carat::AST
         [default]
       end
       
+      def value(values, block, &continuation)
+        case pattern_type
+          when :splat
+            yield runtime.constants[:Array].new(values)
+          when :block_pass
+            yield block || runtime.nil
+          else
+            value = values.shift
+            if value
+              yield value
+            elsif default
+              eval_child(default, &continuation)
+            else
+              yield runtime.nil
+            end
+        end
+      end
+      
       def inspect
         type + "[#{name}, #{pattern_type.inspect}]" + (default && " = \n" + indent(default.inspect) || '')
       end
+    end
+    
+    def match_to(values, block, &continuation)
+      match_operation = lambda do |item, arguments, &match_continuation|
+        item.value(values, block) do |value|
+          arguments[item.name] = value
+          match_continuation.call(arguments)
+        end
+      end
+      
+      runtime.fold({}, match_operation, items, &continuation)
     end
   end
 end
