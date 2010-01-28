@@ -62,7 +62,12 @@ class Carat::Runtime
           
           lambda do
             runtime.call_stack << self
-            contents.eval_in_scope(execution_scope, &return_continuation)
+            
+            if contents.nil?
+              return_continuation.call(runtime.nil)
+            else
+              contents.eval_in_scope(execution_scope, &return_continuation)
+            end
           end
         end
       end

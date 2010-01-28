@@ -1,6 +1,14 @@
 module Kernel
-  def raise
-    Carat.primitive "raise"
+  def raise(exception_or_string = nil, message = "(no message)")
+    if exception_or_string.is_a?(Exception)
+      Carat.primitive "raise"
+    elsif exception_or_string.is_a?(String)
+      raise Exception.new(exception_or_string)
+    elsif exception_or_string == nil
+      raise Exception.new(message)
+    else
+      raise exception_or_string.new(message)
+    end
   end
   
   def puts(obj)

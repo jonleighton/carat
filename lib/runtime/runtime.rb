@@ -84,6 +84,14 @@ module Carat
       call.send(&continuation)
     end
     
+    def default_failure_continuation
+      lambda do |exception|
+        exception.call(:to_s) do |exception_string|
+          puts "#{exception.real_klass.name}: #{exception_string}"
+        end
+      end
+    end
+    
     # This is the starting point for executing an AST. Every time we decend into a method call, we
     # are executing a new AST before returning to the previous one. We track this in @ast_stack for
     # debugging.
@@ -104,10 +112,7 @@ module Carat
     def execute(root_node)
       @call_stack = []
       root_node.runtime = self
-      
-      self.failure_continuation = lambda do
-        puts "Exception raised"
-      end
+      self.failure_continuation = default_failure_continuation
       
       current_result = root_node.eval { |final_result| nil }
       while current_result.is_a?(Proc)

@@ -25,15 +25,18 @@ module Carat::Data
     end
     
     # Throw away the current continuation and call the failure continuation
-    def primitive_raise(&continuation)
-      runtime.failure_continuation.call
+    def primitive_raise(exception, &continuation)
+      runtime.failure_continuation.call(exception)
     end
     
-    # Throw away the current continuation and call the previous call's return continuation. (We
-    # don't use the return continuation for the current call, as that will be the call to 
-    # Carat.primitive which invoked the primitive.)
+    # Return from a method on the call stack without doing any further computation
     def primitive_return(value, &continuation)
-      call_stack[-2].return_continuation.call(value)
+      # Remove the call to this primitive from the call stack
+      call_stack.pop
+      
+      # The call now at the top of the call stack is the call we actually want to return from. We
+      # don't explicitly remove it as that's the job of the return continuation.
+      call_stack.last.return_continuation.call(value)
     end
   end
 end

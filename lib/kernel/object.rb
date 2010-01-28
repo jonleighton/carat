@@ -13,6 +13,20 @@ class Object
     end
   end
   
+  def is_a?(test_class)
+    klass = self.class
+    
+    while klass != nil
+      if klass == test_class
+        return true
+      else
+        klass = klass.superclass
+      end
+    end
+    
+    return false
+  end
+  
   def ==(other)
     Carat.primitive "equality_op"
   end

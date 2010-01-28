@@ -71,5 +71,9 @@ module Carat::Data
     def primitive_allocate
       yield instance_class.new(runtime, self)
     end
+    
+    def primitive_superclass
+      yield superclass || runtime.nil
+    end
   end
 end
