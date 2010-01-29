@@ -10,7 +10,7 @@ module Carat::Data
       super(runtime, runtime.constants[:Method])
     end
     
-    def call(scope, &continuation)
+    def eval_call(scope, &continuation)
       if contents.nil?
         continuation.call(runtime.nil)
       else

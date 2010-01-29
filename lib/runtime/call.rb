@@ -65,7 +65,7 @@ class Carat::Runtime
           
           lambda do
             runtime.call_stack << self
-            callable.call(execution_scope, &return_continuation)
+            callable.eval_call(execution_scope, &return_continuation)
           end
         end
       end

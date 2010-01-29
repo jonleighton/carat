@@ -18,7 +18,8 @@ module Carat::Data
     def primitive_yield(*args, &continuation)
       block = current_call.caller_scope.block
       if block
-        block.primitive_call(*args, &continuation)
+        #block.primitive_call(*args, &continuation)
+        block.call(:call, args, &continuation)
       else
         raise Carat::CaratError, "no block to yield in #{current_call.inspect}"
       end

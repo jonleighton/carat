@@ -12,11 +12,11 @@ class Array
   end
   
   def <<(item)
-    Primitive.push
+    Primitive.push(item)
   end
   
   def [](index)
-    Primitive.at
+    Primitive.at(index)
   end
   
   def to_a

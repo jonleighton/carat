@@ -35,18 +35,6 @@ module Carat
       call_stack.last
     end
     
-    def root_location
-      root.current_location
-    end
-    
-    def current_location
-      if call_stack.empty?
-        root_location
-      else
-        current_call.location
-      end
-    end
-    
     def false
       constants[:FalseClass].instance
     end
@@ -134,6 +122,8 @@ module Carat
     # solves the problem of tail call recursion. This is what the while loop is doing. This
     # technique is called "trampolining".
     def execute(root)
+      return if root.nil?
+      
       @call_stack = []
       @root = root
       root.runtime = self
