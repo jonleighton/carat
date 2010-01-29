@@ -2,7 +2,9 @@ module Carat::AST
   class ExpressionList < NodeList
     attr_reader :current_location
     
-    # We want to keep track of the location of the expression currently being evaluated, 
+    # We want to keep track of the location of the expression currently being evaluated, so we store
+    # the index of the next node in the list which will be evaluated, and update @current_location
+    # before each evaluation.
     def eval(&continuation)
       operation = lambda do |object, accumulation, node, &operation_continuation|
         @next_index += 1
