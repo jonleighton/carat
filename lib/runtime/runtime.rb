@@ -2,6 +2,7 @@ module Carat
   class Runtime
     require RUNTIME_PATH + "/scope"
     require RUNTIME_PATH + "/environment"
+    require RUNTIME_PATH + "/missing_method"
     require RUNTIME_PATH + "/call"
     
     attr_reader   :constants, :current_call, :call_stack, :root

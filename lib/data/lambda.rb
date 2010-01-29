@@ -13,6 +13,14 @@ module Carat::Data
       super(runtime, runtime.constants[:Lambda])
     end
     
+    def call(scope, &continuation)
+      if contents.nil?
+        continuation.call(runtime.nil)
+      else
+        contents.eval_in_scope(scope, &continuation)
+      end
+    end
+    
     # Extend the scope in which the block was created. The reason for extending the scope is that 
     # it means any fresh variables within the lambda will stay local to the lambda.
     def evaluation_scope

@@ -40,10 +40,8 @@ module Carat::AST
     def eval(&continuation)
       if current_scope[name]
         yield current_scope[name]
-      elsif current_object.has_instance_method?(name)
-        current_object.call(name, [], location, &continuation)
       else
-        runtime.raise(:NameError, constants[:String].new(name))
+        current_object.call(name, [], location, :NameError, &continuation)
       end
     end
   end

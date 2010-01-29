@@ -36,22 +36,14 @@ module Carat::Data
       klass.lookup_method(name)
     end
     
-    def has_instance_method?(name)
-      lookup_instance_method(name) && true || false
+    def missing_method(name, error)
+      Carat::Runtime::MissingMethod.new(runtime, self, name, error)
     end
     
     # Call the method with a given name, with the given AST argument list
-    def call(method_name, argument_list = [], location = current_location, &continuation)
-      method = lookup_instance_method(method_name)
-      
-      if method
-        runtime.call(location, method, method_scope, argument_list, &continuation)
-      else
-        # TODO: This means the method never goes on the call-stack, so the first item of the call
-        #       stack is missing.
-        runtime.raise(:NoMethodError, constants[:String].new(method_name))
-        #call(:raise, &continuation)
-      end
+    def call(name, argument_list = [], location = current_location, error = :NoMethodError, &continuation)
+      method = lookup_instance_method(name) || missing_method(name, error)
+      runtime.call(location, method, method_scope, argument_list, &continuation)
     end
     
     # A scope for evaluating the method call, with this object as 'self'
