@@ -23,6 +23,18 @@ module Carat
   require AST_PATH     + "/ast"
   require PARSER_PATH  + "/parser"
   
+  class ExecutionLocation
+    attr_reader :file_name, :line, :column
+    
+    def initialize(file_name, line, column)
+      @file_name, @line, @column = file_name, line, column
+    end
+    
+    def to_s
+      "#{file_name} at line #{line}, col #{column}"
+    end
+  end
+  
   def self.parse(input, file_name = nil)
     LanguageParser.new(input, file_name).ast
   end

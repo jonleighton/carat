@@ -4,7 +4,7 @@ module Carat
     require RUNTIME_PATH + "/environment"
     require RUNTIME_PATH + "/call"
     
-    attr_reader   :constants, :current_call, :call_stack
+    attr_reader   :constants, :current_call, :call_stack, :root
     attr_accessor :current_scope, :failure_continuation
     
     def initialize
@@ -32,6 +32,18 @@ module Carat
     
     def current_call
       call_stack.last
+    end
+    
+    def root_location
+      root.current_location
+    end
+    
+    def current_location
+      if call_stack.empty?
+        root_location
+      else
+        current_call.location
+      end
     end
     
     def false
@@ -77,17 +89,28 @@ module Carat
     end
     
     # Create a +Call+ and send it
-    def call(callable, scope, argument_list, &continuation)
+    def call(location, callable, scope, argument_list, &continuation)
       raise ArgumentError, "no continuation given" unless block_given?
       
-      call = Call.new(self, callable, scope, argument_list)
+      call = Call.new(self, location, callable, scope, argument_list)
       call.send(&continuation)
+    end
+    
+    # Raises an exception in the object language
+    def raise(exception_name, *args)
+      constants[exception_name].call(:new, args) do |exception|
+        failure_continuation.call(exception)
+      end
     end
     
     def default_failure_continuation
       lambda do |exception|
         exception.call(:to_s) do |exception_string|
           puts "#{exception.real_klass.name}: #{exception_string}"
+          call_stack.reverse.each do |call|
+            puts "  #{call.location} called #{call}"
+          end
+          exit 1
         end
       end
     end
@@ -109,12 +132,13 @@ module Carat
     # continue the execution of the program. This collapses the call stack right back down, so
     # solves the problem of tail call recursion. This is what the while loop is doing. This
     # technique is called "trampolining".
-    def execute(root_node)
+    def execute(root)
       @call_stack = []
-      root_node.runtime = self
+      @root = root
+      root.runtime = self
       self.failure_continuation = default_failure_continuation
       
-      current_result = root_node.eval { |final_result| nil }
+      current_result = root.eval { |final_result| nil }
       while current_result.is_a?(Proc)
         current_result = current_result.call
       end

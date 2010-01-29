@@ -1,14 +1,14 @@
 class String
   def inspect
-    Carat.primitive "inspect"
+    Primitive.inspect
   end
   
   def +(other)
-    Carat.primitive "plus"
+    Primitive.plus(other)
   end
   
   def <<(other)
-    Carat.primitive "push"
+    Primitive.push(other)
   end
 
   def to_s

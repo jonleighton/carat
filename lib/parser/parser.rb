@@ -4,11 +4,13 @@ require Carat::PARSER_PATH + "/nodes"
 
 module Carat
   class SyntaxError < CaratError
-    attr_reader :input, :message, :file_name, :line, :column
+    attr_reader :input, :message, :location
     
-    def initialize(input, message, file_name = nil, line = nil, column = nil)
-      @input, @message = input, message
-      @file_name, @line, @column = file_name, line, column
+    extend Forwardable
+    def_delegators :location, :file_name, :line, :column
+    
+    def initialize(input, message, location)
+      @input, @message, @location = input, message, location
     end
     
     # The input text on the offending line
@@ -22,7 +24,7 @@ module Carat
     end
     
     def full_message
-      "#{file_name} at ln #{line}, col #{column}: #{message}\n\n#{diagram}"
+      "#{location}: #{message}\n\n#{diagram}"
     end
   end
   
@@ -50,7 +52,10 @@ module Carat
       @parse_tree ||= begin
         tree = parse(input)
         if tree.nil?
-          raise Carat::ParseError.new(input, expected_message, file_name, failure_line, failure_column)
+          raise Carat::ParseError.new(
+            input, expected_message,
+            Carat::ExecutionLocation.new(file_name, failure_line, failure_column)
+          )
         end
         tree
       end

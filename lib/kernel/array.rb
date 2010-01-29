@@ -1,22 +1,22 @@
 class Array
   def initialize(*contents)
-    Carat.primitive "initialize"
+    Primitive.initialize(*contents)
   end
   
   def length
-    Carat.primitive "length"
+    Primitive.length
   end
   
-  def each
-    Carat.primitive "each"
+  def each(&block)
+    Primitive.each(&block)
   end
   
   def <<(item)
-    Carat.primitive "push"
+    Primitive.push
   end
   
   def [](index)
-    Carat.primitive "at"
+    Primitive.at
   end
   
   def to_a

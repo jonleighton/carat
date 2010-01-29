@@ -1,6 +1,6 @@
 module Carat
   module Language
-    class Node < Treetop::Runtime::SyntaxNode
+    module NodeHelper
       # The file is stored by the root node, so we delegate by to the parent by default and then
       # override this in Program
       def file_name
@@ -12,15 +12,27 @@ module Carat
       end
       
       def column
-        input.column_of(interval.first) + 1
+        input.column_of(interval.first)
+      end
+      
+      def location
+        Carat::ExecutionLocation.new(file_name, line, column)
+      end
+      
+      def error_location
+        Carat::ExecutionLocation.new(file_name, line, column + 1)
       end
       
       def error(message)
-        raise Carat::SyntaxError.new(input, message, file_name, line, column)
+        raise Carat::SyntaxError.new(input, message, error_location)
       end
     end
     
-    class Program < Node
+    class Treetop::Runtime::SyntaxNode
+      include NodeHelper
+    end
+    
+    class Program < Treetop::Runtime::SyntaxNode
       attr_accessor :file_name
       
       def to_ast
@@ -28,36 +40,36 @@ module Carat
       end
     end
   
-    class ExpressionList < Node
+    class ExpressionList < Treetop::Runtime::SyntaxNode
       # An array of nodes representing the expressions in the block
       def expressions
         [first] + rest.elements.map(&:expression)
       end
       
       def to_ast
-        Carat::AST::ExpressionList.new(expressions.map(&:to_ast).compact)
+        Carat::AST::ExpressionList.new(location, expressions.map(&:to_ast).compact)
       end
     end
     
-    class EmptyExpressionList < Node
+    class EmptyExpressionList < Treetop::Runtime::SyntaxNode
       def to_ast
         nil
       end
     end
     
-    class Expression < Node
+    class Expression < Treetop::Runtime::SyntaxNode
       def to_ast
         item.to_ast
       end
     end
     
-    class BracketedExpression < Node
+    class BracketedExpression < Treetop::Runtime::SyntaxNode
       def to_ast
         expression.to_ast
       end
     end
     
-    class DefinitionNode < Node
+    class DefinitionNode < Treetop::Runtime::SyntaxNode
       def contents
         definition_body.expression_list.to_ast
       end
@@ -65,7 +77,7 @@ module Carat
     
     class ModuleDefinition < DefinitionNode
       def to_ast
-        Carat::AST::ModuleDefinition.new(constant.text_value.to_sym, contents)
+        Carat::AST::ModuleDefinition.new(location, constant.text_value.to_sym, contents)
       end
     end
     
@@ -79,7 +91,10 @@ module Carat
       end
       
       def to_ast
-        Carat::AST::ClassDefinition.new(constant.text_value.to_sym, superclass_ast, contents)
+        Carat::AST::ClassDefinition.new(
+          location, constant.text_value.to_sym,
+          superclass_ast, contents
+        )
       end
     end
     
@@ -90,13 +105,14 @@ module Carat
       
       def to_ast
         Carat::AST::MethodDefinition.new(
+          location,
           receiver_ast, method_name.text_value.to_sym,
           method_argument_pattern.to_ast, contents
         )
       end
     end
     
-    class IfExpression < Node
+    class IfExpression < Treetop::Runtime::SyntaxNode
       def false_expression_ast
         false_block.to_ast unless false_block.empty?
       end
@@ -106,23 +122,26 @@ module Carat
       end
     
       def to_ast
-        Carat::AST::If.new(condition.to_ast, true_block.to_ast, false_expression_ast)
+        Carat::AST::If.new(
+          location, condition.to_ast,
+          true_block.to_ast, false_expression_ast
+        )
       end
     end
     
-    class ElseExpression < Node
+    class ElseExpression < Treetop::Runtime::SyntaxNode
       def to_ast
         expression_list.to_ast
       end
     end
     
-    class WhileExpression < Node
+    class WhileExpression < Treetop::Runtime::SyntaxNode
       def to_ast
-        Carat::AST::While.new(condition.to_ast, contents.to_ast)
+        Carat::AST::While.new(location, condition.to_ast, contents.to_ast)
       end
     end
     
-    class ArgumentPattern < Node
+    class ArgumentPattern < Treetop::Runtime::SyntaxNode
       def items
         @items ||= begin
           if contents.respond_to?(:head)
@@ -159,14 +178,14 @@ module Carat
       def to_ast
         if respond_to?(:contents)
           validate_items
-          Carat::AST::ArgumentPattern.new(items)
+          Carat::AST::ArgumentPattern.new(location, items)
         else
-          Carat::AST::ArgumentPattern.new
+          Carat::AST::ArgumentPattern.new(location)
         end
       end
     end
     
-    class ArgumentPatternItem < Node
+    class ArgumentPatternItem < Treetop::Runtime::SyntaxNode
       def default_value_ast
         default.expression.to_ast if respond_to?(:default) && !default.empty?
       end
@@ -187,11 +206,11 @@ module Carat
       end
       
       def to_ast
-        Carat::AST::ArgumentPattern::Item.new(name, type, default_value_ast)
+        Carat::AST::ArgumentPattern::Item.new(location, name, type, default_value_ast)
       end
     end
     
-    class Array < Node
+    class Array < Treetop::Runtime::SyntaxNode
       def items
         if respond_to?(:head)
           [head] + tail.elements.map(&:expression)
@@ -201,59 +220,59 @@ module Carat
       end
       
       def to_ast
-        Carat::AST::Array.new(items.map(&:to_ast))
+        Carat::AST::Array.new(location, items.map(&:to_ast))
       end
     end
     
-    class String < Node
+    class String < Treetop::Runtime::SyntaxNode
       def to_ast
-        Carat::AST::String.new(value.text_value)
+        Carat::AST::String.new(location, value.text_value)
       end
     end
     
-    class True < Node
+    class True < Treetop::Runtime::SyntaxNode
       def to_ast
-        Carat::AST::True.new
+        Carat::AST::True.new(location)
       end
     end
     
-    class False < Node
+    class False < Treetop::Runtime::SyntaxNode
       def to_ast
-        Carat::AST::False.new
+        Carat::AST::False.new(location)
       end
     end
     
-    class Nil < Node
+    class Nil < Treetop::Runtime::SyntaxNode
       def to_ast
-        Carat::AST::Nil.new
+        Carat::AST::Nil.new(location)
       end
     end
     
-    class Integer < Node
+    class Integer < Treetop::Runtime::SyntaxNode
       def to_ast
-        Carat::AST::Integer.new(text_value.to_i)
+        Carat::AST::Integer.new(location, text_value.to_i)
       end
     end
     
     module LocalVariable
       def to_ast
-        Carat::AST::LocalVariable.new(text_value.to_sym)
+        Carat::AST::LocalVariable.new(location, text_value.to_sym)
       end
     end
     
     module LocalVariableOrMethodCall
       def to_ast
-        Carat::AST::LocalVariableOrMethodCall.new(text_value.to_sym)
+        Carat::AST::LocalVariableOrMethodCall.new(location, text_value.to_sym)
       end
     end
     
-    class InstanceVariable < Node
+    class InstanceVariable < Treetop::Runtime::SyntaxNode
       def to_ast
-        Carat::AST::InstanceVariable.new(identifier.text_value.to_sym)
+        Carat::AST::InstanceVariable.new(location, identifier.text_value.to_sym)
       end
     end
     
-    class MethodCallChain < Node
+    class MethodCallChain < Treetop::Runtime::SyntaxNode
       def chain
         [receiver] + tail.elements
       end
@@ -270,12 +289,12 @@ module Carat
           receiver = reduce(chain[0..-2])
           
           if call.argument_list.empty?
-            argument_list = Carat::AST::ArgumentList.new
+            argument_list = Carat::AST::ArgumentList.new(location)
           else
             argument_list = call.argument_list.to_ast
           end
           
-          Carat::AST::MethodCall.new(receiver, call.method_name.to_sym, argument_list)
+          Carat::AST::MethodCall.new(location, receiver, call.method_name.to_sym, argument_list)
         end
       end
       
@@ -284,7 +303,7 @@ module Carat
       end
     end
     
-    class ArrayAccess < Node
+    class ArrayAccess < Treetop::Runtime::SyntaxNode
       def method_name
         :[]
       end
@@ -294,11 +313,11 @@ module Carat
       end
       
       def argument_list
-        Carat::AST::ArgumentList.new(items)
+        Carat::AST::ArgumentList.new(location, items)
       end
     end
     
-    class ArrayAssign < Node
+    class ArrayAssign < Treetop::Runtime::SyntaxNode
       def method_name
         :[]=
       end
@@ -308,11 +327,11 @@ module Carat
       end
       
       def argument_list
-        Carat::AST::ArgumentList.new(items)
+        Carat::AST::ArgumentList.new(location, items)
       end
     end
     
-    class ArrayBrackets < Node
+    class ArrayBrackets < Treetop::Runtime::SyntaxNode
       def items
         if respond_to?(:head)
           [head.to_ast] + tail.elements.map(&:argument_list_item).map(&:to_ast)
@@ -348,46 +367,16 @@ module Carat
       end
     end
     
-    class UnaryMethodCall < Node
+    class UnaryMethodCall < Treetop::Runtime::SyntaxNode
       def to_ast
         Carat::AST::MethodCall.new(
-          receiver.to_ast, (name.text_value * 2).to_sym,
-          Carat::AST::ArgumentList.new
+          location, receiver.to_ast, (name.text_value * 2).to_sym,
+          Carat::AST::ArgumentList.new(location)
         )
       end
     end
     
-=begin
-    class Assignment < Node
-      def right_ast
-        operation_name = operation.text_value
-        case operation_name
-          when '='
-            right.to_ast
-          when *(BinaryOperation::OPERATIONS.keys)
-            BinaryOperation::OPERATIONS[operation_name].new(left_ast, right.to_ast)
-          else
-            Carat::AST::MethodCall.new(
-              left_ast, operation_name.to_sym,
-              Carat::AST::ArgumentList.new(
-                [Carat::AST::ArgumentList::Item.new(right.to_ast)]
-              )
-            )
-        end
-      end
-      
-      def shortcut_binary_name
-      
-      def left_ast
-        @left_ast ||= left.to_ast
-      end
-      
-      def to_ast
-        Carat::AST::Assignment.new(left_ast, right_ast)
-      end
-    end
-=end
-    class Assignment < Node
+    class Assignment < Treetop::Runtime::SyntaxNode
       def receiver_ast
         @receiver_ast ||= receiver.to_ast
       end
@@ -397,22 +386,24 @@ module Carat
       end
       
       def to_ast
-        Carat::AST::Assignment.new(receiver_ast, value_ast)
+        Carat::AST::Assignment.new(location, receiver_ast, value_ast)
       end
     end
     
     module BinaryMethodHelper
       def method_call(left, name, right)
         Carat::AST::MethodCall.new(
-          left.to_ast, name.text_value.to_sym,
+          location, left.to_ast, name.text_value.to_sym,
           Carat::AST::ArgumentList.new(
-            [Carat::AST::ArgumentList::Item.new(right.to_ast)]
+            location, [
+              Carat::AST::ArgumentList::Item.new(location, right.to_ast)
+            ]
           )
         )
       end
     end
     
-    class BinaryMethodCall < Node
+    class BinaryMethodCall < Treetop::Runtime::SyntaxNode
       include BinaryMethodHelper
       
       def to_ast
@@ -428,24 +419,24 @@ module Carat
       end
     end
     
-    class BinaryOperation < Node
+    class BinaryOperation < Treetop::Runtime::SyntaxNode
       OPERATIONS = {
         "&&" => Carat::AST::And,
         "||" => Carat::AST::Or
       }
       
       def to_ast
-        OPERATIONS[name.text_value].new(left.to_ast, right.to_ast)
+        OPERATIONS[name.text_value].new(location, left.to_ast, right.to_ast)
       end
     end
     
     class BinaryOperationAssignment < Assignment
       def value_ast
-        BinaryOperation::OPERATIONS[name.text_value].new(receiver_ast, value.to_ast)
+        BinaryOperation::OPERATIONS[name.text_value].new(location, receiver_ast, value.to_ast)
       end
     end
     
-    class ArgumentList < Node
+    class ArgumentList < Treetop::Runtime::SyntaxNode
       def items
         @items ||= begin
           items = []
@@ -483,11 +474,11 @@ module Carat
       
       def to_ast
         validate_items
-        Carat::AST::ArgumentList.new(items)
+        Carat::AST::ArgumentList.new(location, items)
       end
     end
     
-    class ArgumentListItem < Node
+    class ArgumentListItem < Treetop::Runtime::SyntaxNode
       def type
         case text_value.chars.first
           when '*'
@@ -500,15 +491,16 @@ module Carat
       end
       
       def to_ast
-        Carat::AST::ArgumentList::Item.new(expression.to_ast, type)
+        Carat::AST::ArgumentList::Item.new(location, expression.to_ast, type)
       end
     end
     
-    class Block < Node
+    class Block < Treetop::Runtime::SyntaxNode
       def to_ast
         Carat::AST::ArgumentList::Item.new(
+          location,
           Carat::AST::Block.new(
-            block_argument_pattern.to_ast,
+            location, block_argument_pattern.to_ast,
             expression_list.to_ast
           ),
           :block
@@ -516,13 +508,13 @@ module Carat
       end
     end
     
-    class Constant < Node
+    class Constant < Treetop::Runtime::SyntaxNode
       def to_ast
-        Carat::AST::Constant.new(text_value.to_sym)
+        Carat::AST::Constant.new(location, text_value.to_sym)
       end
     end
     
-    class Nothing < Node
+    class Nothing < Treetop::Runtime::SyntaxNode
       def to_ast
         nil
       end

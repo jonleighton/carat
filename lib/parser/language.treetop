@@ -145,7 +145,7 @@ module Carat
     end
     
     rule definition_body
-      multiline_space expression_list 'end'
+      terminator expression_list 'end'
     end
     
     rule control_structure

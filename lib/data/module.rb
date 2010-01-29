@@ -72,8 +72,5 @@ module Carat::Data
     def primitive_name
       yield constants[:String].new(name)
     end
-    
-    alias_method :primitive_inspect, :primitive_name
-    alias_method :primitive_to_s, :primitive_name
   end
 end

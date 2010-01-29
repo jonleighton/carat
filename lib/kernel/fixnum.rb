@@ -2,19 +2,19 @@ class Fixnum
   include Comparable
   
   def <=>(other)
-    Carat.primitive "spaceship"
+    Primitive.spaceship(other)
   end
   
   def +(other)
-    Carat.primitive "plus"
+    Primitive.plus(other)
   end
   
   def -(other)
-    Carat.primitive "minus"
+    Primitive.minus(other)
   end
   
   def to_s
-    Carat.primitive "to_s"
+    Primitive.to_s
   end
   
   # Unary -

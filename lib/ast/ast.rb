@@ -4,10 +4,14 @@ module Carat
     
     # The superclass of all AST nodes
     class Node
-      attr_reader :runtime
+      attr_reader :runtime, :location
       
       extend Forwardable
       def_delegators :runtime, :constants, :current_call, :current_scope, :current_object
+      
+      def initialize(location)
+        @location = location
+      end
       
       def runtime=(runtime_object)
         @runtime = runtime_object
@@ -86,7 +90,8 @@ module Carat
     class MultipleValueNode < ValueNode
       attr_reader :value
       
-      def initialize(value)
+      def initialize(location, value)
+        super(location)
         @value = value
       end
       
@@ -99,7 +104,8 @@ module Carat
       attr_reader :name
       attr_writer :runtime
       
-      def initialize(name)
+      def initialize(location, name)
+        super(location)
         @name = name
       end
       
@@ -117,7 +123,8 @@ module Carat
       
       alias_method :children, :items
       
-      def initialize(items = [])
+      def initialize(location, items = [])
+        super(location)
         @items = items
       end
       
@@ -152,7 +159,8 @@ module Carat
     class BinaryNode < Node
       attr_reader :left, :right
       
-      def initialize(left, right)
+      def initialize(location, left, right)
+        super(location)
         @left, @right = left, right
       end
       

@@ -1,21 +1,17 @@
 class Module
   def include(mod)
-    Carat.primitive "include"
-  end
-  
-  def ancestors
-    Carat.primitive "ancestors"
+    Primitive.include(mod)
   end
   
   def name
-    Carat.primitive "name"
+    Primitive.name
   end
   
   def inspect
-    Carat.primitive "inspect"
+    name
   end
   
   def to_s
-    Carat.primitive "to_s"
+    name
   end
 end

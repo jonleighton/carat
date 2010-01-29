@@ -1,18 +1,18 @@
 module Kernel
   def raise(exception_or_string = nil, message = "(no message)")
     if exception_or_string.is_a?(Exception)
-      Carat.primitive "raise"
+      Primitive.raise exception_or_string
     elsif exception_or_string.is_a?(String)
-      raise Exception.new(exception_or_string)
+      Primitive.raise RuntimeError.new(exception_or_string)
     elsif exception_or_string == nil
-      raise Exception.new(message)
+      Primitive.raise RuntimeError.new(message)
     else
-      raise exception_or_string.new(message)
+      Primitive.raise exception_or_string.new(message)
     end
   end
   
-  def puts(obj)
-    Carat.primitive "puts"
+  def puts(obj = "\n")
+    Primitive.puts(obj)
   end
 
   def p(obj)
@@ -23,11 +23,11 @@ module Kernel
     Lambda.new(&block)
   end
   
-  def yield
-    Carat.primitive "yield"
+  def yield(*args)
+    Primitive.yield(*args)
   end
   
-  def return
-    Carat.primitive "return"
+  def return(value)
+    Primitive.return(value)
   end
 end

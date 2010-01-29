@@ -17,7 +17,8 @@ module Carat::Data
     attr_accessor :klass
     
     extend Forwardable
-    def_delegators :runtime, :current_call, :current_scope, :current_object, :constants, :call_stack
+    def_delegators :runtime, :constants, :call_stack,
+                   :current_call, :current_scope, :current_object, :current_location
     
     include KernelModule
     
@@ -35,24 +36,22 @@ module Carat::Data
       klass.lookup_method(name)
     end
     
-    def lookup_instance_method!(name)
-      lookup_instance_method(name) || raise(Carat::CaratError, "method '#{self}##{name}' not found")
-    end
-    
     def has_instance_method?(name)
       lookup_instance_method(name) && true || false
     end
     
-    def empty_argument_list
-      argument_list = Carat::AST::ArgumentList.new
-      argument_list.runtime = runtime
-      argument_list
-    end
-    
     # Call the method with a given name, with the given AST argument list
-    def call(method_name, argument_list = nil, &continuation)
-      method = lookup_instance_method!(method_name)
-      runtime.call(method, method_scope, argument_list || empty_argument_list, &continuation)
+    def call(method_name, argument_list = [], location = current_location, &continuation)
+      method = lookup_instance_method(method_name)
+      
+      if method
+        runtime.call(location, method, method_scope, argument_list, &continuation)
+      else
+        # TODO: This means the method never goes on the call-stack, so the first item of the call
+        #       stack is missing.
+        runtime.raise(:NoMethodError, constants[:String].new(method_name))
+        #call(:raise, &continuation)
+      end
     end
     
     # A scope for evaluating the method call, with this object as 'self'
@@ -102,7 +101,7 @@ module Carat::Data
     
     # ***** Primitives ***** #
     
-    def primitive_equality_op(other)
+    def primitive_equal_to(other)
       if carat_object_id == other.carat_object_id
         yield runtime.true
       else

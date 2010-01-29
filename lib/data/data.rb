@@ -20,7 +20,7 @@ module Carat
     
     require DATA_PATH + '/lambda'
     require DATA_PATH + '/method'
-    require DATA_PATH + '/carat'
+    require DATA_PATH + '/primitive'
     
     require DATA_PATH + '/fixnum'
     require DATA_PATH + '/array'

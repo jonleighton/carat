@@ -2,7 +2,8 @@ module Carat::AST
   class Assignment < Node
     attr_reader :variable, :value
     
-    def initialize(variable, value)
+    def initialize(location, variable, value)
+      super(location)
       @variable, @value = variable, value
     end
     
@@ -40,9 +41,9 @@ module Carat::AST
       if current_scope[name]
         yield current_scope[name]
       elsif current_object.has_instance_method?(name)
-        current_object.call(name, &continuation)
+        current_object.call(name, [], location, &continuation)
       else
-        raise Carat::CaratError, "undefined local variable or method '#{name}'"
+        runtime.raise(:NameError, constants[:String].new(name))
       end
     end
   end

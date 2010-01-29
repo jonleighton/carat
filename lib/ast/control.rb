@@ -2,7 +2,8 @@ module Carat::AST
   class If < Node
     attr_reader :condition, :true_node, :false_node
     
-    def initialize(condition, true_node, false_node)
+    def initialize(location, condition, true_node, false_node)
+      super(location)
       @condition, @true_node, @false_node = condition, true_node, false_node
     end
     
@@ -31,7 +32,8 @@ module Carat::AST
   class While < Node
     attr_reader :condition, :contents
     
-    def initialize(condition, contents)
+    def initialize(location, condition, contents)
+      super(location)
       @condition, @contents = condition, contents
     end
     

@@ -28,14 +28,14 @@ class Object
   end
   
   def ==(other)
-    Carat.primitive "equality_op"
+    Primitive.equal_to(other)
   end
   
   def object_id
-    Carat.primitive "object_id"
+    Primitive.object_id
   end
   
   def class
-    Carat.primitive "class"
+    Primitive.class
   end
 end

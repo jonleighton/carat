@@ -2,7 +2,8 @@ module Carat::AST
   class MethodCall < Node
     attr_reader :receiver, :name, :arguments
     
-    def initialize(receiver, name, arguments)
+    def initialize(location, receiver, name, arguments)
+      super(location)
       @receiver, @name, @arguments = receiver, name, arguments
     end
     
@@ -20,7 +21,7 @@ module Carat::AST
     
     def eval(&continuation)
       eval_receiver do |receiver_object|
-        receiver_object.call(name, arguments, &continuation)
+        receiver_object.call(name, arguments, location, &continuation)
       end
     end
     
@@ -35,7 +36,8 @@ module Carat::AST
     class Item < Node
       attr_accessor :expression, :argument_type
       
-      def initialize(expression, argument_type = :normal)
+      def initialize(location, expression, argument_type = :normal)
+        super(location)
         @expression, @argument_type = expression, argument_type
       end
       
@@ -50,10 +52,6 @@ module Carat::AST
       def inspect
         type + "[#{argument_type}]:\n" + indent(expression.inspect)
       end
-    end
-    
-    def initialize(items = [])
-      super(items)
     end
     
     def block
@@ -92,7 +90,8 @@ module Carat::AST
   class Block < Node
     attr_reader :argument_pattern, :contents
     
-    def initialize(argument_pattern, contents)
+    def initialize(location, argument_pattern, contents)
+      super(location)
       @argument_pattern, @contents = argument_pattern, contents
     end
     

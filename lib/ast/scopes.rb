@@ -1,10 +1,17 @@
 module Carat::AST
   class ExpressionList < NodeList
+    attr_reader :current_location
+    
+    # We want to keep track of the location of the expression currently being evaluated, 
     def eval(&continuation)
       operation = lambda do |object, accumulation, node, &operation_continuation|
+        @next_index += 1
+        @current_location = items[@next_index].location unless @next_index == items.length
         operation_continuation.call(object)
       end
       
+      @next_index = 0
+      @current_location = items.first.location
       eval_fold(runtime.nil, operation, &continuation)
     end
   end
@@ -12,7 +19,8 @@ module Carat::AST
   class ModuleDefinition < Node
     attr_reader :name, :contents
     
-    def initialize(name, contents)
+    def initialize(location, name, contents)
+      super(location)
       @name, @contents = name, contents
     end
     
@@ -40,7 +48,8 @@ module Carat::AST
   class ClassDefinition < Node
     attr_reader :name, :superclass, :contents
     
-    def initialize(name, superclass, contents)
+    def initialize(location, name, superclass, contents)
+      super(location)
       @name, @superclass, @contents = name, superclass, contents
     end
     
@@ -84,7 +93,8 @@ module Carat::AST
   class MethodDefinition < Node
     attr_reader :receiver, :name, :argument_pattern, :contents
     
-    def initialize(receiver, name, argument_pattern, contents)
+    def initialize(location, receiver, name, argument_pattern, contents)
+      super(location)
       @receiver, @name, @argument_pattern, @contents = receiver, name, argument_pattern, contents
     end
     
@@ -139,7 +149,8 @@ module Carat::AST
     class Item < Node
       attr_reader :name, :pattern_type, :default
       
-      def initialize(name, pattern_type, default = nil)
+      def initialize(location, name, pattern_type, default = nil)
+        super(location)
         @name, @pattern_type, @default = name, pattern_type, default
       end
       

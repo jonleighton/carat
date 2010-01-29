@@ -1,7 +1,7 @@
 module Carat::Data
   class StringClass < ClassInstance
     def new(contents)
-      StringInstance.new(runtime, contents)
+      StringInstance.new(runtime, contents.to_s)
     end
   
     def primitive_allocate

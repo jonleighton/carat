@@ -31,14 +31,17 @@ class Carat::Runtime
     # The AST node representing the argument list, or just a flat array of pre-evalutated objects
     attr_reader :argument_list
     
+    # Location that the call was made
+    attr_reader :location
+    
     attr_reader :arguments, :argument_objects, :block_from_arguments, :return_continuation
     
     extend Forwardable
     def_delegators :callable, :argument_pattern, :contents
     def_delegators :execution_scope, :block
     
-    def initialize(runtime, callable, execution_scope, argument_list)
-      @runtime, @callable              = runtime, callable
+    def initialize(runtime, location, callable, execution_scope, argument_list)
+      @runtime, @location, @callable   = runtime, location, callable
       @execution_scope, @argument_list = execution_scope, argument_list
       
       @caller_scope = runtime.current_scope
@@ -88,7 +91,7 @@ class Carat::Runtime
     end
     
     # Return a hash where the argument names of this method are assigned the given values
-    def eval_arguments
+    def eval_arguments(&continuation)
       eval_argument_objects do |argument_objects|
         argument_pattern.match_to(argument_objects.clone, block) do |arguments|
           @arguments = arguments
@@ -103,7 +106,7 @@ class Carat::Runtime
     #      items.map { ... }
     #   2. Any other AST node - when the block is passed in as an expression:
     #      items.map(&block)
-    def eval_block_from_arguments
+    def eval_block_from_arguments(&continuation)
       if argument_list.is_a?(Carat::AST::ArgumentList) && argument_list.block
         argument_list.block.eval_in_scope(caller_scope) do |block_from_arguments|
           @block_from_arguments = block_from_arguments
@@ -112,6 +115,10 @@ class Carat::Runtime
       else
         yield nil
       end
+    end
+    
+    def to_s
+      callable.to_s
     end
     
     def inspect

@@ -1,10 +1,10 @@
 class Class < Module
   def allocate
-    Carat.primitive "allocate"
+    Primitive.allocate
   end
   
   def superclass
-    Carat.primitive "superclass"
+    Primitive.superclass
   end
   
   def new(*args, &block)
