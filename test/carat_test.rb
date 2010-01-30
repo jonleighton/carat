@@ -412,6 +412,33 @@ class CaratTest < Test::Unit::TestCase
     assert_equal("PASS\n", execute(code))
   end
   
+  def test_exceptions
+    code = <<-CODE
+      class TestError < RuntimeError; end
+
+      begin
+        raise TestError.new("PASS")
+        puts "FAIL"
+      rescue TestError => error
+        puts "PASS"
+        puts error.to_s
+      end
+
+      begin
+        begin
+          raise RuntimeError
+          puts "FAIL"
+        rescue TestError => error
+          puts "FAIL"
+        end
+      rescue
+        puts "PASS"
+      end
+    CODE
+    
+    assert_equal("PASS\nPASS\nPASS\n", execute(code))
+  end
+  
   def test_environment
     runtime = Carat::Runtime.new
     constants = runtime.constants

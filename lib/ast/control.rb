@@ -88,19 +88,39 @@ module Carat::AST
   end
   
   class Rescue < Node
-    attr_reader :error_type, :assignment, :contents
+    attr_reader :error_type, :exception_variable, :contents
     
-    def initialize(error_type, assignment, contents)
-      @error_type, @assignment, @contents = error_type, assignment, contents
+    def initialize(error_type, exception_variable, contents)
+      @error_type, @exception_variable, @contents = error_type, exception_variable, contents
     end
     
     def children
-      [error_type, assignment, contents]
+      [error_type, exception_variable, contents]
+    end
+    
+    def eval_error_type(&continuation)
+      if error_type
+        eval_child(error_type, &continuation)
+      else
+        yield constants[:RuntimeError]
+      end
     end
     
     def setup(return_continuation)
-      runtime.failure_continuation = lambda do
-        eval_child(contents, &return_continuation)
+      previous_failure_continuation = runtime.failure_continuation
+      runtime.failure_continuation = lambda do |exception|
+        runtime.failure_continuation = previous_failure_continuation
+        
+        eval_error_type do |error_type_object|
+          exception.call(:is_a?, [error_type_object]) do |exception_match|
+            if exception_match == runtime.true
+              exception_variable.assign(exception) unless exception_variable.nil?
+              eval_child(contents, &return_continuation)
+            else
+              previous_failure_continuation.call(exception)
+            end
+          end
+        end
       end
     end
     
