@@ -141,6 +141,30 @@ module Carat
       end
     end
     
+    class BeginExpression < Treetop::Runtime::SyntaxNode
+      def rescue_ast
+        self.rescue.to_ast unless self.rescue.empty?
+      end
+    
+      def to_ast
+        Carat::AST::Begin.new(contents.to_ast, rescue_ast)
+      end
+    end
+    
+    class RescueExpression < Treetop::Runtime::SyntaxNode
+      def type_ast
+        type.expression.to_ast unless type.empty?
+      end
+      
+      def assignment_ast
+        assignment.variable.to_ast unless assignment.empty?
+      end
+      
+      def to_ast
+        Carat::AST::Rescue.new(type_ast, assignment_ast, contents.to_ast)
+      end
+    end
+    
     class ArgumentPattern < Treetop::Runtime::SyntaxNode
       def items
         @items ||= begin

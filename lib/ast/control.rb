@@ -60,7 +60,55 @@ module Carat::AST
     def inspect
       type + ":\n" +
         "Condition:\n" + indent(condition.inspect) + "\n" +
-        "Contents:\n" + indent(contents.inspect) + "\n"
+        "Contents:\n" + indent(contents.inspect)
+    end
+  end
+  
+  class Begin < Node
+    attr_reader :contents, :rescue
+    
+    def initialize(contents, rescu)
+      @contents, @rescue = contents, rescu
+    end
+    
+    def children
+      [contents, self.rescue]
+    end
+    
+    def eval(&continuation)
+      self.rescue.setup(continuation)
+      eval_child(contents, &continuation)
+    end
+    
+    def inspect
+      type + ":\n" +
+        "Contents:\n" + indent(contents.inspect) + "\n" +
+        "Rescue:\n" + indent(self.rescue.inspect)
+    end
+  end
+  
+  class Rescue < Node
+    attr_reader :error_type, :assignment, :contents
+    
+    def initialize(error_type, assignment, contents)
+      @error_type, @assignment, @contents = error_type, assignment, contents
+    end
+    
+    def children
+      [error_type, assignment, contents]
+    end
+    
+    def setup(return_continuation)
+      runtime.failure_continuation = lambda do
+        eval_child(contents, &return_continuation)
+      end
+    end
+    
+    def inspect
+      type + ":\n" +
+        "Error type:\n" + indent(error_type.inspect) + "\n" +
+        "Assignment:\n" + indent(assignment.inspect) + "\n" +
+        "Contents:\n" + indent(contents.inspect)
     end
   end
   

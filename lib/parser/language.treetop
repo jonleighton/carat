@@ -150,7 +150,8 @@ module Carat
     
     rule control_structure
       if_expression /
-      while_expression
+      while_expression /
+      begin_expression
     end
     
     rule if_expression
@@ -174,6 +175,20 @@ module Carat
       'while' space condition:expression space? terminator
       contents:expression_list
       'end' <WhileExpression>
+    end
+    
+    rule begin_expression
+      'begin' multiline_space
+      contents:expression_list
+      rescue:rescue_expression?
+      'end' <BeginExpression>
+    end
+    
+    rule rescue_expression
+      'rescue'
+      type:(space expression)?
+      assignment:(space? '=>' multiline_space variable)?
+      multiline_space contents:expression_list <RescueExpression>
     end
     
     # The arguments defined as part of a method definition
@@ -326,7 +341,10 @@ module Carat
     end
     
     rule keyword
-      'class' / 'module' / 'def' / 'do' / 'end' / 'if' / 'else' / 'elsif' / 'while'
+      'class' / 'module' / 'def' /
+      'do' / 'end' /
+      'if' / 'else' / 'elsif' / 'while' /
+      'begin' / 'rescue'
     end
     
     rule method_name
