@@ -50,7 +50,7 @@ module Carat
     
     def parse_tree
       @parse_tree ||= begin
-        tree = parse(input)
+        tree = parse(input_without_comments)
         if tree.nil?
           raise Carat::ParseError.new(
             input, expected_message,
@@ -59,6 +59,10 @@ module Carat
         end
         tree
       end
+    end
+    
+    def input_without_comments
+      input.gsub(/##.*?##/m, '').gsub(/#[^\n]*/, '')
     end
     
     def expected_message

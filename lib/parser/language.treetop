@@ -13,9 +13,7 @@ module Carat
     
     # An expression is the basic 'thing'
     rule expression
-      item:assignment_expression space? comment? <Expression>
-      /
-      comment
+      assignment_expression
     end
     
     rule assignment_expression
@@ -425,23 +423,11 @@ module Carat
     end
     
     rule space
-      block_comment? ([ \t]+ block_comment?)+
+      [ \t]+
     end
     
     rule multiline_space
-      block_comment? ([ \t\n\r]+ block_comment?)+
-    end
-    
-    rule comment
-      block_comment / line_comment
-    end
-    
-    rule block_comment
-      '##' (!'##' .)* '##' <Nothing>
-    end
-    
-    rule line_comment
-      '#' [^\n]* <Nothing>
+      [ \t\n\r]+
     end
   end
 end

@@ -57,12 +57,6 @@ module Carat
       end
     end
     
-    class Expression < Treetop::Runtime::SyntaxNode
-      def to_ast
-        item.to_ast
-      end
-    end
-    
     class BracketedExpression < Treetop::Runtime::SyntaxNode
       def to_ast
         expression.to_ast
