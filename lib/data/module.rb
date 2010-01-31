@@ -1,6 +1,5 @@
 module Carat::Data
   class ModuleClass < ClassInstance
-    
   end
   
   class ModuleInstance < ObjectInstance

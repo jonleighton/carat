@@ -1,5 +1,9 @@
 module Carat::Data
   class LambdaClass < ClassInstance
+    def new(argument_pattern, contents, scope)
+      LambdaInstance.new(runtime, self, argument_pattern, contents, scope)
+    end
+    
     def primitive_new
       yield current_call.block
     end
@@ -8,9 +12,9 @@ module Carat::Data
   class LambdaInstance < ObjectInstance
     attr_reader :argument_pattern, :contents, :scope
     
-    def initialize(runtime, argument_pattern, contents, scope)
+    def initialize(runtime, klass, argument_pattern, contents, scope)
       @argument_pattern, @contents, @scope = argument_pattern, contents, scope
-      super(runtime, runtime.constants[:Lambda])
+      super(runtime, klass)
     end
     
     def eval_call(scope, &continuation)

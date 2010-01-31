@@ -66,7 +66,7 @@ module Carat::AST
     child :contents
     
     def eval
-      yield Carat::Data::LambdaInstance.new(runtime, argument_pattern, contents, current_scope)
+      yield constants[:Lambda].new(argument_pattern, contents, current_scope)
     end
   end
 end

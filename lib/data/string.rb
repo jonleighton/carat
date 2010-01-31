@@ -1,20 +1,20 @@
 module Carat::Data
   class StringClass < ClassInstance
-    def new(contents)
-      StringInstance.new(runtime, contents.to_s)
+    def new(contents = "")
+      StringInstance.new(runtime, self, contents.to_s)
     end
   
     def primitive_allocate
-      yield StringInstance.new(runtime, "")
+      yield new
     end
   end
   
   class StringInstance < ObjectInstance
     attr_reader :contents
   
-    def initialize(runtime, contents)
+    def initialize(runtime, klass, contents = "")
       @contents = contents
-      super(runtime, runtime.constants[:String])
+      super(runtime, klass)
     end
     
     def to_s

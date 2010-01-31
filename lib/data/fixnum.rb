@@ -5,16 +5,16 @@ module Carat::Data
     end
     
     def get(number)
-      instances[number] ||= FixnumInstance.new(runtime, number)
+      instances[number] ||= FixnumInstance.new(runtime, self, number)
     end
   end
   
   class FixnumInstance < ObjectInstance
     attr_reader :value
     
-    def initialize(runtime, value)
+    def initialize(runtime, klass, value)
       @value = value
-      super(runtime, runtime.constants[:Fixnum])
+      super(runtime, klass)
     end
     
     def to_s

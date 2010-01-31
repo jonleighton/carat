@@ -19,7 +19,7 @@ module Carat::AST
   
   class String < MultipleValueNode
     def value_object
-      Carat::Data::StringInstance.new(runtime, value)
+      constants[:String].new(value)
     end
   end
   

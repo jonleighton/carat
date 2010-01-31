@@ -65,7 +65,7 @@ module Carat::AST
     child    :contents
     
     def method_object
-      Carat::Data::MethodInstance.new(runtime, name, argument_pattern, contents)
+      constants[:Method].new(name, argument_pattern, contents)
     end
     
     def current_klass
