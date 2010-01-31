@@ -40,7 +40,7 @@ class Carat::Runtime
       # TODO: Implement require, and just call run one file which requires the rest
       [:kernel, :module, :class, :object, :comparable, :fixnum, :array, :string, :nil_class,
        :true_class, :false_class, :lambda, :exception].each do |file|
-        runtime.run_file(Carat::KERNEL_PATH + "/#{file}.rb")
+        runtime.run_file(Carat::KERNEL_PATH + "/#{file}.carat")
       end
       
       current_scope[:self] = Carat::Data::ObjectInstance.new(runtime, @object)
