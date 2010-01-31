@@ -5,6 +5,9 @@ class Carat::Runtime
     extend Forwardable
     def_delegators :runtime, :constants, :current_scope
     
+    LOAD_ORDER = [:kernel, :module, :class, :object, :comparable, :fixnum, :array, :string,
+                  :nil_class, :true_class, :false_class, :lambda, :exception]
+    
     def initialize(runtime)
       @runtime = runtime
     end
@@ -37,10 +40,8 @@ class Carat::Runtime
       create_classes(:Primitive, :Fixnum, :Array, :String, :Lambda, :Method,
                      :NilClass, :TrueClass, :FalseClass)
       
-      # TODO: Implement require, and just call run one file which requires the rest
-      [:kernel, :module, :class, :object, :comparable, :fixnum, :array, :string, :nil_class,
-       :true_class, :false_class, :lambda, :exception].each do |file|
-        runtime.run_file(Carat::KERNEL_PATH + "/#{file}.carat")
+      LOAD_ORDER.each do |file|
+        runtime.execute(Marshal.load(File.read(Carat::KERNEL_PATH + "/#{file}.marshal")))
       end
       
       current_scope[:self] = Carat::Data::ObjectInstance.new(runtime, @object)
