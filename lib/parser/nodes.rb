@@ -147,7 +147,7 @@ module Carat
       end
     
       def to_ast
-        Carat::AST::Begin.new(contents.to_ast, rescue_ast)
+        Carat::AST::Begin.new(location, contents.to_ast, rescue_ast)
       end
     end
     
@@ -161,7 +161,7 @@ module Carat
       end
       
       def to_ast
-        Carat::AST::Rescue.new(type_ast, assignment_ast, contents.to_ast)
+        Carat::AST::Rescue.new(location, type_ast, assignment_ast, contents.to_ast)
       end
     end
     

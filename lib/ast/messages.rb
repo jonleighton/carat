@@ -1,15 +1,8 @@
 module Carat::AST
   class MethodCall < Node
-    attr_reader :receiver, :name, :arguments
-    
-    def initialize(location, receiver, name, arguments)
-      super(location)
-      @receiver, @name, @arguments = receiver, name, arguments
-    end
-    
-    def children
-      [receiver, arguments]
-    end
+    child :receiver
+    property :name
+    child :arguments
     
     def eval_receiver(&continuation)
       if receiver
@@ -34,16 +27,8 @@ module Carat::AST
   
   class ArgumentList < NodeList
     class Item < Node
-      attr_accessor :expression, :argument_type
-      
-      def initialize(location, expression, argument_type = :normal)
-        super(location)
-        @expression, @argument_type = expression, argument_type
-      end
-      
-      def children
-        [expression]
-      end
+      child    :expression
+      property :argument_type, :default => :normal
       
       def eval(&continuation)
         eval_child(expression, &continuation)
@@ -88,16 +73,8 @@ module Carat::AST
   # This is a literal block, i.e. "foo do .. end" or "foo { ... }"
   # When evaluated it is converted to a lambda
   class Block < Node
-    attr_reader :argument_pattern, :contents
-    
-    def initialize(location, argument_pattern, contents)
-      super(location)
-      @argument_pattern, @contents = argument_pattern, contents
-    end
-    
-    def children
-      [argument_pattern, contents]
-    end
+    child :argument_pattern
+    child :contents
     
     def eval
       yield Carat::Data::LambdaInstance.new(runtime, argument_pattern, contents, current_scope)

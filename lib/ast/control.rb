@@ -1,15 +1,8 @@
 module Carat::AST
   class If < Node
-    attr_reader :condition, :true_node, :false_node
-    
-    def initialize(location, condition, true_node, false_node)
-      super(location)
-      @condition, @true_node, @false_node = condition, true_node, false_node
-    end
-    
-    def children
-      [condition, true_node, false_node]
-    end
+    child :condition
+    child :true_node
+    child :false_node
     
     def eval(&continuation)
       eval_child(condition) do |condition_value|
@@ -30,16 +23,8 @@ module Carat::AST
   end
   
   class While < Node
-    attr_reader :condition, :contents
-    
-    def initialize(location, condition, contents)
-      super(location)
-      @condition, @contents = condition, contents
-    end
-    
-    def children
-      [condition, contents]
-    end
+    child :condition
+    child :contents
     
     def eval(&continuation)
       loop = lambda do
@@ -65,15 +50,8 @@ module Carat::AST
   end
   
   class Begin < Node
-    attr_reader :contents, :rescue
-    
-    def initialize(contents, rescu)
-      @contents, @rescue = contents, rescu
-    end
-    
-    def children
-      [contents, self.rescue]
-    end
+    child :contents
+    child :rescue
     
     def eval(&continuation)
       self.rescue.setup(continuation)
@@ -88,15 +66,9 @@ module Carat::AST
   end
   
   class Rescue < Node
-    attr_reader :error_type, :exception_variable, :contents
-    
-    def initialize(error_type, exception_variable, contents)
-      @error_type, @exception_variable, @contents = error_type, exception_variable, contents
-    end
-    
-    def children
-      [error_type, exception_variable, contents]
-    end
+    child :error_type
+    child :exception_variable
+    child :contents
     
     def eval_error_type(&continuation)
       if error_type

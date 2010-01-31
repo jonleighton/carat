@@ -10,16 +10,8 @@ module Carat::AST
   end
   
   class ModuleDefinition < Node
-    attr_reader :name, :contents
-    
-    def initialize(location, name, contents)
-      super(location)
-      @name, @contents = name, contents
-    end
-    
-    def children
-      [contents]
-    end
+    property :name
+    child    :contents
     
     def module_object
       constants[name] ||= Carat::Data::ModuleInstance.new(runtime, name)
@@ -39,16 +31,9 @@ module Carat::AST
   end
   
   class ClassDefinition < Node
-    attr_reader :name, :superclass, :contents
-    
-    def initialize(location, name, superclass, contents)
-      super(location)
-      @name, @superclass, @contents = name, superclass, contents
-    end
-    
-    def children
-      [superclass, contents]
-    end
+    property :name
+    child    :superclass
+    child    :contents
     
     def eval_superclass_object(&continuation)
       if superclass
@@ -84,16 +69,10 @@ module Carat::AST
   end
   
   class MethodDefinition < Node
-    attr_reader :receiver, :name, :argument_pattern, :contents
-    
-    def initialize(location, receiver, name, argument_pattern, contents)
-      super(location)
-      @receiver, @name, @argument_pattern, @contents = receiver, name, argument_pattern, contents
-    end
-    
-    def children
-      [receiver, argument_pattern, contents]
-    end
+    child    :receiver
+    property :name
+    child    :argument_pattern
+    child    :contents
     
     def method_object
       Carat::Data::MethodInstance.new(runtime, name, argument_pattern, contents)
@@ -140,16 +119,9 @@ module Carat::AST
   
   class ArgumentPattern < NodeList
     class Item < Node
-      attr_reader :name, :pattern_type, :default
-      
-      def initialize(location, name, pattern_type, default = nil)
-        super(location)
-        @name, @pattern_type, @default = name, pattern_type, default
-      end
-      
-      def children
-        [default]
-      end
+      property :name
+      property :pattern_type
+      child    :default, :default => nil
       
       def value(values, block, &continuation)
         case pattern_type

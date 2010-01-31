@@ -4,13 +4,46 @@ module Carat
     
     # The superclass of all AST nodes
     class Node
+      class << self
+        def attributes
+          @attributes ||= begin
+            if superclass.respond_to?(:attributes)
+              superclass.attributes.clone
+            else
+              []
+            end
+          end
+        end
+        
+        def required_attributes
+          attributes.find_all { |attribute| !attribute.has_key?(:default) }
+        end
+        
+        [:child, :children, :property].each do |attribute_type|
+          class_eval <<-CODE
+            def #{attribute_type}(name, options = {})
+              class_eval { attr_reader name }
+              attributes << options.merge(:type => :#{attribute_type}, :name => name)
+            end
+          CODE
+        end
+      end
+      
       attr_reader :runtime, :location
       
       extend Forwardable
       def_delegators :runtime, :constants, :current_call, :current_scope, :current_object
       
-      def initialize(location)
+      def initialize(location, *attributes)
         @location = location
+        
+        if self.class.required_attributes.length > attributes.length
+          raise ArgumentError, "wrong number of attributes"
+        end
+        
+        self.class.attributes.each do |attribute|
+          instance_variable_set("@#{attribute[:name]}", attributes.shift || attribute[:default])
+        end
       end
       
       def runtime=(runtime_object)
@@ -18,9 +51,18 @@ module Carat
         children.compact.each { |child| child.runtime = runtime_object }
       end
       
-      # Subclasses should implement this method so that children can be manipulated
       def children
-        raise NotImplementedError
+        @children ||= self.class.attributes.inject([]) do |children, attribute|
+          value = instance_variable_get("@#{attribute[:name]}")
+          
+          if attribute[:type] == :children
+            children + value
+          elsif attribute[:type] == :child
+            children << value
+          else
+            children
+          end
+        end
       end
       
       def eval_in_scope(scope, &continuation)
@@ -76,10 +118,6 @@ module Carat
         raise NotImplementedError
       end
       
-      def children
-        []
-      end
-      
       def eval
         yield value_object
       end
@@ -88,12 +126,7 @@ module Carat
     # A node representing a value drawn from a set of possibilities - for example a string or
     # integer value
     class MultipleValueNode < ValueNode
-      attr_reader :value
-      
-      def initialize(location, value)
-        super(location)
-        @value = value
-      end
+      property :value
       
       def inspect
         type + "[#{value.inspect}]"
@@ -101,17 +134,7 @@ module Carat
     end
     
     class NamedNode < Node
-      attr_reader :name
-      attr_writer :runtime
-      
-      def initialize(location, name)
-        super(location)
-        @name = name
-      end
-      
-      def children
-        []
-      end
+      property :name
       
       def inspect
         type + "[#{name}]"
@@ -119,14 +142,7 @@ module Carat
     end
     
     class NodeList < Node
-      attr_reader :items
-      
-      alias_method :children, :items
-      
-      def initialize(location, items = [])
-        super(location)
-        @items = items
-      end
+      children :items, :default => []
       
       def empty?
         items.empty?
@@ -157,16 +173,8 @@ module Carat
     end
     
     class BinaryNode < Node
-      attr_reader :left, :right
-      
-      def initialize(location, left, right)
-        super(location)
-        @left, @right = left, right
-      end
-      
-      def children
-        [left, right]
-      end
+      child :left
+      child :right
       
       def inspect
         type + ":\n" +

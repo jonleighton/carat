@@ -1,15 +1,7 @@
 module Carat::AST
   class Assignment < Node
-    attr_reader :variable, :value
-    
-    def initialize(location, variable, value)
-      super(location)
-      @variable, @value = variable, value
-    end
-    
-    def children
-      [variable, value]
-    end
+    child :variable
+    child :value
     
     def eval
       eval_child(value) do |value_object|
