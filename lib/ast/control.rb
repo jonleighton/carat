@@ -13,13 +13,6 @@ module Carat::AST
         end
       end
     end
-    
-    def inspect
-      type + ":\n" +
-        "Condition:\n" + indent(condition.inspect) + "\n" +
-        "True Branch:\n" + indent(true_node.inspect) + "\n" +
-        "False Branch:\n" + indent(false_node.inspect)
-    end
   end
   
   class While < Node
@@ -41,12 +34,6 @@ module Carat::AST
       
       loop.call
     end
-    
-    def inspect
-      type + ":\n" +
-        "Condition:\n" + indent(condition.inspect) + "\n" +
-        "Contents:\n" + indent(contents.inspect)
-    end
   end
   
   class Begin < Node
@@ -56,12 +43,6 @@ module Carat::AST
     def eval(&continuation)
       self.rescue.setup(continuation)
       eval_child(contents, &continuation)
-    end
-    
-    def inspect
-      type + ":\n" +
-        "Contents:\n" + indent(contents.inspect) + "\n" +
-        "Rescue:\n" + indent(self.rescue.inspect)
     end
   end
   
@@ -94,13 +75,6 @@ module Carat::AST
           end
         end
       end
-    end
-    
-    def inspect
-      type + ":\n" +
-        "Error type:\n" + indent(error_type.inspect) + "\n" +
-        "Assignment:\n" + indent(assignment.inspect) + "\n" +
-        "Contents:\n" + indent(contents.inspect)
     end
   end
   

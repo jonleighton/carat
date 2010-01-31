@@ -178,11 +178,11 @@ module Carat
       end
       
       def splat_count
-        items.find_all { |item| item.pattern_type == :splat }.length
+        items.find_all { |item| item.type == :splat }.length
       end
       
       def block_pass
-        items.find { |item| item.pattern_type == :block_pass }
+        items.find { |item| item.type == :block_pass }
       end
       
       def validate_items
@@ -471,11 +471,11 @@ module Carat
       end
       
       def block_pass
-        items.find { |item| item.argument_type == :block_pass }
+        items.find { |item| item.type == :block_pass }
       end
       
       def block
-        items.last if items.last.argument_type == :block
+        items.last if items.last.type == :block
       end
       
       # Note that multiple splats are allowed, when *calling* a method, because there is no

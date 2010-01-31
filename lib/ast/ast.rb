@@ -1,5 +1,7 @@
 module Carat
   module AST
+    require AST_PATH + "/printer"
+    
     # ***** ABSTRACT SUPERCLASSES ****** #
     
     # The superclass of all AST nodes
@@ -17,6 +19,10 @@ module Carat
         
         def required_attributes
           attributes.find_all { |attribute| !attribute.has_key?(:default) }
+        end
+        
+        def properties
+          attributes.find_all { |attribute| attribute[:type] == :property }
         end
         
         [:child, :children, :property].each do |attribute_type|
@@ -90,26 +96,16 @@ module Carat
       end
       
       def eval
-        raise CaratError, "evaluation logic for #{type} not implemented"
-      end
-      
-      def type
-        self.class.to_s.sub("Carat::AST::", "")
+        raise CaratError, "evaluation logic for #{self} not implemented"
       end
       
       def inspect
-        type
+        Printer.new.print(self)
       end
       
       def to_ast
         self
       end
-      
-      protected
-      
-        def indent(text)
-          "  " + text.gsub("\n", "\n  ")
-        end
     end
     
     # A node which has a given single value when evaluated
@@ -127,18 +123,10 @@ module Carat
     # integer value
     class MultipleValueNode < ValueNode
       property :value
-      
-      def inspect
-        type + "[#{value.inspect}]"
-      end
     end
     
     class NamedNode < Node
       property :name
-      
-      def inspect
-        type + "[#{name}]"
-      end
     end
     
     class NodeList < Node
@@ -162,25 +150,11 @@ module Carat
         
         runtime.fold(base_answer, fold_operation, items, &continuation)
       end
-      
-      def inspect
-        if empty?
-          type + ":\n" + indent("[Empty]")
-        else
-          type + ":\n" + indent(items.map(&:inspect).join("\n"))
-        end
-      end
     end
     
     class BinaryNode < Node
       child :left
       child :right
-      
-      def inspect
-        type + ":\n" +
-          "Left:\n" + indent(left.inspect) + "\n" +
-          "Right:\n" + indent(right.inspect)
-      end
     end
     
     # ***** CONCRETE CLASSES ***** #

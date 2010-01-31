@@ -8,10 +8,6 @@ module Carat::AST
         yield variable.assign(value_object)
       end
     end
-    
-    def inspect
-      type + ": " + variable.inspect + " = \n" + indent(value.inspect)
-    end
   end
   
   class LocalVariable < NamedNode

@@ -24,10 +24,6 @@ module Carat::AST
     def eval(&continuation)
       eval_child(contents, contents_scope, &continuation)
     end
-    
-    def inspect
-      type + "[#{name}]:\n" + indent(contents.inspect)
-    end
   end
   
   class ClassDefinition < Node
@@ -59,12 +55,6 @@ module Carat::AST
       eval_contents_scope do |contents_scope|
         eval_child(contents, contents_scope, &continuation)
       end
-    end
-    
-    def inspect
-      type + "[#{name}]:\n" +
-        "Superclass:\n" + indent(superclass.inspect) + "\n" +
-        "Contents:\n"   + indent(contents.inspect)
     end
   end
   
@@ -108,23 +98,16 @@ module Carat::AST
         yield runtime.nil
       end
     end
-    
-    def inspect
-      type + "[#{name}]:\n" +
-        "Receiver:\n" + indent(receiver.inspect) + "\n" +
-        argument_pattern.inspect + "\n" +
-        "Contents:\n" + indent(contents.inspect)
-    end
   end
   
   class ArgumentPattern < NodeList
     class Item < Node
       property :name
-      property :pattern_type
+      property :type,    :default => :normal
       child    :default, :default => nil
       
       def value(values, block, &continuation)
-        case pattern_type
+        case type
           when :splat
             yield runtime.constants[:Array].new(values)
           when :block_pass
@@ -139,10 +122,6 @@ module Carat::AST
               yield runtime.nil
             end
         end
-      end
-      
-      def inspect
-        type + "[#{name}, #{pattern_type.inspect}]" + (default && " = \n" + indent(default.inspect) || '')
       end
     end
     
