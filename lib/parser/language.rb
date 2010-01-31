@@ -164,13 +164,6 @@ module Carat
       r0
     end
 
-    module Expression0
-      def item
-        elements[0]
-      end
-
-    end
-
     def _nt_expression
       start_index = index
       if node_cache[:expression].has_key?(index)
@@ -179,43 +172,417 @@ module Carat
         return cached
       end
 
+      r0 = _nt_assignment_expression
+
+      node_cache[:expression][start_index] = r0
+
+      r0
+    end
+
+    def _nt_assignment_expression
+      start_index = index
+      if node_cache[:assignment_expression].has_key?(index)
+        cached = node_cache[:assignment_expression][index]
+        @index = cached.interval.end if cached
+        return cached
+      end
+
       i0 = index
-      i1, s1 = index, []
-      i2 = index
-      r3 = _nt_binary_method
-      if r3
-        r2 = r3
+      r1 = _nt_simple_assignment
+      if r1
+        r0 = r1
       else
-        r4 = _nt_primary
-        if r4
-          r2 = r4
+        r2 = _nt_binary_method_assignment
+        if r2
+          r0 = r2
         else
-          @index = i2
-          r2 = nil
+          r3 = _nt_binary_operation_assignment
+          if r3
+            r0 = r3
+          else
+            r4 = _nt_or_expression
+            if r4
+              r0 = r4
+            else
+              @index = i0
+              r0 = nil
+            end
+          end
         end
       end
+
+      node_cache[:assignment_expression][start_index] = r0
+
+      r0
+    end
+
+    module SimpleAssignment0
+      def receiver
+        elements[0]
+      end
+
+      def value
+        elements[4]
+      end
+    end
+
+    def _nt_simple_assignment
+      start_index = index
+      if node_cache[:simple_assignment].has_key?(index)
+        cached = node_cache[:simple_assignment][index]
+        @index = cached.interval.end if cached
+        return cached
+      end
+
+      i0, s0 = index, []
+      r1 = _nt_variable
+      s0 << r1
+      if r1
+        r3 = _nt_space
+        if r3
+          r2 = r3
+        else
+          r2 = instantiate_node(SyntaxNode,input, index...index)
+        end
+        s0 << r2
+        if r2
+          if has_terminal?('=', false, index)
+            r4 = instantiate_node(SyntaxNode,input, index...(index + 1))
+            @index += 1
+          else
+            terminal_parse_failure('=')
+            r4 = nil
+          end
+          s0 << r4
+          if r4
+            r6 = _nt_multiline_space
+            if r6
+              r5 = r6
+            else
+              r5 = instantiate_node(SyntaxNode,input, index...index)
+            end
+            s0 << r5
+            if r5
+              r7 = _nt_assignment_expression
+              s0 << r7
+            end
+          end
+        end
+      end
+      if s0.last
+        r0 = instantiate_node(Assignment,input, i0...index, s0)
+        r0.extend(SimpleAssignment0)
+      else
+        @index = i0
+        r0 = nil
+      end
+
+      node_cache[:simple_assignment][start_index] = r0
+
+      r0
+    end
+
+    module BinaryMethodAssignment0
+      def receiver
+        elements[0]
+      end
+
+      def name
+        elements[2]
+      end
+
+      def value
+        elements[5]
+      end
+    end
+
+    def _nt_binary_method_assignment
+      start_index = index
+      if node_cache[:binary_method_assignment].has_key?(index)
+        cached = node_cache[:binary_method_assignment][index]
+        @index = cached.interval.end if cached
+        return cached
+      end
+
+      i0, s0 = index, []
+      r1 = _nt_variable
+      s0 << r1
+      if r1
+        r3 = _nt_space
+        if r3
+          r2 = r3
+        else
+          r2 = instantiate_node(SyntaxNode,input, index...index)
+        end
+        s0 << r2
+        if r2
+          i4 = index
+          if has_terminal?('<<', false, index)
+            r5 = instantiate_node(SyntaxNode,input, index...(index + 2))
+            @index += 2
+          else
+            terminal_parse_failure('<<')
+            r5 = nil
+          end
+          if r5
+            r4 = r5
+          else
+            if has_terminal?('>>', false, index)
+              r6 = instantiate_node(SyntaxNode,input, index...(index + 2))
+              @index += 2
+            else
+              terminal_parse_failure('>>')
+              r6 = nil
+            end
+            if r6
+              r4 = r6
+            else
+              if has_terminal?('+', false, index)
+                r7 = instantiate_node(SyntaxNode,input, index...(index + 1))
+                @index += 1
+              else
+                terminal_parse_failure('+')
+                r7 = nil
+              end
+              if r7
+                r4 = r7
+              else
+                if has_terminal?('-', false, index)
+                  r8 = instantiate_node(SyntaxNode,input, index...(index + 1))
+                  @index += 1
+                else
+                  terminal_parse_failure('-')
+                  r8 = nil
+                end
+                if r8
+                  r4 = r8
+                else
+                  if has_terminal?('*', false, index)
+                    r9 = instantiate_node(SyntaxNode,input, index...(index + 1))
+                    @index += 1
+                  else
+                    terminal_parse_failure('*')
+                    r9 = nil
+                  end
+                  if r9
+                    r4 = r9
+                  else
+                    if has_terminal?('/', false, index)
+                      r10 = instantiate_node(SyntaxNode,input, index...(index + 1))
+                      @index += 1
+                    else
+                      terminal_parse_failure('/')
+                      r10 = nil
+                    end
+                    if r10
+                      r4 = r10
+                    else
+                      @index = i4
+                      r4 = nil
+                    end
+                  end
+                end
+              end
+            end
+          end
+          s0 << r4
+          if r4
+            if has_terminal?('=', false, index)
+              r11 = instantiate_node(SyntaxNode,input, index...(index + 1))
+              @index += 1
+            else
+              terminal_parse_failure('=')
+              r11 = nil
+            end
+            s0 << r11
+            if r11
+              r13 = _nt_multiline_space
+              if r13
+                r12 = r13
+              else
+                r12 = instantiate_node(SyntaxNode,input, index...index)
+              end
+              s0 << r12
+              if r12
+                r14 = _nt_assignment_expression
+                s0 << r14
+              end
+            end
+          end
+        end
+      end
+      if s0.last
+        r0 = instantiate_node(BinaryMethodAssignment,input, i0...index, s0)
+        r0.extend(BinaryMethodAssignment0)
+      else
+        @index = i0
+        r0 = nil
+      end
+
+      node_cache[:binary_method_assignment][start_index] = r0
+
+      r0
+    end
+
+    module BinaryOperationAssignment0
+      def receiver
+        elements[0]
+      end
+
+      def name
+        elements[2]
+      end
+
+      def value
+        elements[5]
+      end
+    end
+
+    def _nt_binary_operation_assignment
+      start_index = index
+      if node_cache[:binary_operation_assignment].has_key?(index)
+        cached = node_cache[:binary_operation_assignment][index]
+        @index = cached.interval.end if cached
+        return cached
+      end
+
+      i0, s0 = index, []
+      r1 = _nt_variable
+      s0 << r1
+      if r1
+        r3 = _nt_space
+        if r3
+          r2 = r3
+        else
+          r2 = instantiate_node(SyntaxNode,input, index...index)
+        end
+        s0 << r2
+        if r2
+          i4 = index
+          if has_terminal?('||', false, index)
+            r5 = instantiate_node(SyntaxNode,input, index...(index + 2))
+            @index += 2
+          else
+            terminal_parse_failure('||')
+            r5 = nil
+          end
+          if r5
+            r4 = r5
+          else
+            if has_terminal?('&&', false, index)
+              r6 = instantiate_node(SyntaxNode,input, index...(index + 2))
+              @index += 2
+            else
+              terminal_parse_failure('&&')
+              r6 = nil
+            end
+            if r6
+              r4 = r6
+            else
+              @index = i4
+              r4 = nil
+            end
+          end
+          s0 << r4
+          if r4
+            if has_terminal?('=', false, index)
+              r7 = instantiate_node(SyntaxNode,input, index...(index + 1))
+              @index += 1
+            else
+              terminal_parse_failure('=')
+              r7 = nil
+            end
+            s0 << r7
+            if r7
+              r9 = _nt_multiline_space
+              if r9
+                r8 = r9
+              else
+                r8 = instantiate_node(SyntaxNode,input, index...index)
+              end
+              s0 << r8
+              if r8
+                r10 = _nt_assignment_expression
+                s0 << r10
+              end
+            end
+          end
+        end
+      end
+      if s0.last
+        r0 = instantiate_node(BinaryOperationAssignment,input, i0...index, s0)
+        r0.extend(BinaryOperationAssignment0)
+      else
+        @index = i0
+        r0 = nil
+      end
+
+      node_cache[:binary_operation_assignment][start_index] = r0
+
+      r0
+    end
+
+    module OrExpression0
+      def left
+        elements[0]
+      end
+
+      def name
+        elements[2]
+      end
+
+      def right
+        elements[4]
+      end
+    end
+
+    def _nt_or_expression
+      start_index = index
+      if node_cache[:or_expression].has_key?(index)
+        cached = node_cache[:or_expression][index]
+        @index = cached.interval.end if cached
+        return cached
+      end
+
+      i0 = index
+      i1, s1 = index, []
+      r2 = _nt_and_expression
       s1 << r2
       if r2
-        r6 = _nt_space
-        if r6
-          r5 = r6
+        r4 = _nt_space
+        if r4
+          r3 = r4
         else
-          r5 = instantiate_node(SyntaxNode,input, index...index)
+          r3 = instantiate_node(SyntaxNode,input, index...index)
         end
-        s1 << r5
-        if r5
-          r8 = _nt_comment
-          if r8
-            r7 = r8
+        s1 << r3
+        if r3
+          if has_terminal?('||', false, index)
+            r5 = instantiate_node(SyntaxNode,input, index...(index + 2))
+            @index += 2
           else
-            r7 = instantiate_node(SyntaxNode,input, index...index)
+            terminal_parse_failure('||')
+            r5 = nil
           end
-          s1 << r7
+          s1 << r5
+          if r5
+            r7 = _nt_multiline_space
+            if r7
+              r6 = r7
+            else
+              r6 = instantiate_node(SyntaxNode,input, index...index)
+            end
+            s1 << r6
+            if r6
+              r8 = _nt_or_expression
+              s1 << r8
+            end
+          end
         end
       end
       if s1.last
-        r1 = instantiate_node(Expression,input, i1...index, s1)
-        r1.extend(Expression0)
+        r1 = instantiate_node(BinaryOperation,input, i1...index, s1)
+        r1.extend(OrExpression0)
       else
         @index = i1
         r1 = nil
@@ -223,7 +590,7 @@ module Carat
       if r1
         r0 = r1
       else
-        r9 = _nt_comment
+        r9 = _nt_and_expression
         if r9
           r0 = r9
         else
@@ -232,15 +599,735 @@ module Carat
         end
       end
 
-      node_cache[:expression][start_index] = r0
+      node_cache[:or_expression][start_index] = r0
 
       r0
     end
 
-    def _nt_primary
+    module AndExpression0
+      def left
+        elements[0]
+      end
+
+      def name
+        elements[2]
+      end
+
+      def right
+        elements[4]
+      end
+    end
+
+    def _nt_and_expression
       start_index = index
-      if node_cache[:primary].has_key?(index)
-        cached = node_cache[:primary][index]
+      if node_cache[:and_expression].has_key?(index)
+        cached = node_cache[:and_expression][index]
+        @index = cached.interval.end if cached
+        return cached
+      end
+
+      i0 = index
+      i1, s1 = index, []
+      r2 = _nt_comparison_expression
+      s1 << r2
+      if r2
+        r4 = _nt_space
+        if r4
+          r3 = r4
+        else
+          r3 = instantiate_node(SyntaxNode,input, index...index)
+        end
+        s1 << r3
+        if r3
+          if has_terminal?('&&', false, index)
+            r5 = instantiate_node(SyntaxNode,input, index...(index + 2))
+            @index += 2
+          else
+            terminal_parse_failure('&&')
+            r5 = nil
+          end
+          s1 << r5
+          if r5
+            r7 = _nt_multiline_space
+            if r7
+              r6 = r7
+            else
+              r6 = instantiate_node(SyntaxNode,input, index...index)
+            end
+            s1 << r6
+            if r6
+              r8 = _nt_and_expression
+              s1 << r8
+            end
+          end
+        end
+      end
+      if s1.last
+        r1 = instantiate_node(BinaryOperation,input, i1...index, s1)
+        r1.extend(AndExpression0)
+      else
+        @index = i1
+        r1 = nil
+      end
+      if r1
+        r0 = r1
+      else
+        r9 = _nt_comparison_expression
+        if r9
+          r0 = r9
+        else
+          @index = i0
+          r0 = nil
+        end
+      end
+
+      node_cache[:and_expression][start_index] = r0
+
+      r0
+    end
+
+    module ComparisonExpression0
+      def left
+        elements[0]
+      end
+
+      def name
+        elements[2]
+      end
+
+      def right
+        elements[4]
+      end
+    end
+
+    def _nt_comparison_expression
+      start_index = index
+      if node_cache[:comparison_expression].has_key?(index)
+        cached = node_cache[:comparison_expression][index]
+        @index = cached.interval.end if cached
+        return cached
+      end
+
+      i0 = index
+      i1, s1 = index, []
+      r2 = _nt_inequality_expression
+      s1 << r2
+      if r2
+        r4 = _nt_space
+        if r4
+          r3 = r4
+        else
+          r3 = instantiate_node(SyntaxNode,input, index...index)
+        end
+        s1 << r3
+        if r3
+          i5 = index
+          if has_terminal?('==', false, index)
+            r6 = instantiate_node(SyntaxNode,input, index...(index + 2))
+            @index += 2
+          else
+            terminal_parse_failure('==')
+            r6 = nil
+          end
+          if r6
+            r5 = r6
+          else
+            if has_terminal?('!=', false, index)
+              r7 = instantiate_node(SyntaxNode,input, index...(index + 2))
+              @index += 2
+            else
+              terminal_parse_failure('!=')
+              r7 = nil
+            end
+            if r7
+              r5 = r7
+            else
+              if has_terminal?('===', false, index)
+                r8 = instantiate_node(SyntaxNode,input, index...(index + 3))
+                @index += 3
+              else
+                terminal_parse_failure('===')
+                r8 = nil
+              end
+              if r8
+                r5 = r8
+              else
+                if has_terminal?('<=>', false, index)
+                  r9 = instantiate_node(SyntaxNode,input, index...(index + 3))
+                  @index += 3
+                else
+                  terminal_parse_failure('<=>')
+                  r9 = nil
+                end
+                if r9
+                  r5 = r9
+                else
+                  @index = i5
+                  r5 = nil
+                end
+              end
+            end
+          end
+          s1 << r5
+          if r5
+            r11 = _nt_multiline_space
+            if r11
+              r10 = r11
+            else
+              r10 = instantiate_node(SyntaxNode,input, index...index)
+            end
+            s1 << r10
+            if r10
+              r12 = _nt_comparison_expression
+              s1 << r12
+            end
+          end
+        end
+      end
+      if s1.last
+        r1 = instantiate_node(BinaryMethodCall,input, i1...index, s1)
+        r1.extend(ComparisonExpression0)
+      else
+        @index = i1
+        r1 = nil
+      end
+      if r1
+        r0 = r1
+      else
+        r13 = _nt_inequality_expression
+        if r13
+          r0 = r13
+        else
+          @index = i0
+          r0 = nil
+        end
+      end
+
+      node_cache[:comparison_expression][start_index] = r0
+
+      r0
+    end
+
+    module InequalityExpression0
+      def left
+        elements[0]
+      end
+
+      def name
+        elements[2]
+      end
+
+      def right
+        elements[4]
+      end
+    end
+
+    def _nt_inequality_expression
+      start_index = index
+      if node_cache[:inequality_expression].has_key?(index)
+        cached = node_cache[:inequality_expression][index]
+        @index = cached.interval.end if cached
+        return cached
+      end
+
+      i0 = index
+      i1, s1 = index, []
+      r2 = _nt_shift_expression
+      s1 << r2
+      if r2
+        r4 = _nt_space
+        if r4
+          r3 = r4
+        else
+          r3 = instantiate_node(SyntaxNode,input, index...index)
+        end
+        s1 << r3
+        if r3
+          i5 = index
+          if has_terminal?('<=', false, index)
+            r6 = instantiate_node(SyntaxNode,input, index...(index + 2))
+            @index += 2
+          else
+            terminal_parse_failure('<=')
+            r6 = nil
+          end
+          if r6
+            r5 = r6
+          else
+            if has_terminal?('>=', false, index)
+              r7 = instantiate_node(SyntaxNode,input, index...(index + 2))
+              @index += 2
+            else
+              terminal_parse_failure('>=')
+              r7 = nil
+            end
+            if r7
+              r5 = r7
+            else
+              if has_terminal?('<', false, index)
+                r8 = instantiate_node(SyntaxNode,input, index...(index + 1))
+                @index += 1
+              else
+                terminal_parse_failure('<')
+                r8 = nil
+              end
+              if r8
+                r5 = r8
+              else
+                if has_terminal?('>', false, index)
+                  r9 = instantiate_node(SyntaxNode,input, index...(index + 1))
+                  @index += 1
+                else
+                  terminal_parse_failure('>')
+                  r9 = nil
+                end
+                if r9
+                  r5 = r9
+                else
+                  @index = i5
+                  r5 = nil
+                end
+              end
+            end
+          end
+          s1 << r5
+          if r5
+            r11 = _nt_multiline_space
+            if r11
+              r10 = r11
+            else
+              r10 = instantiate_node(SyntaxNode,input, index...index)
+            end
+            s1 << r10
+            if r10
+              r12 = _nt_inequality_expression
+              s1 << r12
+            end
+          end
+        end
+      end
+      if s1.last
+        r1 = instantiate_node(BinaryMethodCall,input, i1...index, s1)
+        r1.extend(InequalityExpression0)
+      else
+        @index = i1
+        r1 = nil
+      end
+      if r1
+        r0 = r1
+      else
+        r13 = _nt_shift_expression
+        if r13
+          r0 = r13
+        else
+          @index = i0
+          r0 = nil
+        end
+      end
+
+      node_cache[:inequality_expression][start_index] = r0
+
+      r0
+    end
+
+    module ShiftExpression0
+      def left
+        elements[0]
+      end
+
+      def name
+        elements[2]
+      end
+
+      def right
+        elements[4]
+      end
+    end
+
+    def _nt_shift_expression
+      start_index = index
+      if node_cache[:shift_expression].has_key?(index)
+        cached = node_cache[:shift_expression][index]
+        @index = cached.interval.end if cached
+        return cached
+      end
+
+      i0 = index
+      i1, s1 = index, []
+      r2 = _nt_add_subtract_expression
+      s1 << r2
+      if r2
+        r4 = _nt_space
+        if r4
+          r3 = r4
+        else
+          r3 = instantiate_node(SyntaxNode,input, index...index)
+        end
+        s1 << r3
+        if r3
+          i5 = index
+          if has_terminal?('<<', false, index)
+            r6 = instantiate_node(SyntaxNode,input, index...(index + 2))
+            @index += 2
+          else
+            terminal_parse_failure('<<')
+            r6 = nil
+          end
+          if r6
+            r5 = r6
+          else
+            if has_terminal?('>>', false, index)
+              r7 = instantiate_node(SyntaxNode,input, index...(index + 2))
+              @index += 2
+            else
+              terminal_parse_failure('>>')
+              r7 = nil
+            end
+            if r7
+              r5 = r7
+            else
+              @index = i5
+              r5 = nil
+            end
+          end
+          s1 << r5
+          if r5
+            r9 = _nt_multiline_space
+            if r9
+              r8 = r9
+            else
+              r8 = instantiate_node(SyntaxNode,input, index...index)
+            end
+            s1 << r8
+            if r8
+              r10 = _nt_shift_expression
+              s1 << r10
+            end
+          end
+        end
+      end
+      if s1.last
+        r1 = instantiate_node(BinaryMethodCall,input, i1...index, s1)
+        r1.extend(ShiftExpression0)
+      else
+        @index = i1
+        r1 = nil
+      end
+      if r1
+        r0 = r1
+      else
+        r11 = _nt_add_subtract_expression
+        if r11
+          r0 = r11
+        else
+          @index = i0
+          r0 = nil
+        end
+      end
+
+      node_cache[:shift_expression][start_index] = r0
+
+      r0
+    end
+
+    module AddSubtractExpression0
+      def left
+        elements[0]
+      end
+
+      def name
+        elements[2]
+      end
+
+      def right
+        elements[4]
+      end
+    end
+
+    def _nt_add_subtract_expression
+      start_index = index
+      if node_cache[:add_subtract_expression].has_key?(index)
+        cached = node_cache[:add_subtract_expression][index]
+        @index = cached.interval.end if cached
+        return cached
+      end
+
+      i0 = index
+      i1, s1 = index, []
+      r2 = _nt_times_divide_expression
+      s1 << r2
+      if r2
+        r4 = _nt_space
+        if r4
+          r3 = r4
+        else
+          r3 = instantiate_node(SyntaxNode,input, index...index)
+        end
+        s1 << r3
+        if r3
+          i5 = index
+          if has_terminal?('+', false, index)
+            r6 = instantiate_node(SyntaxNode,input, index...(index + 1))
+            @index += 1
+          else
+            terminal_parse_failure('+')
+            r6 = nil
+          end
+          if r6
+            r5 = r6
+          else
+            if has_terminal?('-', false, index)
+              r7 = instantiate_node(SyntaxNode,input, index...(index + 1))
+              @index += 1
+            else
+              terminal_parse_failure('-')
+              r7 = nil
+            end
+            if r7
+              r5 = r7
+            else
+              @index = i5
+              r5 = nil
+            end
+          end
+          s1 << r5
+          if r5
+            r9 = _nt_multiline_space
+            if r9
+              r8 = r9
+            else
+              r8 = instantiate_node(SyntaxNode,input, index...index)
+            end
+            s1 << r8
+            if r8
+              r10 = _nt_add_subtract_expression
+              s1 << r10
+            end
+          end
+        end
+      end
+      if s1.last
+        r1 = instantiate_node(BinaryMethodCall,input, i1...index, s1)
+        r1.extend(AddSubtractExpression0)
+      else
+        @index = i1
+        r1 = nil
+      end
+      if r1
+        r0 = r1
+      else
+        r11 = _nt_times_divide_expression
+        if r11
+          r0 = r11
+        else
+          @index = i0
+          r0 = nil
+        end
+      end
+
+      node_cache[:add_subtract_expression][start_index] = r0
+
+      r0
+    end
+
+    module TimesDivideExpression0
+      def left
+        elements[0]
+      end
+
+      def name
+        elements[2]
+      end
+
+      def right
+        elements[4]
+      end
+    end
+
+    def _nt_times_divide_expression
+      start_index = index
+      if node_cache[:times_divide_expression].has_key?(index)
+        cached = node_cache[:times_divide_expression][index]
+        @index = cached.interval.end if cached
+        return cached
+      end
+
+      i0 = index
+      i1, s1 = index, []
+      r2 = _nt_unary_expression
+      s1 << r2
+      if r2
+        r4 = _nt_space
+        if r4
+          r3 = r4
+        else
+          r3 = instantiate_node(SyntaxNode,input, index...index)
+        end
+        s1 << r3
+        if r3
+          i5 = index
+          if has_terminal?('*', false, index)
+            r6 = instantiate_node(SyntaxNode,input, index...(index + 1))
+            @index += 1
+          else
+            terminal_parse_failure('*')
+            r6 = nil
+          end
+          if r6
+            r5 = r6
+          else
+            if has_terminal?('/', false, index)
+              r7 = instantiate_node(SyntaxNode,input, index...(index + 1))
+              @index += 1
+            else
+              terminal_parse_failure('/')
+              r7 = nil
+            end
+            if r7
+              r5 = r7
+            else
+              @index = i5
+              r5 = nil
+            end
+          end
+          s1 << r5
+          if r5
+            r9 = _nt_multiline_space
+            if r9
+              r8 = r9
+            else
+              r8 = instantiate_node(SyntaxNode,input, index...index)
+            end
+            s1 << r8
+            if r8
+              r10 = _nt_times_divide_expression
+              s1 << r10
+            end
+          end
+        end
+      end
+      if s1.last
+        r1 = instantiate_node(BinaryMethodCall,input, i1...index, s1)
+        r1.extend(TimesDivideExpression0)
+      else
+        @index = i1
+        r1 = nil
+      end
+      if r1
+        r0 = r1
+      else
+        r11 = _nt_unary_expression
+        if r11
+          r0 = r11
+        else
+          @index = i0
+          r0 = nil
+        end
+      end
+
+      node_cache[:times_divide_expression][start_index] = r0
+
+      r0
+    end
+
+    module UnaryExpression0
+      def name
+        elements[0]
+      end
+
+      def receiver
+        elements[2]
+      end
+    end
+
+    def _nt_unary_expression
+      start_index = index
+      if node_cache[:unary_expression].has_key?(index)
+        cached = node_cache[:unary_expression][index]
+        @index = cached.interval.end if cached
+        return cached
+      end
+
+      i0 = index
+      i1, s1 = index, []
+      i2 = index
+      if has_terminal?('-', false, index)
+        r3 = instantiate_node(SyntaxNode,input, index...(index + 1))
+        @index += 1
+      else
+        terminal_parse_failure('-')
+        r3 = nil
+      end
+      if r3
+        r2 = r3
+      else
+        if has_terminal?('+', false, index)
+          r4 = instantiate_node(SyntaxNode,input, index...(index + 1))
+          @index += 1
+        else
+          terminal_parse_failure('+')
+          r4 = nil
+        end
+        if r4
+          r2 = r4
+        else
+          if has_terminal?('!', false, index)
+            r5 = instantiate_node(SyntaxNode,input, index...(index + 1))
+            @index += 1
+          else
+            terminal_parse_failure('!')
+            r5 = nil
+          end
+          if r5
+            r2 = r5
+          else
+            @index = i2
+            r2 = nil
+          end
+        end
+      end
+      s1 << r2
+      if r2
+        r7 = _nt_multiline_space
+        if r7
+          r6 = r7
+        else
+          r6 = instantiate_node(SyntaxNode,input, index...index)
+        end
+        s1 << r6
+        if r6
+          r8 = _nt_unary_expression
+          s1 << r8
+        end
+      end
+      if s1.last
+        r1 = instantiate_node(UnaryMethodCall,input, i1...index, s1)
+        r1.extend(UnaryExpression0)
+      else
+        @index = i1
+        r1 = nil
+      end
+      if r1
+        r0 = r1
+      else
+        r9 = _nt_method_call_expression
+        if r9
+          r0 = r9
+        else
+          @index = i0
+          r0 = nil
+        end
+      end
+
+      node_cache[:unary_expression][start_index] = r0
+
+      r0
+    end
+
+    def _nt_method_call_expression
+      start_index = index
+      if node_cache[:method_call_expression].has_key?(index)
+        cached = node_cache[:method_call_expression][index]
         @index = cached.interval.end if cached
         return cached
       end
@@ -250,7 +1337,7 @@ module Carat
       if r1
         r0 = r1
       else
-        r2 = _nt_secondary
+        r2 = _nt_primary
         if r2
           r0 = r2
         else
@@ -259,15 +1346,15 @@ module Carat
         end
       end
 
-      node_cache[:primary][start_index] = r0
+      node_cache[:method_call_expression][start_index] = r0
 
       r0
     end
 
-    def _nt_secondary
+    def _nt_primary
       start_index = index
-      if node_cache[:secondary].has_key?(index)
-        cached = node_cache[:secondary][index]
+      if node_cache[:primary].has_key?(index)
+        cached = node_cache[:primary][index]
         @index = cached.interval.end if cached
         return cached
       end
@@ -289,23 +1376,23 @@ module Carat
             if r4
               r0 = r4
             else
-              r5 = _nt_assignment
+              r5 = _nt_literal
               if r5
                 r0 = r5
               else
-                r6 = _nt_literal
+                r6 = _nt_instance_variable
                 if r6
                   r0 = r6
                 else
-                  r7 = _nt_instance_variable
+                  r7 = _nt_constant
                   if r7
                     r0 = r7
                   else
-                    r8 = _nt_constant
+                    r8 = _nt_local_variable_or_method_call
                     if r8
                       r0 = r8
                     else
-                      r9 = _nt_local_variable_or_method_call
+                      r9 = _nt_bracketed_expression
                       if r9
                         r0 = r9
                       else
@@ -321,77 +1408,64 @@ module Carat
         end
       end
 
-      node_cache[:secondary][start_index] = r0
+      node_cache[:primary][start_index] = r0
 
       r0
     end
 
-    module BinaryMethod0
-      def left
-        elements[0]
+    module BracketedExpression0
+      def expression
+        elements[1]
       end
 
-      def name
-        elements[2]
-      end
-
-      def right
-        elements[4]
-      end
     end
 
-    def _nt_binary_method
+    def _nt_bracketed_expression
       start_index = index
-      if node_cache[:binary_method].has_key?(index)
-        cached = node_cache[:binary_method][index]
+      if node_cache[:bracketed_expression].has_key?(index)
+        cached = node_cache[:bracketed_expression][index]
         @index = cached.interval.end if cached
         return cached
       end
 
       i0, s0 = index, []
-      r1 = _nt_primary
+      if has_terminal?('(', false, index)
+        r1 = instantiate_node(SyntaxNode,input, index...(index + 1))
+        @index += 1
+      else
+        terminal_parse_failure('(')
+        r1 = nil
+      end
       s0 << r1
       if r1
-        r3 = _nt_space
-        if r3
-          r2 = r3
-        else
-          r2 = instantiate_node(SyntaxNode,input, index...index)
-        end
+        r2 = _nt_expression
         s0 << r2
         if r2
-          r4 = _nt_binary_operator
-          s0 << r4
-          if r4
-            r6 = _nt_multiline_space
-            if r6
-              r5 = r6
-            else
-              r5 = instantiate_node(SyntaxNode,input, index...index)
-            end
-            s0 << r5
-            if r5
-              r7 = _nt_expression
-              s0 << r7
-            end
+          if has_terminal?(')', false, index)
+            r3 = instantiate_node(SyntaxNode,input, index...(index + 1))
+            @index += 1
+          else
+            terminal_parse_failure(')')
+            r3 = nil
           end
+          s0 << r3
         end
       end
       if s0.last
-        r0 = instantiate_node(BinaryOperation,input, i0...index, s0)
-        r0.extend(BinaryMethod0)
+        r0 = instantiate_node(BracketedExpression,input, i0...index, s0)
+        r0.extend(BracketedExpression0)
       else
         @index = i0
         r0 = nil
       end
 
-      node_cache[:binary_method][start_index] = r0
+      node_cache[:bracketed_expression][start_index] = r0
 
       r0
     end
 
     module ModuleDefinition0
-      def space
+      def multiline_space
         elements[1]
       end
 
@@ -422,7 +1496,7 @@ module Carat
       end
       s0 << r1
       if r1
-        r2 = _nt_space
+        r2 = _nt_multiline_space
         s0 << r2
         if r2
           r3 = _nt_constant
@@ -453,7 +1527,7 @@ module Carat
     end
 
     module ClassDefinition1
-      def space
+      def multiline_space
         elements[1]
       end
 
@@ -488,7 +1562,7 @@ module Carat
       end
       s0 << r1
       if r1
-        r2 = _nt_space
+        r2 = _nt_multiline_space
         s0 << r2
         if r2
           r3 = _nt_constant
@@ -559,14 +1633,14 @@ module Carat
     end
 
     module MethodDefinition0
-      def secondary
+      def primary
         elements[0]
       end
 
     end
 
     module MethodDefinition1
-      def space
+      def multiline_space
         elements[1]
       end
 
@@ -575,15 +1649,15 @@ module Carat
       end
 
       def method_name
-        elements[4]
+        elements[3]
       end
 
       def method_argument_pattern
-        elements[5]
+        elements[4]
       end
 
       def definition_body
-        elements[6]
+        elements[5]
       end
     end
 
@@ -605,11 +1679,11 @@ module Carat
       end
       s0 << r1
       if r1
-        r2 = _nt_space
+        r2 = _nt_multiline_space
         s0 << r2
         if r2
           i4, s4 = index, []
-          r5 = _nt_secondary
+          r5 = _nt_primary
           s4 << r5
           if r5
             r7 = _nt_space
@@ -628,6 +1702,15 @@ module Carat
                 r8 = nil
               end
               s4 << r8
+              if r8
+                r10 = _nt_multiline_space
+                if r10
+                  r9 = r10
+                else
+                  r9 = instantiate_node(SyntaxNode,input, index...index)
+                end
+                s4 << r9
+              end
             end
           end
           if s4.last
@@ -644,23 +1727,14 @@ module Carat
           end
           s0 << r3
           if r3
-            r10 = _nt_space
-            if r10
-              r9 = r10
-            else
-              r9 = instantiate_node(SyntaxNode,input, index...index)
-            end
-            s0 << r9
-            if r9
-              r11 = _nt_method_name
-              s0 << r11
-              if r11
-                r12 = _nt_method_argument_pattern
-                s0 << r12
-                if r12
-                  r13 = _nt_definition_body
-                  s0 << r13
-                end
+            r11 = _nt_method_name
+            s0 << r11
+            if r11
+              r12 = _nt_method_argument_pattern
+              s0 << r12
+              if r12
+                r13 = _nt_definition_body
+                s0 << r13
               end
             end
           end
@@ -680,7 +1754,7 @@ module Carat
     end
 
     module DefinitionBody0
-      def multiline_space
+      def terminator
         elements[0]
       end
 
@@ -699,7 +1773,7 @@ module Carat
       end
 
       i0, s0 = index, []
-      r1 = _nt_multiline_space
+      r1 = _nt_terminator
       s0 << r1
       if r1
         r2 = _nt_expression_list
@@ -736,7 +1810,24 @@ module Carat
         return cached
       end
 
-      r0 = _nt_if_expression
+      i0 = index
+      r1 = _nt_if_expression
+      if r1
+        r0 = r1
+      else
+        r2 = _nt_while_expression
+        if r2
+          r0 = r2
+        else
+          r3 = _nt_begin_expression
+          if r3
+            r0 = r3
+          else
+            @index = i0
+            r0 = nil
+          end
+        end
+      end
 
       node_cache[:control_structure][start_index] = r0
 
@@ -744,19 +1835,7 @@ module Carat
     end
 
     module IfExpression0
-      def expression_list
-        elements[1]
-      end
-    end
-
-    module IfExpression1
-      def expression_list
-        elements[2]
-      end
-    end
-
-    module IfExpression2
-      def space
+      def multiline_space
         elements[1]
       end
 
@@ -796,6 +1875,257 @@ module Carat
       end
       s0 << r1
       if r1
+        r2 = _nt_multiline_space
+        s0 << r2
+        if r2
+          r3 = _nt_expression
+          s0 << r3
+          if r3
+            r5 = _nt_space
+            if r5
+              r4 = r5
+            else
+              r4 = instantiate_node(SyntaxNode,input, index...index)
+            end
+            s0 << r4
+            if r4
+              r6 = _nt_terminator
+              s0 << r6
+              if r6
+                r7 = _nt_expression_list
+                s0 << r7
+                if r7
+                  i9 = index
+                  r10 = _nt_nested_if_expression
+                  if r10
+                    r9 = r10
+                  else
+                    r11 = _nt_else_expression
+                    if r11
+                      r9 = r11
+                    else
+                      @index = i9
+                      r9 = nil
+                    end
+                  end
+                  if r9
+                    r8 = r9
+                  else
+                    r8 = instantiate_node(SyntaxNode,input, index...index)
+                  end
+                  s0 << r8
+                  if r8
+                    if has_terminal?('end', false, index)
+                      r12 = instantiate_node(SyntaxNode,input, index...(index + 3))
+                      @index += 3
+                    else
+                      terminal_parse_failure('end')
+                      r12 = nil
+                    end
+                    s0 << r12
+                  end
+                end
+              end
+            end
+          end
+        end
+      end
+      if s0.last
+        r0 = instantiate_node(IfExpression,input, i0...index, s0)
+        r0.extend(IfExpression0)
+      else
+        @index = i0
+        r0 = nil
+      end
+
+      node_cache[:if_expression][start_index] = r0
+
+      r0
+    end
+
+    module NestedIfExpression0
+      def multiline_space
+        elements[1]
+      end
+
+      def condition
+        elements[2]
+      end
+
+      def terminator
+        elements[4]
+      end
+
+      def true_block
+        elements[5]
+      end
+
+      def false_block
+        elements[6]
+      end
+    end
+
+    def _nt_nested_if_expression
+      start_index = index
+      if node_cache[:nested_if_expression].has_key?(index)
+        cached = node_cache[:nested_if_expression][index]
+        @index = cached.interval.end if cached
+        return cached
+      end
+
+      i0, s0 = index, []
+      if has_terminal?('elsif', false, index)
+        r1 = instantiate_node(SyntaxNode,input, index...(index + 5))
+        @index += 5
+      else
+        terminal_parse_failure('elsif')
+        r1 = nil
+      end
+      s0 << r1
+      if r1
+        r2 = _nt_multiline_space
+        s0 << r2
+        if r2
+          r3 = _nt_expression
+          s0 << r3
+          if r3
+            r5 = _nt_space
+            if r5
+              r4 = r5
+            else
+              r4 = instantiate_node(SyntaxNode,input, index...index)
+            end
+            s0 << r4
+            if r4
+              r6 = _nt_terminator
+              s0 << r6
+              if r6
+                r7 = _nt_expression_list
+                s0 << r7
+                if r7
+                  i9 = index
+                  r10 = _nt_nested_if_expression
+                  if r10
+                    r9 = r10
+                  else
+                    r11 = _nt_else_expression
+                    if r11
+                      r9 = r11
+                    else
+                      @index = i9
+                      r9 = nil
+                    end
+                  end
+                  if r9
+                    r8 = r9
+                  else
+                    r8 = instantiate_node(SyntaxNode,input, index...index)
+                  end
+                  s0 << r8
+                end
+              end
+            end
+          end
+        end
+      end
+      if s0.last
+        r0 = instantiate_node(IfExpression,input, i0...index, s0)
+        r0.extend(NestedIfExpression0)
+      else
+        @index = i0
+        r0 = nil
+      end
+
+      node_cache[:nested_if_expression][start_index] = r0
+
+      r0
+    end
+
+    module ElseExpression0
+      def multiline_space
+        elements[1]
+      end
+
+      def expression_list
+        elements[2]
+      end
+    end
+
+    def _nt_else_expression
+      start_index = index
+      if node_cache[:else_expression].has_key?(index)
+        cached = node_cache[:else_expression][index]
+        @index = cached.interval.end if cached
+        return cached
+      end
+
+      i0, s0 = index, []
+      if has_terminal?('else', false, index)
+        r1 = instantiate_node(SyntaxNode,input, index...(index + 4))
+        @index += 4
+      else
+        terminal_parse_failure('else')
+        r1 = nil
+      end
+      s0 << r1
+      if r1
+        r2 = _nt_multiline_space
+        s0 << r2
+        if r2
+          r3 = _nt_expression_list
+          s0 << r3
+        end
+      end
+      if s0.last
+        r0 = instantiate_node(ElseExpression,input, i0...index, s0)
+        r0.extend(ElseExpression0)
+      else
+        @index = i0
+        r0 = nil
+      end
+
+      node_cache[:else_expression][start_index] = r0
+
+      r0
+    end
+
+    module WhileExpression0
+      def space
+        elements[1]
+      end
+
+      def condition
+        elements[2]
+      end
+
+      def terminator
+        elements[4]
+      end
+
+      def contents
+        elements[5]
+      end
+
+    end
+
+    def _nt_while_expression
+      start_index = index
+      if node_cache[:while_expression].has_key?(index)
+        cached = node_cache[:while_expression][index]
+        @index = cached.interval.end if cached
+        return cached
+      end
+
+      i0, s0 = index, []
+      if has_terminal?('while', false, index)
+        r1 = instantiate_node(SyntaxNode,input, index...(index + 5))
+        @index += 5
+      else
+        terminal_parse_failure('while')
+        r1 = nil
+      end
+      s0 << r1
+      if r1
         r2 = _nt_space
         s0 << r2
         if r2
@@ -813,72 +2143,17 @@ module Carat
               r6 = _nt_terminator
               s0 << r6
               if r6
-                i7, s7 = index, []
-                r9 = _nt_multiline_space
-                if r9
-                  r8 = r9
-                else
-                  r8 = instantiate_node(SyntaxNode,input, index...index)
-                end
-                s7 << r8
-                if r8
-                  r10 = _nt_expression_list
-                  s7 << r10
-                end
-                if s7.last
-                  r7 = instantiate_node(SyntaxNode,input, i7...index, s7)
-                  r7.extend(IfExpression0)
-                else
-                  @index = i7
-                  r7 = nil
-                end
+                r7 = _nt_expression_list
                 s0 << r7
                 if r7
-                  i12, s12 = index, []
-                  if has_terminal?('else', false, index)
-                    r13 = instantiate_node(SyntaxNode,input, index...(index + 4))
-                    @index += 4
+                  if has_terminal?('end', false, index)
+                    r8 = instantiate_node(SyntaxNode,input, index...(index + 3))
+                    @index += 3
                   else
-                    terminal_parse_failure('else')
-                    r13 = nil
+                    terminal_parse_failure('end')
+                    r8 = nil
                   end
-                  s12 << r13
-                  if r13
-                    r15 = _nt_multiline_space
-                    if r15
-                      r14 = r15
-                    else
-                      r14 = instantiate_node(SyntaxNode,input, index...index)
-                    end
-                    s12 << r14
-                    if r14
-                      r16 = _nt_expression_list
-                      s12 << r16
-                    end
-                  end
-                  if s12.last
-                    r12 = instantiate_node(SyntaxNode,input, i12...index, s12)
-                    r12.extend(IfExpression1)
-                  else
-                    @index = i12
-                    r12 = nil
-                  end
-                  if r12
-                    r11 = r12
-                  else
-                    r11 = instantiate_node(SyntaxNode,input, index...index)
-                  end
-                  s0 << r11
-                  if r11
-                    if has_terminal?('end', false, index)
-                      r17 = instantiate_node(SyntaxNode,input, index...(index + 3))
-                      @index += 3
-                    else
-                      terminal_parse_failure('end')
-                      r17 = nil
-                    end
-                    s0 << r17
-                  end
+                  s0 << r8
                 end
               end
             end
@@ -886,14 +2161,225 @@ module Carat
         end
       end
       if s0.last
-        r0 = instantiate_node(IfExpression,input, i0...index, s0)
-        r0.extend(IfExpression2)
+        r0 = instantiate_node(WhileExpression,input, i0...index, s0)
+        r0.extend(WhileExpression0)
       else
         @index = i0
         r0 = nil
       end
 
-      node_cache[:if_expression][start_index] = r0
+      node_cache[:while_expression][start_index] = r0
+
+      r0
+    end
+
+    module BeginExpression0
+      def multiline_space
+        elements[1]
+      end
+
+      def contents
+        elements[2]
+      end
+
+      def rescue
+        elements[3]
+      end
+
+    end
+
+    def _nt_begin_expression
+      start_index = index
+      if node_cache[:begin_expression].has_key?(index)
+        cached = node_cache[:begin_expression][index]
+        @index = cached.interval.end if cached
+        return cached
+      end
+
+      i0, s0 = index, []
+      if has_terminal?('begin', false, index)
+        r1 = instantiate_node(SyntaxNode,input, index...(index + 5))
+        @index += 5
+      else
+        terminal_parse_failure('begin')
+        r1 = nil
+      end
+      s0 << r1
+      if r1
+        r2 = _nt_multiline_space
+        s0 << r2
+        if r2
+          r3 = _nt_expression_list
+          s0 << r3
+          if r3
+            r5 = _nt_rescue_expression
+            if r5
+              r4 = r5
+            else
+              r4 = instantiate_node(SyntaxNode,input, index...index)
+            end
+            s0 << r4
+            if r4
+              if has_terminal?('end', false, index)
+                r6 = instantiate_node(SyntaxNode,input, index...(index + 3))
+                @index += 3
+              else
+                terminal_parse_failure('end')
+                r6 = nil
+              end
+              s0 << r6
+            end
+          end
+        end
+      end
+      if s0.last
+        r0 = instantiate_node(BeginExpression,input, i0...index, s0)
+        r0.extend(BeginExpression0)
+      else
+        @index = i0
+        r0 = nil
+      end
+
+      node_cache[:begin_expression][start_index] = r0
+
+      r0
+    end
+
+    module RescueExpression0
+      def space
+        elements[0]
+      end
+
+      def expression
+        elements[1]
+      end
+    end
+
+    module RescueExpression1
+      def multiline_space
+        elements[2]
+      end
+
+      def variable
+        elements[3]
+      end
+    end
+
+    module RescueExpression2
+      def type
+        elements[1]
+      end
+
+      def assignment
+        elements[2]
+      end
+
+      def multiline_space
+        elements[3]
+      end
+
+      def contents
+        elements[4]
+      end
+    end
+
+    def _nt_rescue_expression
+      start_index = index
+      if node_cache[:rescue_expression].has_key?(index)
+        cached = node_cache[:rescue_expression][index]
+        @index = cached.interval.end if cached
+        return cached
+      end
+
+      i0, s0 = index, []
+      if has_terminal?('rescue', false, index)
+        r1 = instantiate_node(SyntaxNode,input, index...(index + 6))
+        @index += 6
+      else
+        terminal_parse_failure('rescue')
+        r1 = nil
+      end
+      s0 << r1
+      if r1
+        i3, s3 = index, []
+        r4 = _nt_space
+        s3 << r4
+        if r4
+          r5 = _nt_expression
+          s3 << r5
+        end
+        if s3.last
+          r3 = instantiate_node(SyntaxNode,input, i3...index, s3)
+          r3.extend(RescueExpression0)
+        else
+          @index = i3
+          r3 = nil
+        end
+        if r3
+          r2 = r3
+        else
+          r2 = instantiate_node(SyntaxNode,input, index...index)
+        end
+        s0 << r2
+        if r2
+          i7, s7 = index, []
+          r9 = _nt_space
+          if r9
+            r8 = r9
+          else
+            r8 = instantiate_node(SyntaxNode,input, index...index)
+          end
+          s7 << r8
+          if r8
+            if has_terminal?('=>', false, index)
+              r10 = instantiate_node(SyntaxNode,input, index...(index + 2))
+              @index += 2
+            else
+              terminal_parse_failure('=>')
+              r10 = nil
+            end
+            s7 << r10
+            if r10
+              r11 = _nt_multiline_space
+              s7 << r11
+              if r11
+                r12 = _nt_variable
+                s7 << r12
+              end
+            end
+          end
+          if s7.last
+            r7 = instantiate_node(SyntaxNode,input, i7...index, s7)
+            r7.extend(RescueExpression1)
+          else
+            @index = i7
+            r7 = nil
+          end
+          if r7
+            r6 = r7
+          else
+            r6 = instantiate_node(SyntaxNode,input, index...index)
+          end
+          s0 << r6
+          if r6
+            r13 = _nt_multiline_space
+            s0 << r13
+            if r13
+              r14 = _nt_expression_list
+              s0 << r14
+            end
+          end
+        end
+      end
+      if s0.last
+        r0 = instantiate_node(RescueExpression,input, i0...index, s0)
+        r0.extend(RescueExpression2)
+      else
+        @index = i0
+        r0 = nil
+      end
+
+      node_cache[:rescue_expression][start_index] = r0
 
       r0
     end
@@ -1347,72 +2833,6 @@ module Carat
       r0
     end
 
-    module Assignment0
-      def variable
-        elements[0]
-      end
-
-      def expression
-        elements[4]
-      end
-    end
-
-    def _nt_assignment
-      start_index = index
-      if node_cache[:assignment].has_key?(index)
-        cached = node_cache[:assignment][index]
-        @index = cached.interval.end if cached
-        return cached
-      end
-
-      i0, s0 = index, []
-      r1 = _nt_variable
-      s0 << r1
-      if r1
-        r3 = _nt_space
-        if r3
-          r2 = r3
-        else
-          r2 = instantiate_node(SyntaxNode,input, index...index)
-        end
-        s0 << r2
-        if r2
-          if has_terminal?('=', false, index)
-            r4 = instantiate_node(SyntaxNode,input, index...(index + 1))
-            @index += 1
-          else
-            terminal_parse_failure('=')
-            r4 = nil
-          end
-          s0 << r4
-          if r4
-            r6 = _nt_space
-            if r6
-              r5 = r6
-            else
-              r5 = instantiate_node(SyntaxNode,input, index...index)
-            end
-            s0 << r5
-            if r5
-              r7 = _nt_expression
-              s0 << r7
-            end
-          end
-        end
-      end
-      if s0.last
-        r0 = instantiate_node(Assignment,input, i0...index, s0)
-        r0.extend(Assignment0)
-      else
-        @index = i0
-        r0 = nil
-      end
-
-      node_cache[:assignment][start_index] = r0
-
-      r0
-    end
-
     def _nt_literal
       start_index = index
       if node_cache[:literal].has_key?(index)
@@ -1495,7 +2915,7 @@ module Carat
 
       i0 = index
       i1, s1 = index, []
-      r2 = _nt_secondary
+      r2 = _nt_primary
       s1 << r2
       if r2
         r3 = _nt_method_call_chain_tail
@@ -1972,11 +3392,11 @@ module Carat
       end
 
       i0 = index
-      r1 = _nt_argument_list_parens
+      r1 = _nt_bracketed_argument_list
       if r1
         r0 = r1
       else
-        r2 = _nt_argument_list_no_parens
+        r2 = _nt_unbracketed_argument_list
         if r2
           r0 = r2
         else
@@ -1990,13 +3410,13 @@ module Carat
       r0
     end
 
-    module ArgumentListParens0
+    module BracketedArgumentList0
       def argument_list_item
         elements[3]
       end
     end
 
-    module ArgumentListParens1
+    module BracketedArgumentList1
       def head
         elements[3]
       end
@@ -2010,16 +3430,16 @@ module Carat
       end
     end
 
-    module ArgumentListParens2
+    module BracketedArgumentList2
       def block_node
         elements[4]
       end
     end
 
-    def _nt_argument_list_parens
+    def _nt_bracketed_argument_list
       start_index = index
-      if node_cache[:argument_list_parens].has_key?(index)
-        cached = node_cache[:argument_list_parens][index]
+      if node_cache[:bracketed_argument_list].has_key?(index)
+        cached = node_cache[:bracketed_argument_list][index]
         @index = cached.interval.end if cached
         return cached
       end
@@ -2089,7 +3509,7 @@ module Carat
                 end
                 if s9.last
                   r9 = instantiate_node(SyntaxNode,input, i9...index, s9)
-                  r9.extend(ArgumentListParens0)
+                  r9.extend(BracketedArgumentList0)
                 else
                   @index = i9
                   r9 = nil
@@ -2136,7 +3556,7 @@ module Carat
       end
       if s1.last
         r1 = instantiate_node(ArgumentList,input, i1...index, s1)
-        r1.extend(ArgumentListParens1)
+        r1.extend(BracketedArgumentList1)
       else
         @index = i1
         r1 = nil
@@ -2192,7 +3612,7 @@ module Carat
         end
         if s21.last
           r21 = instantiate_node(ArgumentList,input, i21...index, s21)
-          r21.extend(ArgumentListParens2)
+          r21.extend(BracketedArgumentList2)
         else
           @index = i21
           r21 = nil
@@ -2205,18 +3625,18 @@ module Carat
         end
       end
 
-      node_cache[:argument_list_parens][start_index] = r0
+      node_cache[:bracketed_argument_list][start_index] = r0
 
       r0
     end
 
-    module ArgumentListNoParens0
+    module UnbracketedArgumentList0
       def argument_list_item
         elements[3]
       end
     end
 
-    module ArgumentListNoParens1
+    module UnbracketedArgumentList1
       def space
         elements[0]
       end
@@ -2230,16 +3650,16 @@ module Carat
       end
     end
 
-    module ArgumentListNoParens2
+    module UnbracketedArgumentList2
       def block_node
         elements[1]
       end
     end
 
-    def _nt_argument_list_no_parens
+    def _nt_unbracketed_argument_list
       start_index = index
-      if node_cache[:argument_list_no_parens].has_key?(index)
-        cached = node_cache[:argument_list_no_parens][index]
+      if node_cache[:unbracketed_argument_list].has_key?(index)
+        cached = node_cache[:unbracketed_argument_list][index]
         @index = cached.interval.end if cached
         return cached
       end
@@ -2321,7 +3741,7 @@ module Carat
               end
               if s9.last
                 r9 = instantiate_node(SyntaxNode,input, i9...index, s9)
-                r9.extend(ArgumentListNoParens0)
+                r9.extend(UnbracketedArgumentList0)
               else
                 @index = i9
                 r9 = nil
@@ -2339,7 +3759,7 @@ module Carat
       end
       if s1.last
         r1 = instantiate_node(ArgumentList,input, i1...index, s1)
-        r1.extend(ArgumentListNoParens1)
+        r1.extend(UnbracketedArgumentList1)
       else
         @index = i1
         r1 = nil
@@ -2362,7 +3782,7 @@ module Carat
         end
         if s16.last
           r16 = instantiate_node(ArgumentList,input, i16...index, s16)
-          r16.extend(ArgumentListNoParens2)
+          r16.extend(UnbracketedArgumentList2)
         else
           @index = i16
           r16 = nil
@@ -2375,7 +3795,7 @@ module Carat
         end
       end
 
-      node_cache[:argument_list_no_parens][start_index] = r0
+      node_cache[:unbracketed_argument_list][start_index] = r0
 
       r0
     end
@@ -2810,8 +4230,52 @@ module Carat
                   if r7
                     r0 = r7
                   else
-                    @index = i0
-                    r0 = nil
+                    if has_terminal?('elsif', false, index)
+                      r8 = instantiate_node(SyntaxNode,input, index...(index + 5))
+                      @index += 5
+                    else
+                      terminal_parse_failure('elsif')
+                      r8 = nil
+                    end
+                    if r8
+                      r0 = r8
+                    else
+                      if has_terminal?('while', false, index)
+                        r9 = instantiate_node(SyntaxNode,input, index...(index + 5))
+                        @index += 5
+                      else
+                        terminal_parse_failure('while')
+                        r9 = nil
+                      end
+                      if r9
+                        r0 = r9
+                      else
+                        if has_terminal?('begin', false, index)
+                          r10 = instantiate_node(SyntaxNode,input, index...(index + 5))
+                          @index += 5
+                        else
+                          terminal_parse_failure('begin')
+                          r10 = nil
+                        end
+                        if r10
+                          r0 = r10
+                        else
+                          if has_terminal?('rescue', false, index)
+                            r11 = instantiate_node(SyntaxNode,input, index...(index + 6))
+                            @index += 6
+                          else
+                            terminal_parse_failure('rescue')
+                            r11 = nil
+                          end
+                          if r11
+                            r0 = r11
+                          else
+                            @index = i0
+                            r0 = nil
+                          end
+                        end
+                      end
+                    end
                   end
                 end
               end
@@ -2839,19 +4303,13 @@ module Carat
         r0 = r1
         r0.extend(MethodName)
       else
-        r2 = _nt_binary_operator
+        r2 = _nt_special_method_name
         if r2
           r0 = r2
           r0.extend(MethodName)
         else
-          r3 = _nt_special_method_name
-          if r3
-            r0 = r3
-            r0.extend(MethodName)
-          else
-            @index = i0
-            r0 = nil
-          end
+          @index = i0
+          r0 = nil
         end
       end
 
@@ -2896,6 +4354,50 @@ module Carat
         end
         r2 = instantiate_node(SyntaxNode,input, i2...index, s2)
         s0 << r2
+        if r2
+          i5 = index
+          if has_terminal?('?', false, index)
+            r6 = instantiate_node(SyntaxNode,input, index...(index + 1))
+            @index += 1
+          else
+            terminal_parse_failure('?')
+            r6 = nil
+          end
+          if r6
+            r5 = r6
+          else
+            if has_terminal?('!', false, index)
+              r7 = instantiate_node(SyntaxNode,input, index...(index + 1))
+              @index += 1
+            else
+              terminal_parse_failure('!')
+              r7 = nil
+            end
+            if r7
+              r5 = r7
+            else
+              if has_terminal?('=', false, index)
+                r8 = instantiate_node(SyntaxNode,input, index...(index + 1))
+                @index += 1
+              else
+                terminal_parse_failure('=')
+                r8 = nil
+              end
+              if r8
+                r5 = r8
+              else
+                @index = i5
+                r5 = nil
+              end
+            end
+          end
+          if r5
+            r4 = r5
+          else
+            r4 = instantiate_node(SyntaxNode,input, index...index)
+          end
+          s0 << r4
+        end
       end
       if s0.last
         r0 = instantiate_node(SyntaxNode,input, i0...index, s0)
@@ -2910,78 +4412,6 @@ module Carat
       r0
     end
 
-    def _nt_binary_operator
-      start_index = index
-      if node_cache[:binary_operator].has_key?(index)
-        cached = node_cache[:binary_operator][index]
-        @index = cached.interval.end if cached
-        return cached
-      end
-
-      i0 = index
-      if has_terminal?('+', false, index)
-        r1 = instantiate_node(SyntaxNode,input, index...(index + 1))
-        @index += 1
-      else
-        terminal_parse_failure('+')
-        r1 = nil
-      end
-      if r1
-        r0 = r1
-      else
-        if has_terminal?('-', false, index)
-          r2 = instantiate_node(SyntaxNode,input, index...(index + 1))
-          @index += 1
-        else
-          terminal_parse_failure('-')
-          r2 = nil
-        end
-        if r2
-          r0 = r2
-        else
-          if has_terminal?('==', false, index)
-            r3 = instantiate_node(SyntaxNode,input, index...(index + 2))
-            @index += 2
-          else
-            terminal_parse_failure('==')
-            r3 = nil
-          end
-          if r3
-            r0 = r3
-          else
-            if has_terminal?('!=', false, index)
-              r4 = instantiate_node(SyntaxNode,input, index...(index + 2))
-              @index += 2
-            else
-              terminal_parse_failure('!=')
-              r4 = nil
-            end
-            if r4
-              r0 = r4
-            else
-              if has_terminal?('<<', false, index)
-                r5 = instantiate_node(SyntaxNode,input, index...(index + 2))
-                @index += 2
-              else
-                terminal_parse_failure('<<')
-                r5 = nil
-              end
-              if r5
-                r0 = r5
-              else
-                @index = i0
-                r0 = nil
-              end
-            end
-          end
-        end
-      end
-
-      node_cache[:binary_operator][start_index] = r0
-
-      r0
-    end
-
     def _nt_special_method_name
       start_index = index
       if node_cache[:special_method_name].has_key?(index)
@@ -2991,28 +4421,215 @@ module Carat
       end
 
       i0 = index
-      if has_terminal?('[]', false, index)
-        r1 = instantiate_node(SyntaxNode,input, index...(index + 2))
-        @index += 2
+      if has_terminal?('===', false, index)
+        r1 = instantiate_node(SyntaxNode,input, index...(index + 3))
+        @index += 3
       else
-        terminal_parse_failure('[]')
+        terminal_parse_failure('===')
         r1 = nil
       end
       if r1
         r0 = r1
       else
-        if has_terminal?('[]=', false, index)
+        if has_terminal?('<=>', false, index)
           r2 = instantiate_node(SyntaxNode,input, index...(index + 3))
           @index += 3
         else
-          terminal_parse_failure('[]=')
+          terminal_parse_failure('<=>')
           r2 = nil
         end
         if r2
           r0 = r2
         else
-          @index = i0
-          r0 = nil
+          if has_terminal?('[]=', false, index)
+            r3 = instantiate_node(SyntaxNode,input, index...(index + 3))
+            @index += 3
+          else
+            terminal_parse_failure('[]=')
+            r3 = nil
+          end
+          if r3
+            r0 = r3
+          else
+            if has_terminal?('==', false, index)
+              r4 = instantiate_node(SyntaxNode,input, index...(index + 2))
+              @index += 2
+            else
+              terminal_parse_failure('==')
+              r4 = nil
+            end
+            if r4
+              r0 = r4
+            else
+              if has_terminal?('!=', false, index)
+                r5 = instantiate_node(SyntaxNode,input, index...(index + 2))
+                @index += 2
+              else
+                terminal_parse_failure('!=')
+                r5 = nil
+              end
+              if r5
+                r0 = r5
+              else
+                if has_terminal?('<=', false, index)
+                  r6 = instantiate_node(SyntaxNode,input, index...(index + 2))
+                  @index += 2
+                else
+                  terminal_parse_failure('<=')
+                  r6 = nil
+                end
+                if r6
+                  r0 = r6
+                else
+                  if has_terminal?('>=', false, index)
+                    r7 = instantiate_node(SyntaxNode,input, index...(index + 2))
+                    @index += 2
+                  else
+                    terminal_parse_failure('>=')
+                    r7 = nil
+                  end
+                  if r7
+                    r0 = r7
+                  else
+                    if has_terminal?('<<', false, index)
+                      r8 = instantiate_node(SyntaxNode,input, index...(index + 2))
+                      @index += 2
+                    else
+                      terminal_parse_failure('<<')
+                      r8 = nil
+                    end
+                    if r8
+                      r0 = r8
+                    else
+                      if has_terminal?('>>', false, index)
+                        r9 = instantiate_node(SyntaxNode,input, index...(index + 2))
+                        @index += 2
+                      else
+                        terminal_parse_failure('>>')
+                        r9 = nil
+                      end
+                      if r9
+                        r0 = r9
+                      else
+                        if has_terminal?('--', false, index)
+                          r10 = instantiate_node(SyntaxNode,input, index...(index + 2))
+                          @index += 2
+                        else
+                          terminal_parse_failure('--')
+                          r10 = nil
+                        end
+                        if r10
+                          r0 = r10
+                        else
+                          if has_terminal?('++', false, index)
+                            r11 = instantiate_node(SyntaxNode,input, index...(index + 2))
+                            @index += 2
+                          else
+                            terminal_parse_failure('++')
+                            r11 = nil
+                          end
+                          if r11
+                            r0 = r11
+                          else
+                            if has_terminal?('!!', false, index)
+                              r12 = instantiate_node(SyntaxNode,input, index...(index + 2))
+                              @index += 2
+                            else
+                              terminal_parse_failure('!!')
+                              r12 = nil
+                            end
+                            if r12
+                              r0 = r12
+                            else
+                              if has_terminal?('[]', false, index)
+                                r13 = instantiate_node(SyntaxNode,input, index...(index + 2))
+                                @index += 2
+                              else
+                                terminal_parse_failure('[]')
+                                r13 = nil
+                              end
+                              if r13
+                                r0 = r13
+                              else
+                                if has_terminal?('<', false, index)
+                                  r14 = instantiate_node(SyntaxNode,input, index...(index + 1))
+                                  @index += 1
+                                else
+                                  terminal_parse_failure('<')
+                                  r14 = nil
+                                end
+                                if r14
+                                  r0 = r14
+                                else
+                                  if has_terminal?('>', false, index)
+                                    r15 = instantiate_node(SyntaxNode,input, index...(index + 1))
+                                    @index += 1
+                                  else
+                                    terminal_parse_failure('>')
+                                    r15 = nil
+                                  end
+                                  if r15
+                                    r0 = r15
+                                  else
+                                    if has_terminal?('+', false, index)
+                                      r16 = instantiate_node(SyntaxNode,input, index...(index + 1))
+                                      @index += 1
+                                    else
+                                      terminal_parse_failure('+')
+                                      r16 = nil
+                                    end
+                                    if r16
+                                      r0 = r16
+                                    else
+                                      if has_terminal?('-', false, index)
+                                        r17 = instantiate_node(SyntaxNode,input, index...(index + 1))
+                                        @index += 1
+                                      else
+                                        terminal_parse_failure('-')
+                                        r17 = nil
+                                      end
+                                      if r17
+                                        r0 = r17
+                                      else
+                                        if has_terminal?('*', false, index)
+                                          r18 = instantiate_node(SyntaxNode,input, index...(index + 1))
+                                          @index += 1
+                                        else
+                                          terminal_parse_failure('*')
+                                          r18 = nil
+                                        end
+                                        if r18
+                                          r0 = r18
+                                        else
+                                          if has_terminal?('/', false, index)
+                                            r19 = instantiate_node(SyntaxNode,input, index...(index + 1))
+                                            @index += 1
+                                          else
+                                            terminal_parse_failure('/')
+                                            r19 = nil
+                                          end
+                                          if r19
+                                            r0 = r19
+                                          else
+                                            @index = i0
+                                            r0 = nil
+                                          end
+                                        end
+                                      end
+                                    end
+                                  end
+                                end
+                              end
+                            end
+                          end
+                        end
+                      end
+                    end
+                  end
+                end
+              end
+            end
+          end
         end
       end
 
@@ -3193,9 +4810,6 @@ module Carat
       r0
     end
 
-    module Number0
-    end
-
     def _nt_number
       start_index = index
       if node_cache[:number].has_key?(index)
@@ -3204,76 +4818,25 @@ module Carat
         return cached
       end
 
-      i0, s0 = index, []
-      i2 = index
-      if has_terminal?('+', false, index)
-        r3 = instantiate_node(SyntaxNode,input, index...(index + 1))
-        @index += 1
-      else
-        terminal_parse_failure('+')
-        r3 = nil
-      end
-      if r3
-        r2 = r3
-      else
-        if has_terminal?('-', false, index)
-          r4 = instantiate_node(SyntaxNode,input, index...(index + 1))
+      s0, i0 = [], index
+      loop do
+        if has_terminal?('\G[0-9]', true, index)
+          r1 = true
           @index += 1
         else
-          terminal_parse_failure('-')
-          r4 = nil
+          r1 = nil
         end
-        if r4
-          r2 = r4
+        if r1
+          s0 << r1
         else
-          @index = i2
-          r2 = nil
+          break
         end
       end
-      if r2
-        r1 = r2
-      else
-        r1 = instantiate_node(SyntaxNode,input, index...index)
-      end
-      s0 << r1
-      if r1
-        r6 = _nt_multiline_space
-        if r6
-          r5 = r6
-        else
-          r5 = instantiate_node(SyntaxNode,input, index...index)
-        end
-        s0 << r5
-        if r5
-          s7, i7 = [], index
-          loop do
-            if has_terminal?('\G[0-9]', true, index)
-              r8 = true
-              @index += 1
-            else
-              r8 = nil
-            end
-            if r8
-              s7 << r8
-            else
-              break
-            end
-          end
-          if s7.empty?
-            @index = i7
-            r7 = nil
-          else
-            r7 = instantiate_node(SyntaxNode,input, i7...index, s7)
-          end
-          s0 << r7
-        end
-      end
-      if s0.last
-        r0 = instantiate_node(Integer,input, i0...index, s0)
-        r0.extend(Number0)
-      else
+      if s0.empty?
         @index = i0
         r0 = nil
+      else
+        r0 = instantiate_node(Integer,input, i0...index, s0)
       end
 
       node_cache[:number][start_index] = r0
@@ -3706,12 +5269,6 @@ module Carat
       r0
     end
 
-    module Space0
-    end
-
-    module Space1
-    end
-
     def _nt_space
       start_index = index
       if node_cache[:space].has_key?(index)
@@ -3720,86 +5277,30 @@ module Carat
         return cached
       end
 
-      i0, s0 = index, []
-      r2 = _nt_block_comment
-      if r2
-        r1 = r2
-      else
-        r1 = instantiate_node(SyntaxNode,input, index...index)
-      end
-      s0 << r1
-      if r1
-        s3, i3 = [], index
-        loop do
-          i4, s4 = index, []
-          s5, i5 = [], index
-          loop do
-            if has_terminal?('\G[ \\t]', true, index)
-              r6 = true
-              @index += 1
-            else
-              r6 = nil
-            end
-            if r6
-              s5 << r6
-            else
-              break
-            end
-          end
-          if s5.empty?
-            @index = i5
-            r5 = nil
-          else
-            r5 = instantiate_node(SyntaxNode,input, i5...index, s5)
-          end
-          s4 << r5
-          if r5
-            r8 = _nt_block_comment
-            if r8
-              r7 = r8
-            else
-              r7 = instantiate_node(SyntaxNode,input, index...index)
-            end
-            s4 << r7
-          end
-          if s4.last
-            r4 = instantiate_node(SyntaxNode,input, i4...index, s4)
-            r4.extend(Space0)
-          else
-            @index = i4
-            r4 = nil
-          end
-          if r4
-            s3 << r4
-          else
-            break
-          end
-        end
-        if s3.empty?
-          @index = i3
-          r3 = nil
+      s0, i0 = [], index
+      loop do
+        if has_terminal?('\G[ \\t]', true, index)
+          r1 = true
+          @index += 1
         else
-          r3 = instantiate_node(SyntaxNode,input, i3...index, s3)
+          r1 = nil
         end
-        s0 << r3
+        if r1
+          s0 << r1
+        else
+          break
+        end
       end
-      if s0.last
-        r0 = instantiate_node(SyntaxNode,input, i0...index, s0)
-        r0.extend(Space1)
-      else
+      if s0.empty?
         @index = i0
         r0 = nil
+      else
+        r0 = instantiate_node(SyntaxNode,input, i0...index, s0)
       end
 
       node_cache[:space][start_index] = r0
 
       r0
-    end
-
-    module MultilineSpace0
-    end
-
-    module MultilineSpace1
     end
 
     def _nt_multiline_space
@@ -3810,247 +5311,28 @@ module Carat
         return cached
       end
 
-      i0, s0 = index, []
-      r2 = _nt_block_comment
-      if r2
-        r1 = r2
-      else
-        r1 = instantiate_node(SyntaxNode,input, index...index)
-      end
-      s0 << r1
-      if r1
-        s3, i3 = [], index
-        loop do
-          i4, s4 = index, []
-          s5, i5 = [], index
-          loop do
-            if has_terminal?('\G[ \\t\\n\\r]', true, index)
-              r6 = true
-              @index += 1
-            else
-              r6 = nil
-            end
-            if r6
-              s5 << r6
-            else
-              break
-            end
-          end
-          if s5.empty?
-            @index = i5
-            r5 = nil
-          else
-            r5 = instantiate_node(SyntaxNode,input, i5...index, s5)
-          end
-          s4 << r5
-          if r5
-            r8 = _nt_block_comment
-            if r8
-              r7 = r8
-            else
-              r7 = instantiate_node(SyntaxNode,input, index...index)
-            end
-            s4 << r7
-          end
-          if s4.last
-            r4 = instantiate_node(SyntaxNode,input, i4...index, s4)
-            r4.extend(MultilineSpace0)
-          else
-            @index = i4
-            r4 = nil
-          end
-          if r4
-            s3 << r4
-          else
-            break
-          end
-        end
-        if s3.empty?
-          @index = i3
-          r3 = nil
+      s0, i0 = [], index
+      loop do
+        if has_terminal?('\G[ \\t\\n\\r]', true, index)
+          r1 = true
+          @index += 1
         else
-          r3 = instantiate_node(SyntaxNode,input, i3...index, s3)
+          r1 = nil
         end
-        s0 << r3
+        if r1
+          s0 << r1
+        else
+          break
+        end
       end
-      if s0.last
-        r0 = instantiate_node(SyntaxNode,input, i0...index, s0)
-        r0.extend(MultilineSpace1)
-      else
+      if s0.empty?
         @index = i0
         r0 = nil
+      else
+        r0 = instantiate_node(SyntaxNode,input, i0...index, s0)
       end
 
       node_cache[:multiline_space][start_index] = r0
-
-      r0
-    end
-
-    def _nt_comment
-      start_index = index
-      if node_cache[:comment].has_key?(index)
-        cached = node_cache[:comment][index]
-        @index = cached.interval.end if cached
-        return cached
-      end
-
-      i0 = index
-      r1 = _nt_block_comment
-      if r1
-        r0 = r1
-      else
-        r2 = _nt_line_comment
-        if r2
-          r0 = r2
-        else
-          @index = i0
-          r0 = nil
-        end
-      end
-
-      node_cache[:comment][start_index] = r0
-
-      r0
-    end
-
-    module BlockComment0
-    end
-
-    module BlockComment1
-    end
-
-    def _nt_block_comment
-      start_index = index
-      if node_cache[:block_comment].has_key?(index)
-        cached = node_cache[:block_comment][index]
-        @index = cached.interval.end if cached
-        return cached
-      end
-
-      i0, s0 = index, []
-      if has_terminal?('##', false, index)
-        r1 = instantiate_node(SyntaxNode,input, index...(index + 2))
-        @index += 2
-      else
-        terminal_parse_failure('##')
-        r1 = nil
-      end
-      s0 << r1
-      if r1
-        s2, i2 = [], index
-        loop do
-          i3, s3 = index, []
-          i4 = index
-          if has_terminal?('##', false, index)
-            r5 = instantiate_node(SyntaxNode,input, index...(index + 2))
-            @index += 2
-          else
-            terminal_parse_failure('##')
-            r5 = nil
-          end
-          if r5
-            r4 = nil
-          else
-            @index = i4
-            r4 = instantiate_node(SyntaxNode,input, index...index)
-          end
-          s3 << r4
-          if r4
-            if index < input_length
-              r6 = instantiate_node(SyntaxNode,input, index...(index + 1))
-              @index += 1
-            else
-              terminal_parse_failure("any character")
-              r6 = nil
-            end
-            s3 << r6
-          end
-          if s3.last
-            r3 = instantiate_node(SyntaxNode,input, i3...index, s3)
-            r3.extend(BlockComment0)
-          else
-            @index = i3
-            r3 = nil
-          end
-          if r3
-            s2 << r3
-          else
-            break
-          end
-        end
-        r2 = instantiate_node(SyntaxNode,input, i2...index, s2)
-        s0 << r2
-        if r2
-          if has_terminal?('##', false, index)
-            r7 = instantiate_node(SyntaxNode,input, index...(index + 2))
-            @index += 2
-          else
-            terminal_parse_failure('##')
-            r7 = nil
-          end
-          s0 << r7
-        end
-      end
-      if s0.last
-        r0 = instantiate_node(Nothing,input, i0...index, s0)
-        r0.extend(BlockComment1)
-      else
-        @index = i0
-        r0 = nil
-      end
-
-      node_cache[:block_comment][start_index] = r0
-
-      r0
-    end
-
-    module LineComment0
-    end
-
-    def _nt_line_comment
-      start_index = index
-      if node_cache[:line_comment].has_key?(index)
-        cached = node_cache[:line_comment][index]
-        @index = cached.interval.end if cached
-        return cached
-      end
-
-      i0, s0 = index, []
-      if has_terminal?('#', false, index)
-        r1 = instantiate_node(SyntaxNode,input, index...(index + 1))
-        @index += 1
-      else
-        terminal_parse_failure('#')
-        r1 = nil
-      end
-      s0 << r1
-      if r1
-        s2, i2 = [], index
-        loop do
-          if has_terminal?('\G[^\\n]', true, index)
-            r3 = true
-            @index += 1
-          else
-            r3 = nil
-          end
-          if r3
-            s2 << r3
-          else
-            break
-          end
-        end
-        r2 = instantiate_node(SyntaxNode,input, i2...index, s2)
-        s0 << r2
-      end
-      if s0.last
-        r0 = instantiate_node(Nothing,input, i0...index, s0)
-        r0.extend(LineComment0)
-      else
-        @index = i0
-        r0 = nil
-      end
-
-      node_cache[:line_comment][start_index] = r0
 
       r0
     end

@@ -1,11 +1,4 @@
-begin
-  require "rubygems"
-rescue LoadError
-  # We don't require rubygems to be present, but load it if it is
-end
-
 require "forwardable"
-require "treetop"
 
 module Carat
   ROOT_PATH    = File.expand_path(File.dirname(__FILE__))

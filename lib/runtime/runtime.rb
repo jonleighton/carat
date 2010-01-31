@@ -61,7 +61,9 @@ module Carat
         # operation. The operation should combine them in some way to form the next answer, before
         # yielding to its continuation, which will then fold items[(start+1)...items.length].
         operation.call(items[start], current_answer) do |next_answer|
-          fold(next_answer, operation, items, start + 1, &continuation)
+          lambda do
+            fold(next_answer, operation, items, start + 1, &continuation)
+          end
         end
       end
     end
@@ -72,7 +74,9 @@ module Carat
         yield final_answer
       else
         operation.call(items[start]) do
-          each(operation, items, final_answer, start + 1, &continuation)
+          lambda do
+            each(operation, items, final_answer, start + 1, &continuation)
+          end
         end
       end
     end

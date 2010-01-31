@@ -3,6 +3,7 @@
 
 require "test/unit"
 require File.dirname(__FILE__) + "/../lib/carat"
+require "stringio"
 
 class CaratTest < Test::Unit::TestCase
   def execute(code)

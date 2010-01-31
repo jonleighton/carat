@@ -1,8 +1,15 @@
-# TODO: Replace with pre-generated parser when it has stabilised a bit
-Treetop.load(Carat::PARSER_PATH + "/language")
-require Carat::PARSER_PATH + "/nodes"
-
 module Carat
+  require "rubygems" rescue LoadError
+  require "treetop"
+  
+  if ENV["DYNAMIC_PARSER"] == "true"
+    Treetop.load(PARSER_PATH + "/language")
+  else
+    require PARSER_PATH + "/language"
+  end
+  
+  require PARSER_PATH + "/nodes"
+
   class SyntaxError < CaratError
     attr_reader :input, :message, :location
     
