@@ -9,3 +9,9 @@ task :compile_kernel do
     end
   end
 end
+
+task :test do
+  system "ruby test/carat_test.rb"
+end
+
+task :default => :test

@@ -17,8 +17,8 @@ module Carat::Data
     # Yield the caller's current block
     def primitive_yield(*args, &continuation)
       block = current_call.caller_scope.block
+      
       if block
-        #block.primitive_call(*args, &continuation)
         block.call(:call, args, &continuation)
       else
         raise Carat::CaratError, "no block to yield in #{current_call.inspect}"
@@ -27,17 +27,22 @@ module Carat::Data
     
     # Throw away the current continuation and call the failure continuation
     def primitive_raise(exception, &continuation)
-      runtime.failure_continuation.call(exception)
+      prepare_to_jump
+      current_failure_continuation.call(exception)
     end
     
     # Return from a method on the call stack without doing any further computation
     def primitive_return(value, &continuation)
-      # Remove the call to this primitive from the call stack
+      prepare_to_jump
+      current_return_continuation.call(value)
+    end
+    
+    # Remove the current call and current scope from their respective stacks, as these relate
+    # to the method which called this primitive, and we are going to jump somewhere else without
+    # returning to that method.
+    def prepare_to_jump
       call_stack.pop
-      
-      # The call now at the top of the call stack is the call we actually want to return from. We
-      # don't explicitly remove it as that's the job of the return continuation.
-      call_stack.last.return_continuation.call(value)
+      scope_stack.pop
     end
   end
 end

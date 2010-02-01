@@ -41,8 +41,11 @@ module Carat::AST
     child :rescue
     
     def eval(&continuation)
-      self.rescue.setup(continuation)
-      eval_child(contents, &continuation)
+      self.rescue.setup(&continuation)
+      eval_child(contents) do |result|
+        self.rescue.teardown
+        yield result
+      end
     end
   end
   
@@ -59,22 +62,32 @@ module Carat::AST
       end
     end
     
-    def setup(return_continuation)
-      previous_failure_continuation = runtime.failure_continuation
-      runtime.failure_continuation = lambda do |exception|
-        runtime.failure_continuation = previous_failure_continuation
+    def failure_continuation(&continuation)
+      lambda do |exception|
+        # Remove this failure continuation from the stack
+        failure_continuation_stack.pop
         
+        # If this failure continuation matches the error, evaluate its contents. Otherwise, call
+        # the failure continuation which is now at the top of the stack
         eval_error_type do |error_type_object|
           exception.call(:is_a?, [error_type_object]) do |exception_match|
             if exception_match == runtime.true
               exception_variable.assign(exception) unless exception_variable.nil?
-              eval_child(contents, &return_continuation)
+              eval_child(contents, &continuation)
             else
-              previous_failure_continuation.call(exception)
+              current_failure_continuation.call(exception)
             end
           end
         end
       end
+    end
+    
+    def setup(&continuation)
+      failure_continuation_stack << failure_continuation(&continuation)
+    end
+    
+    def teardown
+      failure_continuation_stack.pop
     end
   end
   

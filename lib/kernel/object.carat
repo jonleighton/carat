@@ -38,4 +38,8 @@ class Object
   def class
     Primitive.class
   end
+  
+  def inspect
+    "<" + self.class.to_s + ":" + object_id.to_s + ">"
+  end
 end

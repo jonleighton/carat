@@ -17,12 +17,12 @@ module Carat::Data
       super(runtime, klass)
     end
     
-    def eval_call(scope, &continuation)
-      if contents.nil?
-        continuation.call(runtime.nil)
-      else
-        contents.eval_in_scope(scope, &continuation)
-      end
+    def empty?
+      contents.nil?
+    end
+    
+    def eval(&continuation)
+      contents.eval(&continuation)
     end
     
     # Extend the scope in which the block was created. The reason for extending the scope is that 

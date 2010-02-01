@@ -17,8 +17,8 @@ module Carat::Data
     attr_accessor :klass
     
     extend Forwardable
-    def_delegators :runtime, :constants, :call_stack,
-                   :current_call, :current_scope, :current_object
+    def_delegators :runtime, :constants, :call_stack, :scope_stack, :current_return_continuation,
+                   :current_call, :current_scope, :current_object, :current_failure_continuation
     
     include KernelModule
     
@@ -43,6 +43,7 @@ module Carat::Data
     # Call the method with a given name, with the given AST argument list
     def call(name, argument_list = [], location = nil, error = :NoMethodError, &continuation)
       method = lookup_instance_method(name) || missing_method(name, error)
+      #p current_scope
       runtime.call(location, method, method_scope, argument_list, &continuation)
     end
     

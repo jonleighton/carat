@@ -440,6 +440,31 @@ class CaratTest < Test::Unit::TestCase
     assert_equal("PASS\nPASS\nPASS\n", execute(code))
   end
   
+  def test_scoping_after_jumps
+    code = <<-CODE
+      begin
+        foo = 4
+        raise
+      rescue
+        puts foo
+      end
+
+      puts foo
+
+      a = 5
+
+      def foo
+        a = 3
+        return
+      end
+
+      foo
+      puts a
+    CODE
+    
+    assert_equal("4\n4\n5\n", execute(code))
+  end
+  
   def test_environment
     runtime = Carat::Runtime.new
     constants = runtime.constants

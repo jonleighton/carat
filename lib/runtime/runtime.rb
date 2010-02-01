@@ -5,15 +5,15 @@ module Carat
     require RUNTIME_PATH + "/missing_method"
     require RUNTIME_PATH + "/call"
     
-    attr_reader   :constants, :current_call, :call_stack, :root
-    attr_accessor :current_scope, :failure_continuation
+    attr_reader :constants, :root
+    attr_reader :call_stack, :scope_stack, :failure_continuation_stack
     
     def initialize
       # The scope containing the top level variables
-      @current_scope = @top_level_scope = Scope.new(nil)
+      @top_level_scope = Scope.new(nil)
       
       # Constants are defined globally
-      @constants       = {}
+      @constants = {}
       
       # Set up basic environment - default set of classes & objects, etc
       @environment = Environment.new(self)
@@ -27,12 +27,24 @@ module Carat
       @initialized == true
     end
     
-    def current_object
-      current_scope[:self]
-    end
-    
     def current_call
       call_stack.last
+    end
+    
+    def current_scope
+      scope_stack.last
+    end
+    
+    def current_failure_continuation
+      failure_continuation_stack.last
+    end
+    
+    def current_return_continuation
+      current_call.return_continuation
+    end
+    
+    def current_object
+      current_scope[:self]
     end
     
     def false
@@ -92,7 +104,7 @@ module Carat
     # Raises an exception in the object language
     def raise(exception_name, *args)
       constants[exception_name].call(:new, args) do |exception|
-        failure_continuation.call(exception)
+        current_failure_continuation.call(exception)
       end
     end
     
@@ -127,11 +139,12 @@ module Carat
     # technique is called "trampolining".
     def execute(root)
       return if root.nil?
-      
-      @call_stack = []
       @root = root
       root.runtime = self
-      self.failure_continuation = default_failure_continuation
+      
+      @call_stack                 = []
+      @scope_stack                = [@top_level_scope]
+      @failure_continuation_stack = [default_failure_continuation]
       
       current_result = root.eval { |final_result| nil }
       while current_result.is_a?(Proc)
@@ -151,21 +164,23 @@ module Carat
       run(File.read(name), name)
     end
     
-    def handle_error(exception)
-      case exception
-        when SyntaxError
-          puts exception.full_message
-        else
-          puts "Error: #{exception.message}"
-          puts exception.backtrace[0..40].join("\n")
-          puts "[Backtrace truncated]" if exception.backtrace.length > 40
-          puts
-          puts "Call Stack"
-          puts "=========="
-          puts
-          puts call_stack.reverse.map(&:inspect).join("\n\n")
+    private
+      
+      def handle_error(exception)
+        case exception
+          when SyntaxError
+            puts exception.full_message
+          else
+            puts "Error: #{exception.message}"
+            puts exception.backtrace[0..40].join("\n")
+            puts "[Backtrace truncated]" if exception.backtrace.length > 40
+            puts
+            puts "Call Stack"
+            puts "=========="
+            puts
+            puts call_stack.reverse.map(&:inspect).join("\n\n")
+        end
+        exit 1
       end
-      exit 1
-    end
   end
 end

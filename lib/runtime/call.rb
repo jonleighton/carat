@@ -58,14 +58,19 @@ class Carat::Runtime
         eval_arguments do |arguments|
           execution_scope.merge!(arguments)
           
-          @return_continuation = lambda do |result|
-            runtime.call_stack.pop
-            yield result
-          end
-          
-          lambda do
-            runtime.call_stack << self
-            callable.eval_call(execution_scope, &return_continuation)
+          if callable.empty?
+            yield runtime.nil
+          else
+            runtime.call_stack  << self
+            runtime.scope_stack << execution_scope
+            
+            @return_continuation = lambda do |result|
+              runtime.call_stack.pop
+              runtime.scope_stack.pop
+              yield result
+            end
+            
+            lambda { callable.eval(&return_continuation) }
           end
         end
       end

@@ -17,7 +17,11 @@ class Carat::Runtime
       end
     end
     
-    def eval_call(scope, &continuation)
+    def empty?
+      false
+    end
+    
+    def eval(&continuation)
       runtime.raise(error, runtime.constants[:String].new(name))
     end
     

@@ -38,7 +38,8 @@ module Carat
       attr_reader :runtime, :location
       
       extend Forwardable
-      def_delegators :runtime, :constants, :current_call, :current_scope, :current_object
+      def_delegators :runtime, :constants, :scope_stack, :failure_continuation_stack,
+                     :current_call, :current_scope, :current_object, :current_failure_continuation
       
       def initialize(location, *attributes)
         @location = location
@@ -72,17 +73,10 @@ module Carat
       end
       
       def eval_in_scope(scope, &continuation)
-        raise ArgumentError, "no continuation given" unless block_given?
-        
-        # Store the current scope, and then update the current scope to be the scope needed when
-        # evaluating the child node
-        previous_scope = current_scope
-        runtime.current_scope = scope
+        scope_stack << scope
         
         eval do |result|
-          # Node has been evaluated, so reset the current scope to the previous scope before
-          # passing the result on to the continuation
-          runtime.current_scope = previous_scope
+          scope_stack.pop
           yield result
         end
       end
@@ -91,7 +85,11 @@ module Carat
         if node.nil?
           yield runtime.nil
         else
-          node.eval_in_scope(new_scope || current_scope, &continuation)
+          if new_scope
+            node.eval_in_scope(new_scope, &continuation)
+          else
+            node.eval(&continuation)
+          end
         end
       end
       
