@@ -68,8 +68,14 @@ module Carat
       end
     end
     
+    # Strips any comments from the input. These can either be multi-line comments, which start and 
+    # end with '##', or single-line comments which start with '#' and end with \n.
+    # 
+    # It is important to preserve \n characters from inside block comments, as otherwise the line
+    # numbers in backtraces wouldn't make sense.
     def input_without_comments
-      input.gsub(/##.*?##/m, '').gsub(/#[^\n]*/, '')
+      input.gsub(/##.*?##/m) { |match| match.to_s.gsub(/./, '') }.
+            gsub(/#[^\n]*/, '')
     end
     
     def expected_message
