@@ -37,7 +37,7 @@ class Array
     "[" + map { |item| item.inspect }.join(", ") + "]"
   end
   
-  def join(joiner)
+  def join(joiner = "")
     result = ""
     i = 1
     each do |item|

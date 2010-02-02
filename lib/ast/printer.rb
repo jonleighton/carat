@@ -49,7 +49,7 @@ module Carat::AST
         unless node.class.properties.empty?
           header << "["
           header << node.class.properties.map do |property|
-            node.send(property[:name])
+            node.send(property[:name]).inspect
           end.join(", ")
           header << "]"
         end

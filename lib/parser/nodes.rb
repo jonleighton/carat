@@ -216,7 +216,7 @@ module Carat
         end
         
         unless mandatory_before_optional?
-          error "all mandatory arguments must come before any optional arguments, splats, or block passes"
+          error "all mandatory arguments must come before any optional ones"
         end
         
         if duplicate_names?

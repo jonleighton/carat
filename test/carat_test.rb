@@ -309,9 +309,16 @@ class CaratTest < Test::Unit::TestCase
       end
       
       bar(*[4, 2])
+      
+      def foo(*a, b)
+        p a
+        puts b
+      end
+
+      foo(3, 4, 5)
     CODE
     
-    assert_equal("1\n[2, 3, 4]\n4\n2\n", execute(code))
+    assert_equal("1\n[2, 3, 4]\n4\n2\n[3, 4]\n5\n", execute(code))
   end
   
   def test_argument_defaults

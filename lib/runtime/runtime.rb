@@ -145,6 +145,7 @@ module Carat
     end
     
     def call_main_method(contents)
+      contents ||= Carat::AST::ExpressionList.new
       call(contents.location, main_method(contents), main_scope) do |final_result|
         nil
       end

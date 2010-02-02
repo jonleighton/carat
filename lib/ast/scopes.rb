@@ -106,56 +106,43 @@ module Carat::AST
       property :type,    :default => :normal
       child    :default, :default => nil
       
-      def value(values, block, &continuation)
-        case type
-          when :splat
-            yield runtime.constants[:Array].new(values)
-          when :block_pass
-            yield block || runtime.nil
-          else
-            value = values.shift
-            if value
-              yield value
-            elsif optional?
-              eval_child(default, &continuation)
-            else
-              yield runtime.nil
-            end
-        end
-      end
-      
+      # A splat it considered mandatory, but it can match 0 arguments
+      # A block pass is always optional and will default to nil
       def mandatory?
-        type == :normal && default.nil?
+        type == :splat || (type == :normal && default.nil?)
       end
       
       def optional?
         !mandatory?
       end
-    end
-    
-    def includes_splat?
-      !items.find { |item| item.type == :splat }.nil?
-    end
-    
-    def normal_arguments
-      items.find_all { |item| item.type == :normal }
-    end
-    
-    def mandatory_arguments
-      items.find_all { |item| item.mandatory? }
+      
+      def minimum_arity
+        case type
+          when :splat, :block_pass
+            0
+          else
+            default ? 0 : 1
+        end
+      end
+      
+      def maximum_arity
+        case type
+          when :splat
+            Infinity
+          when :block_pass
+            0 # Block pass is not considered party of the arity
+          else
+            1
+        end
+      end
     end
     
     def minimum_arity
-      mandatory_arguments.length
+      items.inject(0) { |sum, item| sum + item.minimum_arity }
     end
     
     def maximum_arity
-      if includes_splat?
-        Infinity
-      else
-        # A block pass doesn't count towards the arity, because it can always default to nil
-        normal_arguments.length
-      end
+      items.inject(0) { |sum, item| sum + item.maximum_arity }
     end
     
     def arity
@@ -170,10 +157,36 @@ module Carat::AST
       end
     end
     
+    def normal_items_after_splat
+      items.drop_while { |item| item.type != :splat }.
+        drop(1).reject { |item| item.type == :block_pass}
+    end
+    
+    def values_for_splat(values)
+      values.shift(values.length - normal_items_after_splat.length)
+    end
+    
+    def match_value(item, values, block, &continuation)
+      case item.type
+        when :splat
+          yield runtime.constants[:Array].new(values_for_splat(values))
+        when :block_pass
+          yield block || runtime.nil
+        else
+          value = values.shift
+          
+          if value
+            yield value
+          else
+            eval_child(item.default, &continuation)
+          end
+      end
+    end
+    
     def match_to(values, block, &continuation)
       if arity.include?(values.length)
         match_operation = lambda do |item, arguments, &match_continuation|
-          item.value(values, block) do |value|
+          match_value(item, values, block) do |value|
             arguments[item.name] = value
             match_continuation.call(arguments)
           end
