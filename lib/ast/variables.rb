@@ -15,11 +15,15 @@ module Carat::AST
       current_scope[name] = value
     end
     
+    # The only time when a local variable is explicitly distinguished from a method call is when we
+    # have a line such as "foo ||= 42". In this case, the LHS is taken to be a local variable (not
+    # a method call), and the expression is expanded into an AST node representing "foo = foo || 42",
+    # but the occurance of "foo" on the RHS is also assumed to be a local variable.
     def eval(&continuation)
       if current_scope[name]
         yield current_scope[name]
       else
-        raise Carat::CaratError, "undefined local variable '#{name}'"
+        runtime.raise :NameError, "undefined local variable '#{name}'"
       end
     end
   end
@@ -28,8 +32,10 @@ module Carat::AST
     def eval(&continuation)
       if current_scope[name]
         yield current_scope[name]
+      elsif current_object.has_instance_method?(name)
+        current_object.call(name, [], location, &continuation)
       else
-        current_object.call(name, [], location, :NameError, &continuation)
+        runtime.raise :NameError, "undefined local variable or method '#{name}'"
       end
     end
   end
@@ -49,7 +55,7 @@ module Carat::AST
       if constants[name]
         yield constants[name]
       else
-        raise Carat::CaratError, "constant '#{name}' not found"
+        runtime.raise :NameError, "undefined constant '#{name}'"
       end
     end
   end

@@ -17,14 +17,6 @@ module Carat::Data
       super(runtime, klass)
     end
     
-    def empty?
-      contents.nil?
-    end
-    
-    def eval(&continuation)
-      contents.eval(&continuation)
-    end
-    
     # Extend the scope in which the block was created. The reason for extending the scope is that 
     # it means any fresh variables within the lambda will stay local to the lambda.
     def evaluation_scope

@@ -21,7 +21,7 @@ module Carat::Data
       if block
         block.call(:call, args, &continuation)
       else
-        raise Carat::CaratError, "no block to yield in #{current_call.inspect}"
+        runtime.raise :ArgumentError, "no block given"
       end
     end
     

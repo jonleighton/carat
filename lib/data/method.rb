@@ -13,14 +13,6 @@ module Carat::Data
       super(runtime, klass)
     end
     
-    def empty?
-      contents.nil?
-    end
-    
-    def eval(&continuation)
-      contents.eval(&continuation)
-    end
-    
     def to_s
       "<method:#{name}>"
     end

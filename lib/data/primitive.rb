@@ -1,14 +1,13 @@
 module Carat::Data
   class PrimitiveClass < ClassInstance
+    def has_instance_method?(name)
+      current_object.respond_to?("primitive_#{name}")
+    end
+    
     # This is a special version of call which only dispatches primitives
     def call(method_name, argument_list = [], location = nil, &continuation)
       eval_arguments(argument_list) do |arguments|
-        primitive_name = "primitive_#{method_name}"
-        if current_object.respond_to?(primitive_name)
-          send_primitive(primitive_name, arguments, &continuation)
-        else
-          raise Carat::CaratError, "undefined primitive '#{name}' for #{current_object}"
-        end
+        send_primitive("primitive_#{method_name}", arguments, &continuation)
       end
     end
     

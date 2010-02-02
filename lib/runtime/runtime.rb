@@ -2,7 +2,6 @@ module Carat
   class Runtime
     require RUNTIME_PATH + "/scope"
     require RUNTIME_PATH + "/environment"
-    require RUNTIME_PATH + "/missing_method"
     require RUNTIME_PATH + "/call"
     
     attr_reader :constants, :call_stack, :scope_stack, :failure_continuation_stack
@@ -105,9 +104,10 @@ module Carat
     end
     
     # Raises an exception in the object language
-    def raise(exception_name, *args)
+    def raise(exception_name, message, *args)
+      args = [constants[:String].new(message)] + args
       constants[exception_name].call(:new, args) do |exception|
-        current_failure_continuation.call(exception)
+        current_failure_continuation.call(exception, current_location)
       end
     end
     

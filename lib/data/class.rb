@@ -58,7 +58,6 @@ module Carat::Data
     end
     
     def superclass=(klass)
-      raise Carat::CaratError, "You can't set a non-class as the superclass" unless klass.is_a?(ClassInstance)
       self.super = klass
     end
     

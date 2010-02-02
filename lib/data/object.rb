@@ -40,14 +40,20 @@ module Carat::Data
       klass.lookup_method(name)
     end
     
-    def missing_method(name, error)
-      Carat::Runtime::MissingMethod.new(runtime, self, name, error)
+    # Lookup an intance method or raise an exception
+    def lookup_instance_method!(name)
+      lookup_instance_method(name) || raise(Carat::CaratError, "undefined method '#{name}'")
     end
     
-    # Call the method with a given name, with the given AST argument list
-    def call(name, argument_list = [], location = nil, error = :NoMethodError, &continuation)
-      method = lookup_instance_method(name) || missing_method(name, error)
-      #p current_scope
+    def has_instance_method?(name)
+      lookup_instance_method(name) != nil
+    end
+    
+    # Call the method with a given name, with the given argument list (AST::ArgumentList or Array).
+    # This should only be called when we know the method exists. If the method does not exist an
+    # exception will be raised.
+    def call(name, argument_list = [], location = nil, &continuation)
+      method = lookup_instance_method!(name)
       runtime.call(location, method, method_scope, argument_list, &continuation)
     end
     

@@ -58,7 +58,7 @@ class Carat::Runtime
         eval_arguments do |arguments|
           execution_scope.merge!(arguments)
           
-          if callable.empty?
+          if contents.nil?
             yield runtime.nil
           else
             runtime.call_stack  << self
@@ -70,7 +70,7 @@ class Carat::Runtime
               yield result
             end
             
-            lambda { callable.eval(&return_continuation) }
+            lambda { contents.eval(&return_continuation) }
           end
         end
       end
