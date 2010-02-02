@@ -1,5 +1,8 @@
 module Carat::Data
   class ObjectClass < ClassInstance
+    def new
+      ObjectInstance.new(runtime, self)
+    end
   end
 
   class ObjectInstance
@@ -18,7 +21,8 @@ module Carat::Data
     
     extend Forwardable
     def_delegators :runtime, :constants, :call_stack, :scope_stack, :current_return_continuation,
-                   :current_call, :current_scope, :current_object, :current_failure_continuation
+                   :current_call, :current_scope, :current_object, :current_failure_continuation,
+                   :current_location
     
     include KernelModule
     

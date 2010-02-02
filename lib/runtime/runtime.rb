@@ -5,8 +5,7 @@ module Carat
     require RUNTIME_PATH + "/missing_method"
     require RUNTIME_PATH + "/call"
     
-    attr_reader :constants, :root
-    attr_reader :call_stack, :scope_stack, :failure_continuation_stack
+    attr_reader :constants, :call_stack, :scope_stack, :failure_continuation_stack
     
     def initialize
       # The scope containing the top level variables
@@ -41,6 +40,10 @@ module Carat
     
     def current_return_continuation
       current_call.return_continuation
+    end
+    
+    def current_location
+      current_call.location
     end
     
     def current_object
@@ -94,7 +97,7 @@ module Carat
     end
     
     # Create a +Call+ and send it
-    def call(location, callable, scope, argument_list, &continuation)
+    def call(location, callable, scope, argument_list = [], &continuation)
       raise ArgumentError, "no continuation given" unless block_given?
       
       call = Call.new(self, location, callable, scope, argument_list)
@@ -109,23 +112,46 @@ module Carat
     end
     
     def default_failure_continuation
-      lambda do |exception|
+      lambda do |exception, location|
         exception.call(:to_s) do |exception_string|
           puts "#{exception.real_klass.name}: #{exception_string}"
-          call_stack.reverse.each do |call|
-            puts "  #{call.location} called #{call}"
+          
+          locations       = [location] + call_stack.reverse.map(&:location)
+          enclosing_calls = call_stack.reverse + [nil]
+          backtrace       = locations.zip(enclosing_calls)[0..-2]
+          
+          backtrace.each do |location, enclosing_call|
+            puts "  #{location} in #{enclosing_call}"
           end
+          
           exit 1
         end
       end
     end
     
-    # This is the starting point for executing an AST. Every time we decend into a method call, we
-    # are executing a new AST before returning to the previous one. We track this in @ast_stack for
-    # debugging.
-    # 
-    # AST nodes need a reference to the runtime in order to be evaluated. We set the runtime on the
-    # root node, and it handles recursively setting the runtime on all decendent nodes.
+    def main_method(contents)
+      argument_pattern = Carat::AST::ArgumentPattern.new
+      method = constants[:Method].new(:main, argument_pattern, contents)
+      argument_pattern.runtime = contents.runtime = self
+      method
+    end
+    
+    def main_object
+      constants[:Object].new
+    end
+    
+    def main_scope
+      @top_level_scope.extend(main_object)
+    end
+    
+    def call_main_method(contents)
+      call(contents.location, main_method(contents), main_scope) do |final_result|
+        nil
+      end
+    end
+    
+    # This is the starting point for executing an AST. We reset the various stacks, and then create
+    # and call a special 'main' method with the root node as its contents.
     # 
     # Normally, in Continuation Passing Style, a stack of continuations is built up right until the
     # end of the program when they all collapse in to provide the result. In languages without tail
@@ -138,15 +164,11 @@ module Carat
     # solves the problem of tail call recursion. This is what the while loop is doing. This
     # technique is called "trampolining".
     def execute(root)
-      return if root.nil?
-      @root = root
-      root.runtime = self
-      
       @call_stack                 = []
-      @scope_stack                = [@top_level_scope]
+      @scope_stack                = []
       @failure_continuation_stack = [default_failure_continuation]
       
-      current_result = root.eval { |final_result| nil }
+      current_result = call_main_method(root)
       while current_result.is_a?(Proc)
         current_result = current_result.call
       end

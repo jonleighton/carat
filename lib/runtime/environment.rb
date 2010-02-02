@@ -3,7 +3,7 @@ class Carat::Runtime
     attr_reader :runtime
   
     extend Forwardable
-    def_delegators :runtime, :constants, :current_scope
+    def_delegators :runtime, :constants
     
     LOAD_ORDER = [:kernel, :module, :class, :object, :comparable, :fixnum, :array, :string,
                   :nil_class, :true_class, :false_class, :lambda, :exception]
@@ -43,8 +43,6 @@ class Carat::Runtime
       LOAD_ORDER.each do |file|
         runtime.execute(Marshal.load(File.read(Carat::KERNEL_PATH + "/#{file}.marshal")))
       end
-      
-      current_scope[:self] = Carat::Data::ObjectInstance.new(runtime, @object)
     end
   end
 end

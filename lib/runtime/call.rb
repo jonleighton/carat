@@ -129,8 +129,7 @@ class Carat::Runtime
       else
         result << ", <unevaluated args>"
       end
-      result << "] => \n"
-      result << contents.inspect
+      result << "]"
       result
     end
   end

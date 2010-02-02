@@ -27,8 +27,9 @@ module Carat::Data
     
     # Throw away the current continuation and call the failure continuation
     def primitive_raise(exception, &continuation)
+      location = current_location
       prepare_to_jump
-      current_failure_continuation.call(exception)
+      current_failure_continuation.call(exception, location)
     end
     
     # Return from a method on the call stack without doing any further computation

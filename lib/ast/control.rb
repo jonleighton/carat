@@ -63,7 +63,7 @@ module Carat::AST
     end
     
     def failure_continuation(&continuation)
-      lambda do |exception|
+      lambda do |exception, location|
         # Remove this failure continuation from the stack
         failure_continuation_stack.pop
         
@@ -75,7 +75,7 @@ module Carat::AST
               exception_variable.assign(exception) unless exception_variable.nil?
               eval_child(contents, &continuation)
             else
-              current_failure_continuation.call(exception)
+              current_failure_continuation.call(exception, location)
             end
           end
         end

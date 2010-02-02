@@ -41,7 +41,7 @@ module Carat
       def_delegators :runtime, :constants, :scope_stack, :failure_continuation_stack,
                      :current_call, :current_scope, :current_object, :current_failure_continuation
       
-      def initialize(location, *attributes)
+      def initialize(location = nil, *attributes)
         @location = location
         
         if self.class.required_attributes.length > attributes.length
