@@ -1,7 +1,7 @@
 module Carat::Data
   class StringClass < ClassInstance
     def new(contents = "")
-      StringInstance.new(runtime, self, contents.to_s)
+      StringInstance.new(runtime, self, contents)
     end
   
     def primitive_allocate
@@ -13,7 +13,9 @@ module Carat::Data
     attr_reader :contents
   
     def initialize(runtime, klass, contents = "")
-      @contents = contents
+      # clone the contents string because it is important to make sure that two separate 
+      # StringInstances aren't stored by the same underlying String object
+      @contents = contents.to_s.clone
       super(runtime, klass)
     end
     
@@ -34,7 +36,8 @@ module Carat::Data
     end
     
     def primitive_push(other)
-      yield real_klass.new(contents << other.contents)
+      contents << other.contents
+      yield self
     end
   end
 end
