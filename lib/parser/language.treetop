@@ -212,7 +212,7 @@ module Carat
     end
     
     rule argument_pattern_item
-      local_identifier default:(multiline_space? '=' multiline_space expression)? <ArgumentPatternItem> /
+      local_identifier default:(multiline_space? '=' multiline_space? expression)? <ArgumentPatternItem> /
       ('*' / '&') multiline_space? local_identifier <ArgumentPatternItem>
     end
     

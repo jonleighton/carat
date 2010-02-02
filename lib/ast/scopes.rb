@@ -116,12 +116,20 @@ module Carat::AST
             value = values.shift
             if value
               yield value
-            elsif default
+            elsif optional?
               eval_child(default, &continuation)
             else
               yield runtime.nil
             end
         end
+      end
+      
+      def mandatory?
+        default.nil?
+      end
+      
+      def optional?
+        !mandatory?
       end
     end
     

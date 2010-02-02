@@ -175,21 +175,52 @@ module Carat
         items.find_all { |item| item.type == :splat }.length
       end
       
+      def multiple_splats?
+        splat_count > 1
+      end
+      
       def block_pass
         items.find { |item| item.type == :block_pass }
+      end
+      
+      def block_pass_last?
+        block_pass == items.last
+      end
+      
+      def optional_part
+        items.drop_while { |item| item.mandatory? }
+      end
+      
+      def mandatory_before_optional?
+        optional_part.find { |item| item.mandatory? }.nil?
+      end
+      
+      def unique_item_names
+        items.map { |item| item.name }.uniq
+      end
+      
+      def duplicate_names?
+        items.length > unique_item_names.length
       end
       
       def validate_items
         # There can only be one splat, otherwise there could be multiple ways to map arguments onto
         # the pattern
-        if splat_count > 1
+        if multiple_splats?
           error "only one splat allowed per method definition"
         end
         
-        # A block pass can only occur at the end of the pattern (this also implies there is only
-        # one block pass)
-        if block_pass && block_pass != items.last
+        # This also implies there is only one block pass
+        if block_pass && !block_pass_last?
           error "a block pass may only occur at the end of the argument list in a method definition"
+        end
+        
+        unless mandatory_before_optional?
+          error "all mandatory arguments must come before any optional arguments, splats, or block passes"
+        end
+        
+        if duplicate_names?
+          error "duplicate argument name(s)"
         end
       end
       
