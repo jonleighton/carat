@@ -180,7 +180,7 @@ module Carat
       end
       
       def block_pass
-        items.find { |item| item.type == :block_pass }
+        @block_pass ||= items.find { |item| item.type == :block_pass }
       end
       
       def block_pass_last?

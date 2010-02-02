@@ -125,7 +125,7 @@ module Carat::AST
       end
       
       def mandatory?
-        default.nil?
+        type == :normal && default.nil?
       end
       
       def optional?
@@ -133,15 +133,57 @@ module Carat::AST
       end
     end
     
-    def match_to(values, block, &continuation)
-      match_operation = lambda do |item, arguments, &match_continuation|
-        item.value(values, block) do |value|
-          arguments[item.name] = value
-          match_continuation.call(arguments)
-        end
+    def includes_splat?
+      !items.find { |item| item.type == :splat }.nil?
+    end
+    
+    def normal_arguments
+      items.find_all { |item| item.type == :normal }
+    end
+    
+    def mandatory_arguments
+      items.find_all { |item| item.mandatory? }
+    end
+    
+    def minimum_arity
+      mandatory_arguments.length
+    end
+    
+    def maximum_arity
+      if includes_splat?
+        Infinity
+      else
+        # A block pass doesn't count towards the arity, because it can always default to nil
+        normal_arguments.length
       end
-      
-      runtime.fold({}, match_operation, items, &continuation)
+    end
+    
+    def arity
+      @arity ||= minimum_arity..maximum_arity
+    end
+    
+    def arity_as_string
+      if minimum_arity == maximum_arity
+        minimum_arity.to_s
+      else
+        "#{minimum_arity} to #{maximum_arity}"
+      end
+    end
+    
+    def match_to(values, block, &continuation)
+      if arity.include?(values.length)
+        match_operation = lambda do |item, arguments, &match_continuation|
+          item.value(values, block) do |value|
+            arguments[item.name] = value
+            match_continuation.call(arguments)
+          end
+        end
+        
+        runtime.fold({}, match_operation, items, &continuation)
+      else
+        runtime.raise :ArgumentError, "wrong number of arguments (#{values.length} supplied, " +
+                                      "#{arity_as_string} required)"
+      end
     end
   end
 end

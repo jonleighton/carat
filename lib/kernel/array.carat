@@ -23,6 +23,10 @@ class Array
     self
   end
   
+  def to_s
+    map { |item| item.to_s }.join("\n")
+  end
+  
   def map
     ary = []
     each { |item| ary << yield(item) }
