@@ -74,7 +74,7 @@ module Carat
     # It is important to preserve \n characters from inside block comments, as otherwise the line
     # numbers in backtraces wouldn't make sense.
     def input_without_comments
-      input.gsub(/##.*?##/m) { |match| match.to_s.gsub(/./, '') }.
+      input.gsub(/##.*?(##|\z)/m) { |match| match.to_s.gsub(/./, '') }.
             gsub(/#[^\n]*/, '')
     end
     
