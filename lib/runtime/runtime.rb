@@ -7,9 +7,6 @@ module Carat
     attr_reader :constants, :call_stack, :scope_stack, :failure_continuation_stack
     
     def initialize
-      # The scope containing the top level variables
-      @top_level_scope = Scope.new(nil)
-      
       # Constants are defined globally
       @constants = {}
       
@@ -141,7 +138,7 @@ module Carat
     end
     
     def main_scope
-      @top_level_scope.extend(main_object)
+      Scope.new(main_object)
     end
     
     def call_main_method(contents)
@@ -149,6 +146,12 @@ module Carat
       call(contents.location, main_method(contents), main_scope) do |final_result|
         nil
       end
+    end
+    
+    def setup_environment
+      @call_stack                 = []
+      @scope_stack                = []
+      @failure_continuation_stack = [default_failure_continuation]
     end
     
     # This is the starting point for executing an AST. We reset the various stacks, and then create
@@ -165,9 +168,7 @@ module Carat
     # solves the problem of tail call recursion. This is what the while loop is doing. This
     # technique is called "trampolining".
     def execute(root)
-      @call_stack                 = []
-      @scope_stack                = []
-      @failure_continuation_stack = [default_failure_continuation]
+      setup_environment
       
       current_result = call_main_method(root)
       while current_result.is_a?(Proc)
