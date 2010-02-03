@@ -474,6 +474,8 @@ class CaratTest < Test::Unit::TestCase
   
   def test_environment
     runtime = Carat::Runtime.new
+    runtime.setup_environment
+    
     constants = runtime.constants
     
     object = constants[:Object]
