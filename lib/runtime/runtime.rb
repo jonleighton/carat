@@ -1,26 +1,10 @@
 module Carat
   class Runtime
+    require RUNTIME_PATH + "/kernel_loader"
     require RUNTIME_PATH + "/scope"
-    require RUNTIME_PATH + "/environment"
     require RUNTIME_PATH + "/call"
     
     attr_reader :constants, :call_stack, :scope_stack, :failure_continuation_stack
-    
-    def initialize
-      # Constants are defined globally
-      @constants = {}
-      
-      # Set up basic environment - default set of classes & objects, etc
-      @environment = Environment.new(self)
-      @environment.setup
-      @initialized = true
-      @environment.load_kernel
-    end
-    
-    # The runtime is initialized when the environment has been set up
-    def initialized?
-      @initialized == true
-    end
     
     def current_call
       call_stack.last
@@ -149,13 +133,19 @@ module Carat
     end
     
     def setup_environment
+      # Initialize stacks
       @call_stack                 = []
       @scope_stack                = []
       @failure_continuation_stack = [default_failure_continuation]
+      
+      # Constants are defined globally
+      @constants = {}
+      
+      # Load core classes
+      KernelLoader.new(self).run
     end
     
-    # This is the starting point for executing an AST. We reset the various stacks, and then create
-    # and call a special 'main' method with the root node as its contents.
+    # This is the starting point for executing an AST.
     # 
     # Normally, in Continuation Passing Style, a stack of continuations is built up right until the
     # end of the program when they all collapse in to provide the result. In languages without tail
@@ -168,9 +158,8 @@ module Carat
     # solves the problem of tail call recursion. This is what the while loop is doing. This
     # technique is called "trampolining".
     def execute(root)
-      setup_environment
-      
       current_result = call_main_method(root)
+      
       while current_result.is_a?(Proc)
         current_result = current_result.call
       end
@@ -178,7 +167,9 @@ module Carat
     
     # Parse some code and then execute its AST
     def run(input, file_name = nil)
-      execute Carat.parse(input, file_name)
+      ast = Carat.parse(input, file_name)
+      setup_environment
+      execute(ast)
     rescue StandardError => e
       handle_error(e)
     end

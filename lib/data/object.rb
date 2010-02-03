@@ -27,10 +27,6 @@ module Carat::Data
     include KernelModule
     
     def initialize(runtime, klass)
-      if klass.nil? && runtime.initialized?
-        raise Carat::CaratError, "cannot create object without a class"
-      end
-      
       @runtime, @klass = runtime, klass
       @carat_object_id = ObjectInstance.next_object_id
     end

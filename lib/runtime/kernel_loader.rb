@@ -1,5 +1,5 @@
 class Carat::Runtime
-  class Environment
+  class KernelLoader
     attr_reader :runtime
   
     extend Forwardable
@@ -12,7 +12,7 @@ class Carat::Runtime
       @runtime = runtime
     end
     
-    def setup
+    def run
       @object = constants[:Object] = Carat::Data::ObjectClass.new(runtime, nil)
       @module = constants[:Module] = Carat::Data::ModuleClass.new(runtime, @object)
       @class  = constants[:Class]  = Carat::Data::ClassClass.new(runtime, @module)
@@ -27,21 +27,19 @@ class Carat::Runtime
       
       # The superclass of the metaclass of Object is just Class
       @object.metaclass.superclass = @class
-    end
-    
-    def create_classes(*names)
-      names.each do |name|
-        constants[name] = Carat::Data.const_get("#{name}Class").new(runtime, @object)
-      end
-    end
-    
-    def load_kernel    
+      
       constants[:Kernel] = Carat::Data::ModuleInstance.new(runtime, :Kernel)
       create_classes(:Primitive, :Fixnum, :Array, :String, :Lambda, :Method,
                      :NilClass, :TrueClass, :FalseClass)
       
       LOAD_ORDER.each do |file|
         runtime.execute(Marshal.load(File.read(Carat::KERNEL_PATH + "/#{file}.marshal")))
+      end
+    end
+    
+    def create_classes(*names)
+      names.each do |name|
+        constants[name] = Carat::Data.const_get("#{name}Class").new(runtime, @object)
       end
     end
   end
