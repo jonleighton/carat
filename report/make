@@ -1,0 +1,9 @@
+#!/bin/bash
+
+# We run xelatex twice because this makes sure the glossary is up-to-date. On the first parse
+# the project.glo file is generated, which is then indexed in the file project.gls. Then in 
+# the second pass the correct glossary is embedded in the document
+
+xelatex project
+makeindex project.glo -s project.ist -t project.glg -o project.gls
+xelatex project

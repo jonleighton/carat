@@ -1,0 +1,124 @@
+\documentclass[10pt,a4paper]{article}
+
+\usepackage{fontspec}
+\usepackage{xunicode}
+\usepackage{xltxtra}
+\usepackage{ifpdf}
+\usepackage[utf8]{inputenc}
+\usepackage[UKenglish]{babel}
+\usepackage[breaklinks=true]{hyperref}
+\usepackage{listings}
+\usepackage[usenames,dvipsnames]{color}
+\usepackage[a4paper]{geometry}
+\usepackage{textcomp}
+\usepackage{setspace}
+\usepackage[hypertoc=true]{glossary}
+\usepackage{amsmath}
+
+\usepackage{tikz}
+\usetikzlibrary{trees,chains,backgrounds,fit}
+
+\tikzset{
+  generic node/.style={
+    rectangle,rounded corners=2mm,
+    very thick,
+    text height=1.5ex,text depth=.25ex,
+    align=center
+  },
+  grey node/.style={
+    generic node,
+    draw=black!50,
+    top color=white,bottom color=black!20
+  },
+  red node/.style={
+    generic node,
+    draw=red!50!black!50,
+    top color=white,bottom color=red!50!black!20
+  },
+  multiline node/.style={
+    text height=,text depth=
+  }
+}
+
+\definecolor{verylightgrey}{gray}{0.95}
+\definecolor{lightgrey}{gray}{0.85}
+
+\lstset{
+language=Ruby,                % choose the language of the code
+showstringspaces=false,       % underline spaces within strings
+tabsize=2,	                  % sets default tabsize to 2 spaces
+rulesepcolor=\color{Gray},
+basicstyle=\ttfamily,
+upquote=true,
+keywordstyle=\color{Mahogany}\bfseries,
+commentstyle=\color{MidnightBlue}\em,
+stringstyle=\color{RedOrange},
+aboveskip=\bigskipamount,
+belowskip=0pt,
+backgroundcolor=\color{verylightgrey},
+frame=single,
+frameround=tttt,
+rulecolor=\color{lightgrey}
+}
+\lstdefinelanguage{treetop}
+{keywords={rule,end},string=[b]{'}}
+
+\setmainfont[Mapping=tex-text-with-ligs]{GaramondClassico}
+\onehalfspace
+\pagestyle{headings}
+
+\numberwithin{figure}{section}
+
+\makeglossary
+\include{glossary}
+
+\title{Carat: An interpreted language written in Ruby}
+\author{Jonathan Leighton}
+\date{\today}
+\ifpdf
+\pdfinfo {
+	/Author (Jonathan Leighton)
+	/Title (Carat: An interpreted language written in Ruby)
+	/Subject (Carat: An interpreted language written in Ruby)
+	/Keywords ()
+	/CreationDate (\today)
+}
+\fi
+
+\newcommand{\code}[1]{\texttt{{#1}}}
+\newcommand{\file}[1]{\texttt{{#1}}}
+\newcommand{\defn}[1]{\emph{{#1}}}
+
+\newenvironment{dirlist}{
+  \begin{itemize}
+  \setlength{\itemsep}{0pt}
+  \setlength{\parskip}{0pt}
+  \setlength{\parsep}{0pt}
+  \renewcommand{\labelitemi}{}
+  \renewcommand{\labelitemii}{}
+  \renewcommand{\labelitemiii}{}
+  \renewcommand{\labelitemiv}{}
+}{
+  \end{itemize}
+}
+
+\begin{document}
+	\maketitle
+	
+	\begin{abstract}
+	Abstract (TODO)
+	\end{abstract}
+	
+	\tableofcontents
+	
+	\setlength{\parindent}{0pt}
+  \setlength{\parskip}{2ex}
+	
+	\include{introduction}
+	% \include{research}
+	\include{background}
+	\include{design}
+	
+	\printglossary
+\end{document}
+

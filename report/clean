@@ -1,0 +1,2 @@
+#!/bin/bash
+rm *.aux project.gl* project.ist *.log project.out project.pdf project.toc

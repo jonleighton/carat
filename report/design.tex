@@ -1,0 +1,211 @@
+\section{The Implementation}
+
+I explain my implementation in two steps. First, I present a simple program and explain its execution in depth. Then, I give examples of other language features which are worth explaining. I will not exhaustively cover all language features.
+
+\subsection{A simple program}
+
+In this section, I consider the execution of the following program:
+
+\begin{lstlisting}
+puts "Goodbye Cruel World"
+\end{lstlisting}
+
+This example is deliberately minimal. In explaining it, I will focus on the overall design of the interpreter, rather than the implementation of specific language features.
+
+\subsubsection{Code layout}
+
+The interpreter code is organised into the following directory structure:
+
+\begin{dirlist}
+  \item \textbf{lib/}
+    \begin{dirlist}
+      \item \textbf{ast/} - AST nodes
+      \item \textbf{data/} - Classes representing objects in the target language
+      \item \textbf{kernel/} - Core classes in the target language
+      \item \textbf{parser/} - The parser and associated code
+      \item \textbf{runtime/} - Classes representing run time state and behaviour
+      \item \textbf{carat.rb} - Responsible for loading the interpreter
+    \end{dirlist}
+\end{dirlist}
+
+\subsubsection{Parsing}
+
+The first step is to parse the source code and convert it into an AST. This is done by the \code{Carat::LanguageParser} class, which is largely produced by the parser generator, Treetop\footnote{\url{http://treetop.rubyforge.org/}}.
+
+I chose Treetop because its grammar format is intuitive. It uses Parsing Expression Grammars which avoid the need to write a separate tokeniser. Here is an excerpt from the grammar (in \file{parser/language.treetop}), defining the syntax for a while loop:
+
+\begin{lstlisting}[language=treetop]
+rule while_expression
+  'while' space condition:expression space? terminator
+  contents:expression_list
+  'end' <WhileExpression>
+end
+\end{lstlisting}
+
+Characters in single quotes are matched literally. The other items are references to rules. Names before a colon apply a label. The question mark in ``\code{space?}" makes that rule optional.
+
+The parser produces a parse tree. Each node has a \code{to\_ast} method, which recursively converts it to an AST. In the above example, \code{<WhileExpression>} specifies the name of a class for the node, which is defined in \file{parser/nodes.rb}:
+
+\begin{lstlisting}
+class WhileExpression < Treetop::Runtime::SyntaxNode
+  def to_ast
+    Carat::AST::While.new(location, condition.to_ast, contents.to_ast)
+  end
+end
+\end{lstlisting}
+
+This is a simple example: more complex nodes may not map directly to an AST, and may need to do additional syntax checking.
+
+\subsubsection{Abstract Syntax Tree}
+
+Each AST node has a number of children (other nodes) and properties (static data). It also has an \code{eval} method which is discussed later. For example, the node for a method call is defined as:
+
+\begin{lstlisting}
+class MethodCall < Node
+  child :receiver
+  property :name
+  child :arguments
+end
+\end{lstlisting}
+
+These attributes can be used to print an AST as text. The example program's AST is printed as:
+
+\begin{verbatim}
+ExpressionList:
+  MethodCall[:puts]:
+    receiver:
+      nil
+    arguments:
+      ArgumentList:
+        ArgumentList::Item[:normal]:
+          expression:
+            String["Goodbye Cruel World"]
+\end{verbatim}
+
+This can be read as an expression list with one item: a call to the method `puts'. The object receiving the call is not explicitly given. The argument list contains one item, which is the literal string ``Goodbye Cruel World".
+
+\subsubsection{Setting up the Runtime}
+
+\code{Carat::Runtime} is the fundamental class responsible for executing a program. After the code is parsed, \code{setup\_environment} is called:
+
+\begin{lstlisting}
+def setup_environment
+  # Initialize stacks
+  @call_stack                 = []
+  @scope_stack                = []
+  @failure_continuation_stack = [default_failure_continuation]
+  
+  # Constants are defined globally
+  @constants = {}
+  
+  # Load core classes
+  KernelLoader.new(self).run
+end
+\end{lstlisting}
+
+Three stacks are used:
+
+\begin{enumerate}
+  \item The \textit{call stack} contains \code{Call} objects which represent a call to a method or lambda (see [section])
+  \item The \textit{scope stack} contains \code{Scope} objects which represent variable scopes (see [section])
+  \item The \textit{failure continuation stack} contains objects representing what to do if an exception occurs (see [section])
+\end{enumerate}
+
+Constants are globally defined, so are not stored in \code{Scope} objects. \code{KernelLoader} sets up the core classes in the target language (\code{Object}, \code{Class}, \code{Array}, \code{String}, ...). To optimise this, the parsing is done ahead-of-time and the AST nodes are stored as binary data in files. These files are then loaded directly.
+
+\subsubsection{The Object Model}
+
+The language follows Ruby's object model closely. Everything is an object, and all objects are represented by the class \code{Carat::Data::ObjectInstance} in the implementation language. There are various other classes which implement behaviour for certain types of objects, but all are subclasses of \code{ObjectInstance}. Through this, the inheritance hierarchy of data objects in the implementation language mirrors that of objects in the target language (figure \ref{fig:data_object_hierarchy}).
+
+\begin{figure}
+\begin{center}
+\begin{tikzpicture}
+[
+  every node/.style={grey node,font=\ttfamily},
+  level 1/.style={sibling distance=60mm},
+  level 3/.style={sibling distance=30mm}
+]
+\node {ObjectInstance}
+  child { node {ModuleInstance}
+    child { node {ClassInstance}
+      child { node [multiline node] {ObjectClass, \\ ModuleClass, \\ ClassClass} }
+      child { node [multiline node] {ArrayClass, \\ StringClass, \\ FixnumClass, \\ ...} }
+      child { node [multiline node] {IncludeClass- \\ Instance} }
+      child { node [multiline node] {SingletonClass- \\ Instance}
+        child { node {MetaClassInstance} }
+      }
+    }
+  }
+  child { node [multiline node] {ArrayInstance, \\ StringInstance, \\ FixnumInstance, \\ ...} };
+\end{tikzpicture}
+\caption{Inheritance hierarchy of \code{Carat::Data} classes}
+\label{fig:data_object_hierarchy}
+\end{center}
+\end{figure}
+
+\paragraph{\code{ObjectInstance}} An \code{ObjectInstance} is initialized with the following signature:
+
+\code{ObjectInstance.new(runtime, klass)}
+
+All \code{Carat::Data} objects hold a reference to the runtime they exist in. The \code{klass} parameter is for an object representing the class of the instance (this spelling is used to avoid conflicts with the Ruby method \code{class}). When initialized, an \code{ObjectInstance} is assigned a unique numeric identifier.
+
+When an object receives a method call, it calls \code{klass.lookup\_method(name)} to find the method. The class then searches for the method in its own method table, and the method table of superclasses.
+
+Objects can have \defn{singleton methods}. These methods are specific to individual instances, so if there are two objects of the same class, \code{a} and \code{b}, and \code{a} defines a singleton method, \code{b} will not have that method.
+
+Objects don't have their own method table for singleton methods. Instead, the method table of the \defn{singleton class} is used. The singleton class is created when first used, and the object's original class becomes the superclass of the singleton class (figure \ref{fig:singleton_class_creation}). This ensures the object can still access methods defined by its original class.
+
+\begin{figure}
+\begin{center}
+\begin{tikzpicture}
+[
+  node distance=15mm,
+  every node/.style={font=\ttfamily,minimum width=15mm},
+  object/.style={grey node},
+  class/.style={red node},
+  arrow/.style={->,thick,draw=black!50,black!50,text=black},
+  every edge/.style={arrow},
+  >=stealth
+]
+
+\begin{scope}[yshift=1cm]
+\node[object]                (obj)   {apple};
+\node[class,right=of obj]    (class) {Apple}
+  edge [<-] node[auto,swap] {klass} (obj);
+\node[class,above=of class]  (dots)  {...}
+  edge [<-] node[auto,swap] {superclass} (class);
+\end{scope}
+
+\begin{scope}[xshift=8cm]
+\node[object]                 (obj')    {apple};
+\node[class,right=of obj']    (sclass') {apple'}
+  edge [<-] node[auto,swap] {klass} (obj');
+\node[class,above=of sclass'] (class')  {Apple}
+  edge [<-] node[auto,swap] {superclass} (sclass');
+\node[class,above=of class']  (dots')  {...}
+  edge [<-] node[auto,swap] {superclass} (class');
+\end{scope}
+
+\begin{pgfonlayer}{background}
+  \node (r1) [fill=black!7,rounded corners,fit=(obj)(dots)] {};
+  \node (r2) [fill=black!5,rounded corners,fit=(obj')(dots')] {};
+\end{pgfonlayer}
+
+\draw [arrow,shorten >=1mm,shorten <=1mm,dashed]
+  (r1) -- (r2)
+  node [above,align=center,midway,text width=1.5cm,font=\normalfont] {Singleton class created};
+\end{tikzpicture}
+\caption{Singleton class creation}
+\label{fig:singleton_class_creation}
+\end{center}
+\end{figure}
+
+It is useful to be able to identify the class from which an object was created, but calling \code{klass} might return a singleton class instead. So objects have a \code{real\_klass} method which returns the first \code{klass} or superclass of \code{klass} which is not a singleton class.
+
+\paragraph{\code{ModuleInstance}} A module is a container of methods. It cannot be instantiated, but it can be included within other classes or modules. A \code{ModuleInstance} is initialized with the following signature:
+
+\code{ModuleInstance.new(runtime, name = nil)}
+
+A \code{ModuleInstance} has a \defn{method table}, which maps method names to \code{Method} objects.
+
+Modules can also have ``singleton methods", which can be invoked directly. For example, the module \code{Kernel} has a method \code{puts}, which can be invoked by \code{Kernel.puts}.
