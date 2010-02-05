@@ -15,7 +15,7 @@ module Carat::Data
       if argument_list.is_a?(Array)
         yield argument_list
       else
-        argument_list.eval_in_scope(current_scope, &continuation)
+        argument_list.eval(&continuation)
       end
     end
     
