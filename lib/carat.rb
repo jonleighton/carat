@@ -13,8 +13,8 @@ module Carat
   # TODO: Replace all occurances with something more specific
   class CaratError < StandardError; end
   
-  require RUNTIME_PATH + "/runtime"
   require DATA_PATH    + "/data"
+  require RUNTIME_PATH + "/runtime"
   require AST_PATH     + "/ast"
   require PARSER_PATH  + "/parser"
   

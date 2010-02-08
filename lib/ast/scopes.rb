@@ -14,7 +14,7 @@ module Carat::AST
     child    :contents
     
     def module_object
-      constants[name] ||= Carat::Data::ModuleInstance.new(runtime, name)
+      constants[name] ||= constants[:Module].new(name)
     end
     
     def contents_scope
@@ -41,7 +41,7 @@ module Carat::AST
     
     def eval_class_object
       eval_superclass_object do |superclass_object|
-        yield constants[name] ||= Carat::Data::ClassInstance.new(runtime, superclass_object, name)
+        yield constants[name] ||= constants[:Class].new(superclass_object, name)
       end
     end
     

@@ -478,75 +478,19 @@ class CaratTest < Test::Unit::TestCase
     
     constants = runtime.constants
     
-    object = constants[:Object]
-    objectm = object.metaclass
-    objecti = Carat::Data::ObjectInstance.new(runtime, object)
-    
-    mod = constants[:Module]
-    modm = mod.metaclass
-    modi = Carat::Data::ModuleInstance.new(runtime)
-    
-    klass = constants[:Class]
-    klassm = klass.metaclass
-    klassi = Carat::Data::ClassInstance.new(runtime, klass)
-    
-    foo = Carat::Data::ClassInstance.new(runtime, object, :Foo)
-    foom = foo.metaclass
-    fooi = Carat::Data::ObjectInstance.new(runtime, foo)
-    
-    # Object
-    assert_equal nil, object.superclass
-    assert_equal object.metaclass, object.klass
-    assert_equal klass, object.real_klass
-    
-    # Object.metaclass
-    assert_equal klass, objectm.super
-    assert_equal klassm, objectm.klass
-    assert_equal klass, objectm.real_klass
-    assert_equal klass, objectm.super
-    
-    # Object.new
-    assert_equal object, objecti.klass
-    
-    # Module
-    assert_equal object, mod.super
-    assert_equal mod.metaclass, mod.klass
-    assert_equal klass, mod.real_klass
-    
-    # Module.metaclass
-    assert_equal klassm, modm.klass
-    assert_equal klass, modm.real_klass
-    assert_equal objectm, modm.super
-    
-    # Module.new
-    assert_equal mod, modi.real_klass
-    
-    # Class
-    assert_equal mod, klass.super
-    assert_equal klass.metaclass, klass.klass
-    assert_equal klass, klass.real_klass
-    
-    # Class.metaclass
-    assert_equal modm, klassm.super
-    assert_equal klass, klassm.klass
-    assert_equal klass, klassm.real_klass
-    assert_equal modm, klassm.super
-    
-    # Class.new
-    assert_equal klass, klassi.real_klass
-    
-    # Foo
-    assert_equal object, foo.super
-    assert_equal foo.metaclass, foo.klass
-    assert_equal klass, foo.real_klass
-    
-    # Foo.metaclass
-    assert_equal objectm, foom.super
-    assert_equal klassm, foom.klass
-    assert_equal klass, foom.real_klass
-    assert_equal objectm, foom.super
-    
-    # Foo.new
-    assert_equal foo, fooi.klass
+    constants.each do |name, object|
+      if object.is_a?(Carat::Data::ClassInstance)
+        case object
+          when Carat::Data::SingletonClassInstance
+            assert_equal constants[:SingletonClass].singleton_class, object.singleton_class
+          else
+            if object.superclass.nil?
+              assert_equal :Object, name
+            else
+              assert_equal object.superclass.singleton_class, object.singleton_class.superclass
+            end
+        end
+      end
+    end
   end
 end

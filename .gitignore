@@ -1,2 +1,10 @@
 test.rb
 lib/kernel/*.marshal
+report/*.aux
+report/*.log
+report/*.glo
+report/*.pdf
+report/*.xml
+report/*.ist
+report/*.out
+report/*.toc

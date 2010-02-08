@@ -1,32 +1,20 @@
 module Carat::Data
+  class SingletonClassClass < ClassClass
+    def new(owner, superclass)
+      SingletonClassInstance.new(runtime, owner, superclass)
+    end
+  end
+  
   class SingletonClassInstance < ClassInstance
-    attr_reader :parent
+    attr_reader :owner
     
-    # For a singleton class we do not create a metaclass (this would result in infinite recursion)
-    # We set the class to be the class +Class+.
-    def initialize(runtime, parent, superclass)
-      @parent = parent
-      super(runtime, superclass)
-    end
-    
-    # Use the same class as the superclass. With the definitions in +Environment+, this ends up
-    # being the metaclass of +Class+.
-    def get_klass(runtime)
-      superclass && superclass.klass
-    end
-    
-    def real_klass
-      if superclass
-        superclass.singleton? ? superclass.real_klass : superclass
-      end
-    end
-    
-    def singleton?
-      true
+    def initialize(runtime, owner, superclass)
+      @owner = owner
+      super(runtime, superclass && superclass.klass, superclass)
     end
     
     def to_s
-      "<singleton_class:#{parent}>"
+      "<singleton_class:#{owner}>"
     end
   end
 end

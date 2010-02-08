@@ -4,7 +4,7 @@ module Carat::Data
       ObjectInstance.new(runtime, self)
     end
   end
-
+  
   class ObjectInstance
     class << self
       def next_object_id
@@ -16,7 +16,7 @@ module Carat::Data
       end
     end
     
-    attr_reader :runtime, :carat_object_id
+    attr_reader :runtime, :carat_object_id, :instance_variables
     attr_accessor :klass
     
     extend Forwardable
@@ -24,11 +24,13 @@ module Carat::Data
                    :current_call, :current_scope, :current_object, :current_failure_continuation,
                    :current_location
     
+    # TODO: Can this be done automatically in primitive_include?
     include KernelModule
     
     def initialize(runtime, klass)
-      @runtime, @klass = runtime, klass
-      @carat_object_id = ObjectInstance.next_object_id
+      @runtime, @klass    = runtime, klass
+      @carat_object_id    = ObjectInstance.next_object_id
+      @instance_variables = {}
     end
     
     # Lookup a instance method - i.e. one defined by this object's class
@@ -53,38 +55,25 @@ module Carat::Data
       runtime.call(location, method, method_scope, argument_list, &continuation)
     end
     
-    # A scope for evaluating the method call, with this object as 'self'
-    def method_scope
-      Carat::Runtime::Scope.new(self)
-    end
-    
-    def instance_variables
-      @instance_variables ||= {}
-    end
-    
-    # If the class is already a singleton class then return it, otherwise create one and insert it
-    # in the hierarchy in between this object and the class. Note: +Class+ creates its singleton
-    # class on initialization, and the way it fits into the hierarchy is slightly different.
     def singleton_class
-      if klass.singleton?
-        klass
-      else
-        self.klass = SingletonClassInstance.new(runtime, self, klass)
-      end
+      klass && klass.singleton? ? klass : create_singleton_class
     end
     
+    # A 'real class' is the first one in the ancestry of the actual class, which is not a singleton
     def real_klass
       if klass
-        klass.singleton? ? klass.real_klass : klass
+        real_klass = klass
+        
+        while real_klass && real_klass.singleton?
+          real_klass = real_klass.superclass
+        end
+        
+        real_klass
       end
-    end
-    
-    def instance_variables
-      @instance_variables ||= {}
     end
     
     def false_or_nil?
-      false
+      instance_of?(FalseClassInstance) || instance_of?(NilClassInstance)
     end
     
     def to_s
@@ -93,10 +82,23 @@ module Carat::Data
     
     def inspect
       "<#{self.class}:(#{object_id}) " +
-      ":klass=#{real_klass} " + 
+      ":klass=#{klass} " + 
       ":instance_variables=#{instance_variables.inspect} " +
       ":to_s=#{to_s}>"
     end
+    
+    private
+    
+      def create_singleton_class
+        self.klass = constants[:SingletonClass].new(self, klass)
+      end
+      
+      # A scope for evaluating the method call, with this object as 'self'
+      def method_scope
+        Carat::Runtime::Scope.new(self)
+      end
+    
+    public
     
     # ***** Primitives ***** #
     

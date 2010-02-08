@@ -8,15 +8,11 @@ module Carat::Data
     
     def initialize(runtime, mod, supr)
       @module = mod
-      super(runtime, supr)
+      super(runtime, mod, supr)
       
       # An include class does not have its own method table, it uses the method table of the module
       # being included
-      self.method_table = mod.method_table
-    end
-    
-    def get_klass(runtime)
-      self.module
+      @method_table = mod.method_table
     end
     
     def to_s

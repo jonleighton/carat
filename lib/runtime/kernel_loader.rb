@@ -5,6 +5,8 @@ class Carat::Runtime
     extend Forwardable
     def_delegators :runtime, :constants
     
+    include Carat::Data
+    
     LOAD_ORDER = [:kernel, :module, :class, :object, :comparable, :fixnum, :array, :string,
                   :nil_class, :true_class, :false_class, :lambda, :exception]
     
@@ -13,24 +15,33 @@ class Carat::Runtime
     end
     
     def run
-      @object = constants[:Object] = Carat::Data::ObjectClass.new(runtime, nil)
-      @module = constants[:Module] = Carat::Data::ModuleClass.new(runtime, @object)
-      @class  = constants[:Class]  = Carat::Data::ClassClass.new(runtime, @module)
+      # Create SingletonClass - it has no class or super at this stage
+      @singleton_class = constants[:SingletonClass] = SingletonClassClass.new(runtime, nil, nil)
       
-      # The class of the metaclass of Class is Class (but Class didn't exist when Class was set up)
-      @class.metaclass.klass = @class
+      # The class of a singleton class is the singleton class of SingletonClass. In this case it's
+      # a reference to itself.
+      @singleton_class.singleton_class.klass = @singleton_class.singleton_class
       
-      # The above is a special case. In all other cases the class of a metaclass is the metaclass
-      # of Class
-      @object.metaclass.klass = @class.metaclass
-      @module.metaclass.klass = @class.metaclass
+      @object = constants[:Object] = ObjectClass.new(runtime, nil, nil)
       
-      # The superclass of the metaclass of Object is just Class
-      @object.metaclass.superclass = @class
+      # Object's singleton class is a SingletonClass, so set the super pointer
+      @object.singleton_class.super = @singleton_class
       
-      constants[:Kernel] = Carat::Data::ModuleInstance.new(runtime, :Kernel)
+      # The class of a singleton class is the singleton class of SingletonClass
+      @object.singleton_class.klass = @singleton_class.singleton_class
+      
+      # Module and Class should now set themselves up correctly
+      @module = constants[:Module] = ModuleClass.new(runtime, nil, @object)
+      @class  = constants[:Class]  = ClassClass.new(runtime, nil, @module)
+      
+      # Now position SingletonClass as a subclass of Class
+      @singleton_class.super = @class
+      @singleton_class.singleton_class.super = @class.singleton_class
+      
+      constants[:Kernel] = ModuleInstance.new(runtime, @module, :Kernel)
+      
       create_classes(:Primitive, :Fixnum, :Array, :String, :Lambda, :Method,
-                     :NilClass, :TrueClass, :FalseClass)
+                     :NilClass, :TrueClass, :FalseClass, :SingletonClass)
       
       LOAD_ORDER.each do |file|
         runtime.execute(Marshal.load(File.read(Carat::KERNEL_PATH + "/#{file}.marshal")))
@@ -39,7 +50,7 @@ class Carat::Runtime
     
     def create_classes(*names)
       names.each do |name|
-        constants[name] = Carat::Data.const_get("#{name}Class").new(runtime, @object)
+        constants[name] = self.class.const_get("#{name}Class").new(runtime, @class, @object)
       end
     end
   end
