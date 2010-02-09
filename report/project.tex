@@ -87,8 +87,7 @@ belowskip=0pt,
 backgroundcolor=\color{verylightgrey},
 frame=single,
 frameround=tttt,
-rulecolor=\color{lightgrey},
-breaklines=true
+rulecolor=\color{lightgrey}
 }
 \lstdefinelanguage{treetop}
 {keywords={rule,end},string=[b]{'}}
@@ -102,20 +101,20 @@ breaklines=true
 \makeglossary
 \include{glossary}
 
-\title{Carat: An interpreted language written in Ruby}
+\title{Carat: An interpreter written in Ruby}
 \author{Jonathan Leighton}
 \date{\today}
 \ifpdf
 \pdfinfo {
 	/Author (Jonathan Leighton)
-	/Title (Carat: An interpreted language written in Ruby)
-	/Subject (Carat: An interpreted language written in Ruby)
+	/Title (Carat: An interpreter written in Ruby)
+	/Subject (Carat: An interpreter written in Ruby)
 	/Keywords ()
 	/CreationDate (\today)
 }
 \fi
 
-\newcommand{\code}[1]{\texttt{{#1}}}
+\newcommand{\code}[1]{\texttt{\textcolor{Mahogany}{{#1}}}}
 \newcommand{\file}[1]{\texttt{{#1}}}
 \newcommand{\defn}[1]{\emph{{#1}}}
 
@@ -149,7 +148,7 @@ breaklines=true
 	\include{introduction}
 	% \include{research}
 	\include{background}
-	\include{design}
+	\include{implementation}
 	
 	\printglossary
 \end{document}

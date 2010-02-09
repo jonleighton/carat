@@ -1,9 +1,5 @@
 \section{The Implementation}
 
-I explain my implementation in two steps. First, I present a simple program and explain its execution in depth. Then, I give examples of other language features which are worth explaining. I will not exhaustively cover all language features.
-
-\subsection{A simple program}
-
 In this section, I consider the execution of the following program:
 
 \begin{lstlisting}
@@ -12,7 +8,7 @@ puts "Goodbye Cruel World"
 
 This example is deliberately minimal. In explaining it, I will focus on the overall design of the interpreter, rather than the implementation of specific language features.
 
-\subsubsection{Code layout}
+\subsection{Code layout}
 
 The interpreter code is organised into the following directory structure:
 
@@ -28,7 +24,7 @@ The interpreter code is organised into the following directory structure:
     \end{dirlist}
 \end{dirlist}
 
-\subsubsection{Parsing}
+\subsection{Parsing}
 
 The first step is to parse the source code and convert it into an AST. This is done by the \code{Carat::LanguageParser} class, which is largely produced by the parser generator, Treetop\footnote{\url{http://treetop.rubyforge.org/}}.
 
@@ -56,7 +52,7 @@ end
 
 This is a simple example: more complex nodes may not map directly to an AST, and may need to do additional syntax checking.
 
-\subsubsection{Abstract Syntax Tree}
+\subsection{Abstract Syntax Tree}
 
 Each AST node has a number of children (other nodes) and properties (static data). It also has an \code{eval} method which is discussed later. For example, the node for a method call is defined as:
 
@@ -84,7 +80,7 @@ ExpressionList:
 
 This can be read as an expression list with one item: a call to the method `puts'. The object receiving the call is not explicitly given. The argument list contains one item, which is the literal string ``Goodbye Cruel World".
 
-\subsubsection{Setting up the Runtime}
+\subsection{Setting up the Runtime}
 
 \code{Carat::Runtime} is the fundamental class responsible for executing a program. After the code is parsed, \code{setup\_environment} is called:
 
@@ -111,9 +107,11 @@ Three stacks are used:
   \item The \textit{failure continuation stack} contains objects representing what to do if an exception occurs (see [section])
 \end{enumerate}
 
-Constants are globally defined, so are not stored in \code{Scope} objects. \code{KernelLoader} sets up the core classes in the target language (\code{Object}, \code{Class}, \code{Array}, \code{String}, ...). To optimise this, the parsing is done ahead-of-time and the AST nodes are stored as binary data in files. These files are then loaded directly.
+Constants are globally defined, so are not stored in \code{Scope} objects.
 
-\subsubsection{The Object Model}
+\code{KernelLoader} sets up the core classes in the target language (\code{Object}, \code{Class}, \code{Array}, \code{String}, ...). While some code is needed in the implementation language, most of this is done by interpreting class definitions written in the target language. To optimise this, the parsing is done ahead-of-time and the AST nodes are stored as binary data in files. These files are then loaded directly.
+
+\subsection{The Object Model}
 
 Carat follows Ruby's object model closely. Everything is an object, and all objects are represented by the class \code{Carat::Data::ObjectInstance} in the implementation language. There are various other classes which implement behaviour for certain types of objects, but all are subclasses of \code{ObjectInstance}. Through this, the inheritance hierarchy of data objects in the implementation language mirrors that of objects in the target language (figure \ref{fig:data_object_hierarchy}).
 
@@ -148,7 +146,9 @@ Carat follows Ruby's object model closely. Everything is an object, and all obje
 \end{center}
 \end{figure}
 
-\paragraph{\code{ObjectInstance}} An \code{ObjectInstance} is initialized with the following signature:
+\subsubsection{\code{ObjectInstance}}
+
+An \code{ObjectInstance} is initialized with the following signature:
 
 \begin{lstlisting}
 ObjectInstance.new(runtime, klass)
@@ -198,7 +198,9 @@ Objects don't store their own singleton methods. Instead, a \defn{singleton clas
 
 It is useful to be able to identify the class from which an object was created, but calling \code{klass} might return a singleton class instead. So objects have a \code{real\_klass} method which returns the first \code{klass} or superclass of \code{klass} which is not a singleton class.
 
-\paragraph{\code{ModuleInstance}} A module is a container of methods. It cannot be instantiated, but it can be included within other classes or modules. A \code{ModuleInstance} is initialized with the following signature:
+\subsubsection{\code{ModuleInstance}}
+
+A module is a container of methods. It cannot be instantiated, but it can be included within other classes or modules. A \code{ModuleInstance} is initialized with the following signature:
 
 \begin{lstlisting}
 ModuleInstance.new(runtime, klass, name = nil)
@@ -210,7 +212,9 @@ Being a type of object, a module can have singleton methods which are analogous 
 
 A module may also have a \defn{super} pointer, which facilitates the inclusion of one module within another through an \code{IncludeClassInstance} (see [section]).
 
-\paragraph{\code{ClassInstance}} A class is like a module, but can be instantiated. A \code{ClassInstance} is initialized with the following signature:
+\subsubsection{\code{ClassInstance}}
+
+A class is like a module, but can be instantiated. A \code{ClassInstance} is initialized with the following signature:
 
 \begin{lstlisting}
 ClassInstance.new(runtime, klass, superclass, name = nil)
@@ -248,7 +252,9 @@ Singleton classes are created in a slightly different way than for normal object
 \end{center}
 \end{figure}
 
-\paragraph{Four Core Classes} The most important four classes in the language are \code{Object}, \code{Module}, \code{Class} and \code{SingletonClass}. Their relationships are somewhat complex, but can be summarised by some basic rules:
+\subsubsection{Four Core Classes}
+
+The most important four classes in the language are \code{Object}, \code{Module}, \code{Class} and \code{SingletonClass}. Their relationships are somewhat complex, but can be summarised by some basic rules:
 
 \begin{enumerate}
   \item For \textit{all classes except \code{Object}}, the superclass of the singleton class is the singleton class of the superclass (as explained above)
@@ -336,3 +342,75 @@ The core classes and their relationships are constructed by \code{KernelLoader}.
 \label{fig:core_relationships}
 \end{center}
 \end{figure}
+
+\subsection{Continuation Passing Style}
+
+The interpreter works out the result of a program by ``walking" the AST. An AST node with children probably needs to evaluate its child nodes before it can return its own answer. The obvious way to do this is to literally evaluate the children by calling the relevant evaluation methods, and then compute the answer to return.
+
+This problem with this approach is it does not allow for ``jumps". Jumps occur when the program needs to move to a different node in the AST without first returning the answer of the current node. This can happen when a return call or an exception is encountered. The problem is that the execution of the AST is tied to the call stack of the implementation language, which can't be directly manipulated.
+
+To solve this, the interepreter is written in \defn{continuation passing style} (CPS). Any method involved in the evaluation of AST nodes expects to be called with a \defn{continuation}. Abstractly, this is an object which represents the computation still to be done once an answer has been found. In this implementation, continuations are represented as lambdas, which expect one argument: the current result.
+
+Some AST nodes can return a result immediately, without further computation (such as the literal \code{Nil} node). In this case, the node should simply call the continuation, passing its immediate value to the continuation.
+
+Most nodes need to evaluate other nodes before they can produce an answer. In this case, instead of evaluating the child nodes and waiting for the answer, they evaluate the child node and pass a continuation which captures what needs to be done with the answer. This way, nodes have a choice about whether to continue a computation by calling the continuation, or by calling some other continuation which jumps to another part of the program.
+
+\subsection{Execution}
+
+An AST is executed by passing its root node to \code{Runtime\#execute}:
+
+\begin{lstlisting}
+def execute(root)
+  current_result = call_main_method(root)
+  
+  while current_result.is_a?(Proc)
+    current_result = current_result.call
+  end
+end
+\end{lstlisting}
+
+The root node is wrapped in a method named ``\code{main}" and then that method is called.
+
+\subsubsection{Trampoline}
+
+One outcome of CPS is that all evaluation methods have calls to other evaluation methods in \defn{tail position}: the last line of the method. When a method call in tail position returns, no further computation is done before the method which made the call also returns. Languages with \defn{tail call optimisation} keep the stack size down by replacing the calling method on the stack with the method which is being called in tail position. Ruby does not implement tail call optimisation, so it is quite easy to write a Carat program which will exhaust the stack space. This is because in CPS, no evaluation method returns a result until the very last node is evaluated.
+
+To solve this, \code{execute} uses a \defn{trampoline}. In certain places where an evaluation method would usually call another evaluation method, it instead wraps that call in a lambda which is returned. This causes the stack in the implementation language to ``collapse" right back down to \code{execute}, which simply calls the lambda to resume execution. The \code{while} loop does this repeatedly until an answer which is not a lambda is returned.
+
+\subsubsection{The main scope}
+
+Every method must be executed within a \code{Scope}. Every \code{Scope} must have a value for \code{self}, which is used when looking up instance variables and evaluating method calls with no explicit receiver. For the main method, a new instance of \code{Object} is used as the \code{self} value of the execution scope.
+
+\subsubsection{Calling the main method}
+
+Methods and lambdas are called by \code{Runtime\#call}:
+
+\begin{lstlisting}
+def call(location, callable, scope, argument_list = [], &continuation)
+  call = Call.new(self, location, callable, scope, argument_list)
+  call.send(&continuation)
+end
+\end{lstlisting}
+
+A \code{Call} object represents the call, and its \code{send} method actually evaluates that call. Roughly speaking, the following happens when a method call is sent:
+
+\begin{enumerate}
+  \item The argument list is evaluated to produce the argument values
+  \item The argument values are assigned within the execution scope, according to the argument pattern of the callable (this is discussed in section ?)
+  \item The \code{Call} is pushed onto the call stack
+  \item The execution scope is pushed onto the scope stack
+  \item The call's \defn{return continuation} is set, which pops the call and execution stacks before continuing with the result
+  \item The \code{eval} method for the AST node of the method contents is called
+\end{enumerate}
+
+\code{Call\#send} is one of the places where a lambda is used to collapse the implementation language call stack.
+
+\subsection{Sequential evaluation}
+
+Returning to the example, the top node is an expression list. Expression list nodes contain an array of child nodes, which are evaluated in turn. The result of the last node is the result of the expression list.
+
+This presents a challenge, because whilst the natural inclination would be to loop over the child nodes, CPS requires that evaluation calls only appear in tail position. To solve this, \code{Runtime} provides two high-level operations, \code{each} (for iteration) and \code{fold} (for accumulation). These translate a sequential operation on an array into a recursive one using continuations. For AST nodes, there is also \code{eval\_fold} which accumulates the result of evaluating each node in an array.
+
+\subsection{Primitives}
+
+

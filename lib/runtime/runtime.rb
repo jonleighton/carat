@@ -78,8 +78,6 @@ module Carat
     
     # Create a +Call+ and send it
     def call(location, callable, scope, argument_list = [], &continuation)
-      raise ArgumentError, "no continuation given" unless block_given?
-      
       call = Call.new(self, location, callable, scope, argument_list)
       call.send(&continuation)
     end
