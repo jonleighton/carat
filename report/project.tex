@@ -16,14 +16,15 @@
 \usepackage{amsmath}
 
 \usepackage{tikz}
-\usetikzlibrary{trees,chains,backgrounds,fit}
+\usetikzlibrary{trees,chains,backgrounds,fit,calc}
 
 \tikzset{
   generic node/.style={
     rectangle,rounded corners=2mm,
     very thick,
     text height=1.5ex,text depth=.25ex,
-    align=center
+    align=center,
+    text=black
   },
   grey node/.style={
     generic node,
@@ -35,8 +36,36 @@
     draw=red!50!black!50,
     top color=white,bottom color=red!50!black!20
   },
+  blue node/.style={
+    generic node,
+    draw=blue!50!black!50,
+    top color=white,bottom color=blue!50!black!20
+  },
+  object/.style={blue node,font=\ttfamily},
+  class/.style={grey node,font=\ttfamily},
+  sclass/.style={red node,font=\ttfamily},
+  dots/.style={faded node},
+  faded node/.style={
+    generic node,
+    thin,
+    draw=black!15,fill=black!10,
+    text=black!50,
+    text height=1ex
+  },
   multiline node/.style={
     text height=,text depth=
+  },
+  line/.style={
+    thick,
+    draw=black!50,
+    black!50,
+    text=black!70
+  },
+  every edge/.style={line},
+  every path/.style={line,rounded corners},
+  >=stealth,
+  background/.style={
+    fill=black!5,rounded corners
   }
 }
 
@@ -58,7 +87,8 @@ belowskip=0pt,
 backgroundcolor=\color{verylightgrey},
 frame=single,
 frameround=tttt,
-rulecolor=\color{lightgrey}
+rulecolor=\color{lightgrey},
+breaklines=true
 }
 \lstdefinelanguage{treetop}
 {keywords={rule,end},string=[b]{'}}
@@ -104,6 +134,8 @@ rulecolor=\color{lightgrey}
 
 \begin{document}
 	\maketitle
+	
+	\input{wordcount.txt} words
 	
 	\begin{abstract}
 	Abstract (TODO)

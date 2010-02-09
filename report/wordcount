@@ -1,0 +1,5 @@
+#!/bin/bash
+cat project.tex |
+  ruby -e 'puts $stdin.read.match(/\\begin\{document\}.*/m)[0]' |
+  detex -e array,eqnarray,equation,figure,picture,table,verbatim,lstlisting |
+  wc -w

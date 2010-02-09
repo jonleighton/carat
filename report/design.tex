@@ -115,25 +115,30 @@ Constants are globally defined, so are not stored in \code{Scope} objects. \code
 
 \subsubsection{The Object Model}
 
-The language follows Ruby's object model closely. Everything is an object, and all objects are represented by the class \code{Carat::Data::ObjectInstance} in the implementation language. There are various other classes which implement behaviour for certain types of objects, but all are subclasses of \code{ObjectInstance}. Through this, the inheritance hierarchy of data objects in the implementation language mirrors that of objects in the target language (figure \ref{fig:data_object_hierarchy}).
+Carat follows Ruby's object model closely. Everything is an object, and all objects are represented by the class \code{Carat::Data::ObjectInstance} in the implementation language. There are various other classes which implement behaviour for certain types of objects, but all are subclasses of \code{ObjectInstance}. Through this, the inheritance hierarchy of data objects in the implementation language mirrors that of objects in the target language (figure \ref{fig:data_object_hierarchy}).
 
 \begin{figure}
 \begin{center}
 \begin{tikzpicture}
 [
-  every node/.style={grey node,font=\ttfamily},
+  every node/.style={class},
   level 1/.style={sibling distance=40mm},
-  level 3/.style={sibling distance=30mm}
+  level 3/.style={sibling distance=30mm},
+  level 4/.style={level distance=10mm}
 ]
 \node {ObjectInstance}
   child { node {ModuleInstance}
     child { node {ClassInstance}
-      child { node [multiline node] {ObjectClass, \\ ModuleClass, \\ ClassClass} }
+      child { node {ObjectClass}
+        child { node {ModuleClass}
+          child { node {ClassClass}
+            child { node {SingletonClassClass} }
+          }
+        }
+      }
       child { node [multiline node] {ArrayClass, \\ StringClass, \\ FixnumClass, \\ ...} }
       child { node [multiline node] {IncludeClass- \\ Instance} }
-      child { node [multiline node] {SingletonClass- \\ Instance}
-        child { node {MetaClassInstance} }
-      }
+      child { node [multiline node] {SingletonClass- \\ Instance} }
     }
   }
   child { node [multiline node] {ArrayInstance, \\ StringInstance, \\ FixnumInstance, \\ ...} };
@@ -145,53 +150,44 @@ The language follows Ruby's object model closely. Everything is an object, and a
 
 \paragraph{\code{ObjectInstance}} An \code{ObjectInstance} is initialized with the following signature:
 
-\code{ObjectInstance.new(runtime, klass)}
+\begin{lstlisting}
+ObjectInstance.new(runtime, klass)
+\end{lstlisting}
 
 All \code{Carat::Data} objects hold a reference to the runtime they exist in. The \code{klass} parameter is for an object representing the class of the instance (this spelling is used to avoid conflicts with the Ruby method \code{class}). When initialized, an \code{ObjectInstance} is assigned a unique numeric identifier.
 
-When an object receives a method call, it calls \code{klass.lookup\_method(name)} to find the method. The class then searches for the method in its own method table, and the method table of superclasses.
-
 Objects can have \defn{singleton methods}. These methods are specific to individual instances, so if there are two objects of the same class, \code{a} and \code{b}, and \code{a} defines a singleton method, \code{b} will not have that method.
 
-Objects don't have their own method table for singleton methods. Instead, the method table of the \defn{singleton class} is used. The singleton class is created when first used, and the object's original class becomes the superclass of the singleton class (figure \ref{fig:singleton_class_creation}). This ensures the object can still access methods defined by its original class.
+Objects don't store their own singleton methods. Instead, a \defn{singleton class} is created when first required, and the object's original class becomes the superclass of the singleton class (figure \ref{fig:singleton_class_creation}). This ensures the object can still access methods defined by its original class.
 
 \begin{figure}
 \begin{center}
-\begin{tikzpicture}
-[
-  node distance=15mm,
-  every node/.style={font=\ttfamily,minimum width=15mm},
-  object/.style={grey node},
-  class/.style={red node},
-  arrow/.style={->,thick,draw=black!50,black!50,text=black},
-  every edge/.style={arrow},
-  >=stealth
-]
+\begin{tikzpicture}[node distance=15mm,every edge/.append style={->}]
 
 \begin{scope}[yshift=1cm]
 \node[object]                (obj)   {apple};
 \node[class,right=of obj]    (class) {Apple}
   edge [<-] node[auto,swap] {klass} (obj);
-\node[class,above=of class]  (dots)  {...}
-  edge [<-] node[auto,swap] {superclass} (class);
+\node[dots,above=of class]  (dots)  {...}
+  edge [<-] node[auto,swap] {super} (class);
 \end{scope}
 
 \begin{scope}[xshift=8cm]
 \node[object]                 (obj')    {apple};
-\node[class,right=of obj']    (sclass') {apple'}
+\node[sclass,right=of obj']    (sclass') {apple'}
   edge [<-] node[auto,swap] {klass} (obj');
 \node[class,above=of sclass'] (class')  {Apple}
-  edge [<-] node[auto,swap] {superclass} (sclass');
-\node[class,above=of class']  (dots')  {...}
-  edge [<-] node[auto,swap] {superclass} (class');
+  edge [<-] node[auto,swap] {super} (sclass');
+\node[dots,above=of class']  (dots')  {...}
+  edge [<-] node[auto,swap] {super} (class');
 \end{scope}
 
 \begin{pgfonlayer}{background}
-  \node (r1) [fill=black!7,rounded corners,fit=(obj)(dots)] {};
-  \node (r2) [fill=black!5,rounded corners,fit=(obj')(dots')] {};
+  \node (r1) [background,fit=(obj)(class)(dots)] {};
+  \node (r2) [background,fit=(obj')(class')(sclass')(dots')] {};
 \end{pgfonlayer}
 
-\draw [arrow,shorten >=1mm,shorten <=1mm,dashed]
+\draw [->,shorten >=1mm,shorten <=1mm,dashed]
   (r1) -- (r2)
   node [above,align=center,midway,text width=1.5cm,font=\normalfont] {Singleton class created};
 \end{tikzpicture}
@@ -204,8 +200,139 @@ It is useful to be able to identify the class from which an object was created, 
 
 \paragraph{\code{ModuleInstance}} A module is a container of methods. It cannot be instantiated, but it can be included within other classes or modules. A \code{ModuleInstance} is initialized with the following signature:
 
-\code{ModuleInstance.new(runtime, name = nil)}
+\begin{lstlisting}
+ModuleInstance.new(runtime, klass, name = nil)
+\end{lstlisting}
 
 A \code{ModuleInstance} has a \defn{method table}, which maps method names to \code{Method} objects.
 
-Modules can also have ``singleton methods", which can be invoked directly. For example, the module \code{Kernel} has a method \code{puts}, which can be invoked by \code{Kernel.puts}.
+Being a type of object, a module can have singleton methods which are analogous to ``class methods" in other languages. Unlike normal objects, modules create their singleton class immediately rather than waiting for it to be needed.
+
+A module may also have a \defn{super} pointer, which facilitates the inclusion of one module within another through an \code{IncludeClassInstance} (see [section]).
+
+\paragraph{\code{ClassInstance}} A class is like a module, but can be instantiated. A \code{ClassInstance} is initialized with the following signature:
+
+\begin{lstlisting}
+ClassInstance.new(runtime, klass, superclass, name = nil)
+\end{lstlisting}
+
+The \code{super} pointer gets set to the \code{superclass} provided. Generally, the \code{super} may be an include class or a normal class; the \code{superclass} method returns the first object in the \code{super} hierarchy which is a normal class.
+
+Singleton classes are created in a slightly different way than for normal objects, because the inheritance hierarchy needs to be respected for ``class methods" as well as instance methods. When a class creates its singleton class, it uses the singleton class of its superclass as the superclass of its singleton class. In this way, classes and their singleton classes are positioned in parallel (figure \ref{fig:singleton_class_inheritance}).
+
+\begin{figure}
+\begin{center}
+\begin{tikzpicture}[node distance=15mm,every edge/.append style={->}]
+\node[class] (square) {Square};
+\node[sclass,right=of square] (square') {Square'}
+  edge [<-] node[auto,swap] {klass} (square);
+
+\node[class,above=of square] (shape) {Shape}
+  edge [<-] node[auto] {super} (square);
+\node[sclass,above=of square'] (shape') {Shape'}
+  edge [<-] node[auto,swap] {super} (square')
+  edge [<-] node[auto,swap] {klass} (shape);
+
+\node[dots,above=of shape] (dots) {...}
+  edge [<-] node[auto] {super} (shape);
+\node[dots,above=of shape'] (dots') {...}
+  edge [<-] node[auto,swap] {super} (shape');
+
+\begin{pgfonlayer}{background}
+  \node [background,fit=(square)(square')(dots)(dots')] {};
+\end{pgfonlayer}
+
+\end{tikzpicture}
+\caption{Singleton classes reflecting inheritance hierarchy}
+\label{fig:singleton_class_inheritance}
+\end{center}
+\end{figure}
+
+\paragraph{Four Core Classes} The most important four classes in the language are \code{Object}, \code{Module}, \code{Class} and \code{SingletonClass}. Their relationships are somewhat complex, but can be summarised by some basic rules:
+
+\begin{enumerate}
+  \item For \textit{all classes except \code{Object}}, the superclass of the singleton class is the singleton class of the superclass (as explained above)
+  \item \code{Object} does not have a superclass; the superclass of \code{Object}'s singleton class is \code{SingletonClass}
+  \item The class of \textit{any} singleton class is the singleton class of \code{SingletonClass}
+\end{enumerate}
+
+The core classes and their relationships are constructed by \code{KernelLoader}. They are shown in figure \ref{fig:core_relationships}.
+
+\begin{figure}
+\begin{center}
+\begin{tikzpicture}
+[
+  every path/.append style={->},
+  class/.append style={minimum width=20mm},
+  sclass/.append style={minimum width=20mm},
+  point/.style={coordinate}
+]
+
+\matrix (matrix)
+  [row sep=15mm]
+  {
+    \node (nil) {nil};
+    &[20mm]
+    &[20mm]
+    &[5mm] \\
+    
+    \node[class] (Object) {Object}; &
+    \node[sclass] (Object') {Object'}; &
+    \node[point] (p23) {}; &
+    \node[point] (p24) {}; \\
+    
+    \node[class] (Module) {Module}; &
+    \node[sclass] (Module') {Module'}; &
+    \node[point] (p33) {}; &
+    & \\
+    
+    \node[class] (Class) {Class}; &
+    \node[sclass] (Class') {Class'}; &
+    \node[point] (p43) {}; &
+    & \\
+    
+    \node[class,multiline node] (SingletonClass) {Singleton\\Class}; &
+    \node[sclass,multiline node] (SingletonClass') {Singleton\\Class'}; &
+    \node[point] (p53) {}; &
+    & \\[-10mm]
+    
+    &
+    \node[point] (p62) {}; &
+    \node[point] (p63) {}; &
+    & \\[-10mm]
+    
+    \node[point] (p71) {}; &
+    &
+    &
+    \node[point] (p74) {}; & \\
+  };
+
+\draw (Object) -- node[right] {super} (nil);
+\draw (Module) -- node[right] {super} (Object);
+\draw (Class) -- node[right] {super} (Module);
+\draw (SingletonClass) -- node[right] {super} (Class);
+
+\draw (Object') -- ($(Object') + (0,10mm)$) -- node[above] {super} ($(p24) + (0,10mm)$) -- (p74) -- (p71) -- (SingletonClass);
+\draw (Module') -- node[right] {super} (Object');
+\draw (Class') -- node[right] {super} (Module');
+\draw (SingletonClass') -- node[right] {super} (Class');
+
+\draw (Object) -- node[above] {klass} (Object');
+\draw (Module) -- node[above] {klass} (Module');
+\draw (Class) -- node[above] {klass} (Class');
+\draw (SingletonClass) -- node[above] {klass} (SingletonClass');
+
+\draw (Object') -- node[above] {klass} (p23) -- (p63) -- (p62) -- (SingletonClass');
+\draw (Module') -- node[above] {klass} (p33);
+\draw (Class') -- node[above] {klass} (p43);
+\draw (SingletonClass') -- node[above] {klass} (p53);
+
+\begin{pgfonlayer}{background}
+  \node [background,fit=(matrix)] {};
+\end{pgfonlayer}
+
+\end{tikzpicture}
+\caption{Class and superclass relationships between the four core classes and their singleton classes}
+\label{fig:core_relationships}
+\end{center}
+\end{figure}
