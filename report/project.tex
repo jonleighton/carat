@@ -6,9 +6,9 @@
 \usepackage{ifpdf}
 \usepackage[utf8]{inputenc}
 \usepackage[UKenglish]{babel}
-\usepackage[breaklinks=true]{hyperref}
+\usepackage[usenames,dvipsnames]{xcolor}
+\usepackage[breaklinks=true,colorlinks=true,linkcolor=MidnightBlue]{hyperref}
 \usepackage{listings}
-\usepackage[usenames,dvipsnames]{color}
 \usepackage[a4paper]{geometry}
 \usepackage{textcomp}
 \usepackage{setspace}
@@ -16,7 +16,7 @@
 \usepackage{amsmath}
 
 \usepackage{tikz}
-\usetikzlibrary{trees,chains,backgrounds,fit,calc}
+\usetikzlibrary{trees,chains,backgrounds,fit,calc,shapes.multipart}
 
 \tikzset{
   generic node/.style={
@@ -38,27 +38,25 @@
   },
   blue node/.style={
     generic node,
-    draw=blue!50!black!50,
-    top color=white,bottom color=blue!50!black!20
+    draw=MidnightBlue!50!black!50,
+    top color=white,bottom color=MidnightBlue!50!black!20
+  },
+  green node/.style={
+    generic node,
+    draw=OliveGreen!50!black!50,
+    top color=white,bottom color=OliveGreen!50!black!20
   },
   object/.style={blue node,font=\ttfamily},
   class/.style={grey node,font=\ttfamily},
   sclass/.style={red node,font=\ttfamily},
-  dots/.style={faded node},
-  faded node/.style={
-    generic node,
-    thin,
-    draw=black!15,fill=black!10,
-    text=black!50,
-    text height=1ex
-  },
+  module/.style={green node,font=\ttfamily},
   multiline node/.style={
     text height=,text depth=
   },
   line/.style={
     thick,
     draw=black!50,
-    black!50,
+    color=black!50,
     text=black!70
   },
   every edge/.style={line},
@@ -66,6 +64,16 @@
   >=stealth,
   background/.style={
     fill=black!5,rounded corners
+  },
+  diagram transition/.style={
+    ->,shorten >=1mm,shorten <=1mm,
+    dashed,
+    every node/.style={
+      above,align=center,
+      midway,text width=1.5cm,
+      font=\normalfont,
+      text=black
+    }
   }
 }
 

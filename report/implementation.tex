@@ -112,6 +112,7 @@ Constants are globally defined, so are not stored in \code{Scope} objects.
 \code{KernelLoader} sets up the core classes in the target language (\code{Object}, \code{Class}, \code{Array}, \code{String}, ...). While some code is needed in the implementation language, most of this is done by interpreting class definitions written in the target language. To optimise this, the parsing is done ahead-of-time and the AST nodes are stored as binary data in files. These files are then loaded directly.
 
 \subsection{The Object Model}
+\label{sec:object_model}
 
 Carat follows Ruby's object model closely. Everything is an object, and all objects are represented by the class \code{Carat::Data::ObjectInstance} in the implementation language. There are various other classes which implement behaviour for certain types of objects, but all are subclasses of \code{ObjectInstance}. Through this, the inheritance hierarchy of data objects in the implementation language mirrors that of objects in the target language (figure \ref{fig:data_object_hierarchy}).
 
@@ -162,13 +163,15 @@ Objects don't store their own singleton methods. Instead, a \defn{singleton clas
 
 \begin{figure}
 \begin{center}
-\begin{tikzpicture}[node distance=15mm,every edge/.append style={->}]
+\begin{tikzpicture}[node distance=15mm,
+                    every edge/.append style={->},
+                    every node/.style={minimum width=10mm}]
 
 \begin{scope}[yshift=1cm]
 \node[object]                (obj)   {apple};
 \node[class,right=of obj]    (class) {Apple}
   edge [<-] node[auto,swap] {klass} (obj);
-\node[dots,above=of class]  (dots)  {...}
+\node[class,above=of class]  (dots)  {...}
   edge [<-] node[auto,swap] {super} (class);
 \end{scope}
 
@@ -178,7 +181,7 @@ Objects don't store their own singleton methods. Instead, a \defn{singleton clas
   edge [<-] node[auto,swap] {klass} (obj');
 \node[class,above=of sclass'] (class')  {Apple}
   edge [<-] node[auto,swap] {super} (sclass');
-\node[dots,above=of class']  (dots')  {...}
+\node[class,above=of class']  (dots')  {...}
   edge [<-] node[auto,swap] {super} (class');
 \end{scope}
 
@@ -187,9 +190,7 @@ Objects don't store their own singleton methods. Instead, a \defn{singleton clas
   \node (r2) [background,fit=(obj')(class')(sclass')(dots')] {};
 \end{pgfonlayer}
 
-\draw [->,shorten >=1mm,shorten <=1mm,dashed]
-  (r1) -- (r2)
-  node [above,align=center,midway,text width=1.5cm,font=\normalfont] {Singleton class created};
+\draw [diagram transition] (r1) -- (r2) node {Singleton class created};
 \end{tikzpicture}
 \caption{Singleton class creation}
 \label{fig:singleton_class_creation}
@@ -226,7 +227,9 @@ Singleton classes are created in a slightly different way than for normal object
 
 \begin{figure}
 \begin{center}
-\begin{tikzpicture}[node distance=15mm,every edge/.append style={->}]
+\begin{tikzpicture}[node distance=15mm,
+                    every edge/.append style={->},
+                    every node/.style={minimum width=10mm}]
 \node[class] (square) {Square};
 \node[sclass,right=of square] (square') {Square'}
   edge [<-] node[auto,swap] {klass} (square);
@@ -237,9 +240,9 @@ Singleton classes are created in a slightly different way than for normal object
   edge [<-] node[auto,swap] {super} (square')
   edge [<-] node[auto,swap] {klass} (shape);
 
-\node[dots,above=of shape] (dots) {...}
+\node[class,above=of shape] (dots) {...}
   edge [<-] node[auto] {super} (shape);
-\node[dots,above=of shape'] (dots') {...}
+\node[sclass,above=of shape'] (dots') {...}
   edge [<-] node[auto,swap] {super} (shape');
 
 \begin{pgfonlayer}{background}
@@ -411,6 +414,70 @@ Returning to the example, the top node is an expression list. Expression list no
 
 This presents a challenge, because whilst the natural inclination would be to loop over the child nodes, CPS requires that evaluation calls only appear in tail position. To solve this, \code{Runtime} provides two high-level operations, \code{each} (for iteration) and \code{fold} (for accumulation). These translate a sequential operation on an array into a recursive one using continuations. For AST nodes, there is also \code{eval\_fold} which accumulates the result of evaluating each node in an array.
 
-\subsection{Primitives}
+\subsection{Method calls}
 
+The only item in the expression list is a \code{MethodCall[:puts]} with no receiver and and argument list containing ``Goodbye Cruel World". Method calls are evaluated as follows:
 
+\begin{enumerate}
+  \item Evaluate the receiver. If there is no explicit receiver, the \code{self} object in the current scope (the one at the top of the scope stack) is used.
+  \item Check whether the receiver object has an instance method with the given name. The advantage of the object model discussed in section \ref{sec:object_model} is that method look-up is very simple. When an object looks for an instance method, it asks its \code{klass} to look up that method. If the class contains the method in its method table, it returns it. Otherwise, it asks its \code{super}. Eventually, when there is no \code{super} (i.e. for \code{Object}), no method has been found so \code{nil} is returned.
+  \item If the method is found, use the receiver object's \code{call} method (which then uses \code{Runtime\#call}) to dispatch the call.
+  \item Otherwise, an exception is raised (see section ?)
+\end{enumerate}
+
+\subsection{Module inclusion}
+
+The \code{self} in the example is an \code{Object} instance. \code{Object} does not have a \code{puts} method, but it includes the \code{Kernel} module, which does.
+
+As explained above, the only way methods are found is by walking up the \code{super} chain. So, when a module is included within another module or class, it must be inserted within the \code{super} chain. If inserted directly, the module's \code{super} would need to take the original value of the \code{super} of the object including the module. This would be problematic if the module was included more than once.
+
+Instead, an \defn{include class} is created and the actual module's \code{super} is unchanged. The method table of an include class is a direct reference to the method table of the module it represents. Note that this implementation means including a module \textit{does not} make its singleton methods available. Module inclusion is shown in figure \ref{fig:module_inclusion}.
+
+\begin{figure}
+\begin{center}
+\begin{tikzpicture}[
+  node distance=10mm,
+  every edge/.append style={->},
+  every node/.style={minimum width=10mm},
+  split node/.style={
+    rectangle split,
+    rectangle split parts=2,
+    rectangle split part align={left, left}
+  },
+  class/.append style={split node},
+  module/.append style={split node}
+]
+
+\begin{scope}[yshift=-1cm]
+  \node[class] (Object) {\textbf{Object} \nodepart{two} method\_table};
+  \node[class,below=of Object] (Duck) {\textbf{Duck} \nodepart{two} method\_table}
+    edge [->] node[auto,swap] {super} (Object);
+
+  \draw ($(Object) + 0.5*(Duck) - 0.5*(Object) + (3,0)$)
+    node[module] (Quackable) {\textbf{Quackable} \nodepart{two} method\_table};
+\end{scope}
+
+\begin{scope}[xshift=8cm]
+  \node[class] (Object') {\textbf{Object} \nodepart{two} method\_table};
+  \node[class,below=of Object'] (Include') {\textbf{\textit{IncludeClass}} \nodepart{two} method\_table}
+    edge [->] node[auto,swap] {super} (Object');
+  \node[class,below=of Include'] (Duck') {\textbf{Duck} \nodepart{two} method\_table}
+    edge [->] node[auto,swap] {super} (Include');
+  
+  \node[module,right=of Include'] (Quackable') {\textbf{Quackable} \nodepart{two} method\_table};
+  
+  \draw[->,dashed] (Include'.two east) -- (Quackable'.two west);
+\end{scope}
+
+\begin{pgfonlayer}{background}
+  \node (r1) [background,fit=(Object)(Duck)(Quackable)] {};
+  \node (r2) [background,fit=(Object')(Duck')(Quackable')] {};
+\end{pgfonlayer}
+
+\draw [diagram transition] (r1) -- (r2) node {\code{Quackable} included in \code{Duck}};
+
+\end{tikzpicture}
+\caption{Module inclusion}
+\label{fig:module_inclusion}
+\end{center}
+\end{figure}
