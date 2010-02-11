@@ -15,3 +15,8 @@ task :test do
 end
 
 task :default => :test
+
+task :sloccount do
+  files = Rake::FileList['lib/**/*.rb', 'lib/**/*.treetop'].exclude('lib/parser/language.rb')
+  system "sloccount", *files
+end
