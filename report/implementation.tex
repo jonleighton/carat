@@ -1,4 +1,4 @@
-\section{The Implementation}
+\section{Implementation Overview}
 
 In this section, I consider the execution of the following program:
 
@@ -156,6 +156,8 @@ ObjectInstance.new(runtime, klass)
 \end{lstlisting}
 
 All \code{Carat::Data} objects hold a reference to the runtime they exist in. The \code{klass} parameter is for an object representing the class of the instance (this spelling is used to avoid conflicts with the Ruby method \code{class}). When initialized, an \code{ObjectInstance} is assigned a unique numeric identifier.
+
+Each object has a hash of \defn{instance variables} mapping of their names to values.
 
 Objects can have \defn{singleton methods}. These methods are specific to individual instances, so if there are two objects of the same class, \code{a} and \code{b}, and \code{a} defines a singleton method, \code{b} will not have that method.
 
@@ -427,7 +429,7 @@ The only item in the expression list is a \code{MethodCall[:puts]} with no recei
 
 \subsection{Module inclusion}
 
-The \code{self} in the example is an \code{Object} instance. \code{Object} does not have a \code{puts} method, but it includes the \code{Kernel} module, which does.
+In the example, \code{self} is an \code{Object} instance. \code{Object} does not have a \code{puts} method, but it includes the \code{Kernel} module, which does.
 
 As explained above, the only way methods are found is by walking up the \code{super} chain. So, when a module is included within another module or class, it must be inserted within the \code{super} chain. If inserted directly, the module's \code{super} would need to take the original value of the \code{super} of the object including the module. This would be problematic if the module was included more than once.
 
@@ -481,3 +483,27 @@ Instead, an \defn{include class} is created and the actual module's \code{super}
 \label{fig:module_inclusion}
 \end{center}
 \end{figure}
+
+\subsection{Primitives}
+
+The method definition for \code{Kernel\#puts} (in \file{kernel/kernel.carat}) is:
+
+\begin{lstlisting}
+def puts(obj = "\n")
+  Primitive.puts(obj)
+end
+\end{lstlisting}
+
+This is a \defn{primitive method call}. Primitives are the eventual way that a program can actually ``do" something; everything else is just memory access and method calls. In this case, the \code{puts} method needs to output some text, so it uses the \code{puts} primitive.
+
+The \code{Primitive} class is represented by \code{Carat::Data::PrimitiveClass} in the implementation language. The primitive syntax is parsed in exactly the same way as any other method call, but \code{PrimitiveClass} overrides the default \code{ObjectInstance\#call} method to do the following:
+
+\begin{enumerate}
+  \item Evaluate the argument list
+  \item Get the object representing the current \code{self}
+  \item Prepend ``\code{primitive\_}" to the method name and call that method on the object, passing the evaluated arguments
+\end{enumerate}
+
+For the example, \code{self} is an \code{Object}, but the method is in \code{Kernel}. The \code{primitive\_puts} method is actually defined the \code{Carat::Data::KernelModule} module. When a module inclusion happens in the target language, the implementation checks whether there is a corresponding module in the implementation language. If there is, that module is included in the implementation language. For example, when \code{Object} included \code{Kernel} in the target language, \code{ObjectInstance} includes \code{KernelModule} in the implementation language.
+
+When \code{KernelModule\#primitive\_puts} is finally called, it converts the object given as an argument to a Ruby string, and uses Ruby's \code{Kernel.puts} method to output it.

@@ -10,7 +10,6 @@ module Carat
   AST_PATH     = ROOT_PATH + "/ast"
   PARSER_PATH  = ROOT_PATH + "/parser"
   
-  # TODO: Replace all occurances with something more specific
   class CaratError < StandardError; end
   
   require DATA_PATH    + "/data"
