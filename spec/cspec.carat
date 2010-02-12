@@ -83,15 +83,3 @@ class Object
     Should.new(self)
   end
 end
-
-describe "a cspec test" do
-  it "should pass" do
-    true.should == true
-  end
-  
-  it "should fail" do
-    false.should == true
-  end
-end
-
-CSpec.run

@@ -4,7 +4,23 @@ module Carat
     require RUNTIME_PATH + "/scope"
     require RUNTIME_PATH + "/call"
     
-    attr_reader :constants, :call_stack, :scope_stack, :failure_continuation_stack
+    attr_reader :constants, :call_stack, :scope_stack, :failure_continuation_stack, :accessed_files
+    
+    def initialize
+      # Initialise stacks
+      @call_stack                 = []
+      @scope_stack                = []
+      @failure_continuation_stack = [default_failure_continuation]
+      
+      # Constants are defined globally
+      @constants = {}
+      
+      # Keep track of which additional files have been accessed
+      @accessed_files = []
+      
+      # Load core classes
+      KernelLoader.new(self).run
+    end
     
     def current_call
       call_stack.last
@@ -130,19 +146,6 @@ module Carat
       end
     end
     
-    def setup_environment
-      # Initialize stacks
-      @call_stack                 = []
-      @scope_stack                = []
-      @failure_continuation_stack = [default_failure_continuation]
-      
-      # Constants are defined globally
-      @constants = {}
-      
-      # Load core classes
-      KernelLoader.new(self).run
-    end
-    
     # This is the starting point for executing an AST.
     # 
     # Normally, in Continuation Passing Style, a stack of continuations is built up right until the
@@ -165,9 +168,7 @@ module Carat
     
     # Parse some code and then execute its AST
     def run(input, file_name = nil)
-      ast = Carat.parse(input, file_name)
-      setup_environment
-      execute(ast)
+      execute(Carat.parse(input, file_name))
     rescue StandardError => e
       handle_error(e)
     end

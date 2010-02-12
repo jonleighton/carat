@@ -38,6 +38,17 @@ module Carat::Data
       current_return_continuation.call(value)
     end
     
+    def primitive_require(file, &continuation)
+      file_location = File.dirname(File.expand_path(current_location.file_name)) + "/" + file.to_s
+      
+      if runtime.accessed_files.include?(file_location)
+        yield runtime.false
+      else
+        runtime.run_file(file_location + ".carat")
+        yield runtime.true
+      end
+    end
+    
     # Remove the current call and current scope from their respective stacks, as these relate
     # to the method which called this primitive, and we are going to jump somewhere else without
     # returning to that method.

@@ -82,34 +82,18 @@ This can be read as an expression list with one item: a call to the method `puts
 
 \subsection{Setting up the Runtime}
 
-\code{Carat::Runtime} is the fundamental class responsible for executing a program. After the code is parsed, \code{setup\_environment} is called:
-
-\begin{lstlisting}
-def setup_environment
-  # Initialize stacks
-  @call_stack                 = []
-  @scope_stack                = []
-  @failure_continuation_stack = [default_failure_continuation]
-  
-  # Constants are defined globally
-  @constants = {}
-  
-  # Load core classes
-  KernelLoader.new(self).run
-end
-\end{lstlisting}
-
-Three stacks are used:
+\code{Carat::Runtime} is the fundamental class responsible for executing a program. When initialized it sets up the runtime environment by:
 
 \begin{enumerate}
-  \item The \textit{call stack} contains \code{Call} objects which represent a call to a method or lambda (see [section])
-  \item The \textit{scope stack} contains \code{Scope} objects which represent variable scopes (see [section])
-  \item The \textit{failure continuation stack} contains objects representing what to do if an exception occurs (see [section])
+  \item Initialising the stacks. Three stacks are used:
+    \begin{enumerate}
+      \item The \textit{call stack} contains \code{Call} objects which represent a call to a method or lambda (see [section])
+      \item The \textit{scope stack} contains \code{Scope} objects which represent variable scopes (see [section])
+      \item The \textit{failure continuation stack} contains objects representing what to do if an exception occurs (see [section])
+    \end{enumerate}
+  \item Creating a hash mapping the names of constants to their values. Constants are globally defined, so are not stored by scopes
+  \item Running the \code{KernelLoader} which sets up the core classes in the target language (\code{Object}, \code{Class}, \code{Array}, \code{String}, ...). While some code is needed in the implementation language, most of this is done by interpreting class definitions written in the target language. To optimise this, the parsing is done ahead-of-time and the AST nodes are stored as binary data in files. These files are then loaded directly.
 \end{enumerate}
-
-Constants are globally defined, so are not stored in \code{Scope} objects.
-
-\code{KernelLoader} sets up the core classes in the target language (\code{Object}, \code{Class}, \code{Array}, \code{String}, ...). While some code is needed in the implementation language, most of this is done by interpreting class definitions written in the target language. To optimise this, the parsing is done ahead-of-time and the AST nodes are stored as binary data in files. These files are then loaded directly.
 
 \subsection{The Object Model}
 \label{sec:object_model}

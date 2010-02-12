@@ -1,0 +1,6 @@
+#!/usr/bin/ruby
+require File.dirname(__FILE__) + '/../lib/carat'
+
+runtime = Carat::Runtime.new
+runtime.run_file(File.dirname(__FILE__) + '/../spec/all.carat')
+runtime.run("CSpec.run")

@@ -30,4 +30,8 @@ module Kernel
   def return(value)
     Primitive.return(value)
   end
+  
+  def require(file)
+    Primitive.require(file)
+  end
 end
