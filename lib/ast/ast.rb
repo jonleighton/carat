@@ -38,7 +38,7 @@ module Carat
       attr_reader :runtime, :location
       
       extend Forwardable
-      def_delegators :runtime, :constants, :scope_stack, :failure_continuation_stack,
+      def_delegators :runtime, :constants, :scope_stack, :failure_continuation_stack, :call_stack,
                      :current_call, :current_scope, :current_object, :current_failure_continuation
       
       def initialize(location = nil, *attributes)

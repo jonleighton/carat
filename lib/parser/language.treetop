@@ -296,7 +296,8 @@ module Carat
     rule unbracketed_argument_list
       space !('+' / '-')
       head:argument_list_item
-      tail:(space? ',' multiline_space? argument_list_item)* <ArgumentList>
+      tail:(space? ',' multiline_space? argument_list_item)*
+      block_node:block? <ArgumentList>
       /
       '' block_node:block <ArgumentList>
     end

@@ -77,14 +77,11 @@ module Carat::Data
     end
     
     def to_s
-      "<object:#{klass}>"
+      inspect
     end
     
     def inspect
-      "<#{self.class}:(#{object_id}) " +
-      ":klass=#{klass} " + 
-      ":instance_variables=#{instance_variables.inspect} " +
-      ":to_s=#{to_s}>"
+      "<object:#{klass}>"
     end
     
     private

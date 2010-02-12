@@ -1,0 +1,97 @@
+module CSpec
+  def self.sets
+    @sets ||= []
+  end
+  
+  def self.describe(name, &block)
+    @current_set = CSpecSet.new(name)
+    self.sets << @current_set
+    block.call
+  end
+  
+  def self.it(expectation, &block)
+    @current_set << CSpecItem.new(expectation, &block)
+  end
+  
+  def self.run
+    sets.each { |set| set.run }
+  end
+end
+
+class CSpecSet
+  def initialize(name)
+    @name = name
+    @items = []
+  end
+  
+  def <<(item)
+    @items << item
+  end
+  
+  def run
+    puts @name
+    @items.each { |item| item.run }
+  end
+end
+
+class CSpecItem
+  def initialize(expectation, &contents)
+    @expectation = expectation
+    @contents    = contents
+  end
+  
+  def run
+    line = " - " + @expectation
+    
+    begin
+      @contents.call
+    rescue ExpectationFailure => e
+      line << " (FAILED: " + e.to_s + ")"
+    end
+    
+    puts line
+  end
+end
+
+module Kernel
+  def describe(name, &block)
+    CSpec.describe(name, &block)
+  end
+  
+  def it(expectation, &block)
+    CSpec.it(expectation, &block)
+  end
+end
+
+class ExpectationFailure < RuntimeError
+end
+
+class Should
+  def initialize(expected)
+    @expected = expected
+  end
+
+  def ==(actual)
+    if @expected != actual
+      raise ExpectationFailure, actual.to_s + " did not match " + @expected.to_s
+    end
+  end
+end
+
+class Object
+  def should
+    Should.new(self)
+  end
+end
+
+describe "a cspec test" do
+  it "should pass" do
+    true.should == true
+  end
+  
+  it "should fail" do
+    false.should == true
+  end
+end
+
+CSpec.run

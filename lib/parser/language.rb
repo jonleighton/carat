@@ -19,10 +19,7 @@ module Carat
       start_index = index
       if node_cache[:program].has_key?(index)
         cached = node_cache[:program][index]
-        if cached
-          cached = SyntaxNode.new(input, index...(index + 1)) if cached == true
-          @index = cached.interval.end
-        end
+        @index = cached.interval.end if cached
         return cached
       end
 
@@ -76,10 +73,7 @@ module Carat
       start_index = index
       if node_cache[:expression_list].has_key?(index)
         cached = node_cache[:expression_list][index]
-        if cached
-          cached = SyntaxNode.new(input, index...(index + 1)) if cached == true
-          @index = cached.interval.end
-        end
+        @index = cached.interval.end if cached
         return cached
       end
 
@@ -174,10 +168,7 @@ module Carat
       start_index = index
       if node_cache[:expression].has_key?(index)
         cached = node_cache[:expression][index]
-        if cached
-          cached = SyntaxNode.new(input, index...(index + 1)) if cached == true
-          @index = cached.interval.end
-        end
+        @index = cached.interval.end if cached
         return cached
       end
 
@@ -192,10 +183,7 @@ module Carat
       start_index = index
       if node_cache[:assignment_expression].has_key?(index)
         cached = node_cache[:assignment_expression][index]
-        if cached
-          cached = SyntaxNode.new(input, index...(index + 1)) if cached == true
-          @index = cached.interval.end
-        end
+        @index = cached.interval.end if cached
         return cached
       end
 
@@ -242,10 +230,7 @@ module Carat
       start_index = index
       if node_cache[:simple_assignment].has_key?(index)
         cached = node_cache[:simple_assignment][index]
-        if cached
-          cached = SyntaxNode.new(input, index...(index + 1)) if cached == true
-          @index = cached.interval.end
-        end
+        @index = cached.interval.end if cached
         return cached
       end
 
@@ -315,10 +300,7 @@ module Carat
       start_index = index
       if node_cache[:binary_method_assignment].has_key?(index)
         cached = node_cache[:binary_method_assignment][index]
-        if cached
-          cached = SyntaxNode.new(input, index...(index + 1)) if cached == true
-          @index = cached.interval.end
-        end
+        @index = cached.interval.end if cached
         return cached
       end
 
@@ -460,10 +442,7 @@ module Carat
       start_index = index
       if node_cache[:binary_operation_assignment].has_key?(index)
         cached = node_cache[:binary_operation_assignment][index]
-        if cached
-          cached = SyntaxNode.new(input, index...(index + 1)) if cached == true
-          @index = cached.interval.end
-        end
+        @index = cached.interval.end if cached
         return cached
       end
 
@@ -561,10 +540,7 @@ module Carat
       start_index = index
       if node_cache[:or_expression].has_key?(index)
         cached = node_cache[:or_expression][index]
-        if cached
-          cached = SyntaxNode.new(input, index...(index + 1)) if cached == true
-          @index = cached.interval.end
-        end
+        @index = cached.interval.end if cached
         return cached
       end
 
@@ -646,10 +622,7 @@ module Carat
       start_index = index
       if node_cache[:and_expression].has_key?(index)
         cached = node_cache[:and_expression][index]
-        if cached
-          cached = SyntaxNode.new(input, index...(index + 1)) if cached == true
-          @index = cached.interval.end
-        end
+        @index = cached.interval.end if cached
         return cached
       end
 
@@ -731,10 +704,7 @@ module Carat
       start_index = index
       if node_cache[:comparison_expression].has_key?(index)
         cached = node_cache[:comparison_expression][index]
-        if cached
-          cached = SyntaxNode.new(input, index...(index + 1)) if cached == true
-          @index = cached.interval.end
-        end
+        @index = cached.interval.end if cached
         return cached
       end
 
@@ -856,10 +826,7 @@ module Carat
       start_index = index
       if node_cache[:inequality_expression].has_key?(index)
         cached = node_cache[:inequality_expression][index]
-        if cached
-          cached = SyntaxNode.new(input, index...(index + 1)) if cached == true
-          @index = cached.interval.end
-        end
+        @index = cached.interval.end if cached
         return cached
       end
 
@@ -981,10 +948,7 @@ module Carat
       start_index = index
       if node_cache[:shift_expression].has_key?(index)
         cached = node_cache[:shift_expression][index]
-        if cached
-          cached = SyntaxNode.new(input, index...(index + 1)) if cached == true
-          @index = cached.interval.end
-        end
+        @index = cached.interval.end if cached
         return cached
       end
 
@@ -1084,10 +1048,7 @@ module Carat
       start_index = index
       if node_cache[:add_subtract_expression].has_key?(index)
         cached = node_cache[:add_subtract_expression][index]
-        if cached
-          cached = SyntaxNode.new(input, index...(index + 1)) if cached == true
-          @index = cached.interval.end
-        end
+        @index = cached.interval.end if cached
         return cached
       end
 
@@ -1187,10 +1148,7 @@ module Carat
       start_index = index
       if node_cache[:times_divide_expression].has_key?(index)
         cached = node_cache[:times_divide_expression][index]
-        if cached
-          cached = SyntaxNode.new(input, index...(index + 1)) if cached == true
-          @index = cached.interval.end
-        end
+        @index = cached.interval.end if cached
         return cached
       end
 
@@ -1286,10 +1244,7 @@ module Carat
       start_index = index
       if node_cache[:unary_expression].has_key?(index)
         cached = node_cache[:unary_expression][index]
-        if cached
-          cached = SyntaxNode.new(input, index...(index + 1)) if cached == true
-          @index = cached.interval.end
-        end
+        @index = cached.interval.end if cached
         return cached
       end
 
@@ -1373,10 +1328,7 @@ module Carat
       start_index = index
       if node_cache[:method_call_expression].has_key?(index)
         cached = node_cache[:method_call_expression][index]
-        if cached
-          cached = SyntaxNode.new(input, index...(index + 1)) if cached == true
-          @index = cached.interval.end
-        end
+        @index = cached.interval.end if cached
         return cached
       end
 
@@ -1403,10 +1355,7 @@ module Carat
       start_index = index
       if node_cache[:primary].has_key?(index)
         cached = node_cache[:primary][index]
-        if cached
-          cached = SyntaxNode.new(input, index...(index + 1)) if cached == true
-          @index = cached.interval.end
-        end
+        @index = cached.interval.end if cached
         return cached
       end
 
@@ -1475,10 +1424,7 @@ module Carat
       start_index = index
       if node_cache[:bracketed_expression].has_key?(index)
         cached = node_cache[:bracketed_expression][index]
-        if cached
-          cached = SyntaxNode.new(input, index...(index + 1)) if cached == true
-          @index = cached.interval.end
-        end
+        @index = cached.interval.end if cached
         return cached
       end
 
@@ -1536,10 +1482,7 @@ module Carat
       start_index = index
       if node_cache[:module_definition].has_key?(index)
         cached = node_cache[:module_definition][index]
-        if cached
-          cached = SyntaxNode.new(input, index...(index + 1)) if cached == true
-          @index = cached.interval.end
-        end
+        @index = cached.interval.end if cached
         return cached
       end
 
@@ -1605,10 +1548,7 @@ module Carat
       start_index = index
       if node_cache[:class_definition].has_key?(index)
         cached = node_cache[:class_definition][index]
-        if cached
-          cached = SyntaxNode.new(input, index...(index + 1)) if cached == true
-          @index = cached.interval.end
-        end
+        @index = cached.interval.end if cached
         return cached
       end
 
@@ -1725,10 +1665,7 @@ module Carat
       start_index = index
       if node_cache[:method_definition].has_key?(index)
         cached = node_cache[:method_definition][index]
-        if cached
-          cached = SyntaxNode.new(input, index...(index + 1)) if cached == true
-          @index = cached.interval.end
-        end
+        @index = cached.interval.end if cached
         return cached
       end
 
@@ -1831,10 +1768,7 @@ module Carat
       start_index = index
       if node_cache[:definition_body].has_key?(index)
         cached = node_cache[:definition_body][index]
-        if cached
-          cached = SyntaxNode.new(input, index...(index + 1)) if cached == true
-          @index = cached.interval.end
-        end
+        @index = cached.interval.end if cached
         return cached
       end
 
@@ -1872,10 +1806,7 @@ module Carat
       start_index = index
       if node_cache[:control_structure].has_key?(index)
         cached = node_cache[:control_structure][index]
-        if cached
-          cached = SyntaxNode.new(input, index...(index + 1)) if cached == true
-          @index = cached.interval.end
-        end
+        @index = cached.interval.end if cached
         return cached
       end
 
@@ -1930,10 +1861,7 @@ module Carat
       start_index = index
       if node_cache[:if_expression].has_key?(index)
         cached = node_cache[:if_expression][index]
-        if cached
-          cached = SyntaxNode.new(input, index...(index + 1)) if cached == true
-          @index = cached.interval.end
-        end
+        @index = cached.interval.end if cached
         return cached
       end
 
@@ -2041,10 +1969,7 @@ module Carat
       start_index = index
       if node_cache[:nested_if_expression].has_key?(index)
         cached = node_cache[:nested_if_expression][index]
-        if cached
-          cached = SyntaxNode.new(input, index...(index + 1)) if cached == true
-          @index = cached.interval.end
-        end
+        @index = cached.interval.end if cached
         return cached
       end
 
@@ -2130,10 +2055,7 @@ module Carat
       start_index = index
       if node_cache[:else_expression].has_key?(index)
         cached = node_cache[:else_expression][index]
-        if cached
-          cached = SyntaxNode.new(input, index...(index + 1)) if cached == true
-          @index = cached.interval.end
-        end
+        @index = cached.interval.end if cached
         return cached
       end
 
@@ -2190,10 +2112,7 @@ module Carat
       start_index = index
       if node_cache[:while_expression].has_key?(index)
         cached = node_cache[:while_expression][index]
-        if cached
-          cached = SyntaxNode.new(input, index...(index + 1)) if cached == true
-          @index = cached.interval.end
-        end
+        @index = cached.interval.end if cached
         return cached
       end
 
@@ -2273,10 +2192,7 @@ module Carat
       start_index = index
       if node_cache[:begin_expression].has_key?(index)
         cached = node_cache[:begin_expression][index]
-        if cached
-          cached = SyntaxNode.new(input, index...(index + 1)) if cached == true
-          @index = cached.interval.end
-        end
+        @index = cached.interval.end if cached
         return cached
       end
 
@@ -2371,10 +2287,7 @@ module Carat
       start_index = index
       if node_cache[:rescue_expression].has_key?(index)
         cached = node_cache[:rescue_expression][index]
-        if cached
-          cached = SyntaxNode.new(input, index...(index + 1)) if cached == true
-          @index = cached.interval.end
-        end
+        @index = cached.interval.end if cached
         return cached
       end
 
@@ -2482,10 +2395,7 @@ module Carat
       start_index = index
       if node_cache[:method_argument_pattern].has_key?(index)
         cached = node_cache[:method_argument_pattern][index]
-        if cached
-          cached = SyntaxNode.new(input, index...(index + 1)) if cached == true
-          @index = cached.interval.end
-        end
+        @index = cached.interval.end if cached
         return cached
       end
 
@@ -2581,10 +2491,7 @@ module Carat
       start_index = index
       if node_cache[:block_argument_pattern].has_key?(index)
         cached = node_cache[:block_argument_pattern][index]
-        if cached
-          cached = SyntaxNode.new(input, index...(index + 1)) if cached == true
-          @index = cached.interval.end
-        end
+        @index = cached.interval.end if cached
         return cached
       end
 
@@ -2689,10 +2596,7 @@ module Carat
       start_index = index
       if node_cache[:argument_pattern_contents].has_key?(index)
         cached = node_cache[:argument_pattern_contents][index]
-        if cached
-          cached = SyntaxNode.new(input, index...(index + 1)) if cached == true
-          @index = cached.interval.end
-        end
+        @index = cached.interval.end if cached
         return cached
       end
 
@@ -2806,10 +2710,7 @@ module Carat
       start_index = index
       if node_cache[:argument_pattern_item].has_key?(index)
         cached = node_cache[:argument_pattern_item][index]
-        if cached
-          cached = SyntaxNode.new(input, index...(index + 1)) if cached == true
-          @index = cached.interval.end
-        end
+        @index = cached.interval.end if cached
         return cached
       end
 
@@ -2937,10 +2838,7 @@ module Carat
       start_index = index
       if node_cache[:literal].has_key?(index)
         cached = node_cache[:literal][index]
-        if cached
-          cached = SyntaxNode.new(input, index...(index + 1)) if cached == true
-          @index = cached.interval.end
-        end
+        @index = cached.interval.end if cached
         return cached
       end
 
@@ -3012,10 +2910,7 @@ module Carat
       start_index = index
       if node_cache[:method_call_chain].has_key?(index)
         cached = node_cache[:method_call_chain][index]
-        if cached
-          cached = SyntaxNode.new(input, index...(index + 1)) if cached == true
-          @index = cached.interval.end
-        end
+        @index = cached.interval.end if cached
         return cached
       end
 
@@ -3086,10 +2981,7 @@ module Carat
       start_index = index
       if node_cache[:method_call_chain_tail].has_key?(index)
         cached = node_cache[:method_call_chain_tail][index]
-        if cached
-          cached = SyntaxNode.new(input, index...(index + 1)) if cached == true
-          @index = cached.interval.end
-        end
+        @index = cached.interval.end if cached
         return cached
       end
 
@@ -3118,10 +3010,7 @@ module Carat
       start_index = index
       if node_cache[:method_call_segment].has_key?(index)
         cached = node_cache[:method_call_segment][index]
-        if cached
-          cached = SyntaxNode.new(input, index...(index + 1)) if cached == true
-          @index = cached.interval.end
-        end
+        @index = cached.interval.end if cached
         return cached
       end
 
@@ -3163,10 +3052,7 @@ module Carat
       start_index = index
       if node_cache[:dot_method_call].has_key?(index)
         cached = node_cache[:dot_method_call][index]
-        if cached
-          cached = SyntaxNode.new(input, index...(index + 1)) if cached == true
-          @index = cached.interval.end
-        end
+        @index = cached.interval.end if cached
         return cached
       end
 
@@ -3224,10 +3110,7 @@ module Carat
       start_index = index
       if node_cache[:array_access].has_key?(index)
         cached = node_cache[:array_access][index]
-        if cached
-          cached = SyntaxNode.new(input, index...(index + 1)) if cached == true
-          @index = cached.interval.end
-        end
+        @index = cached.interval.end if cached
         return cached
       end
 
@@ -3271,10 +3154,7 @@ module Carat
       start_index = index
       if node_cache[:array_assign].has_key?(index)
         cached = node_cache[:array_assign][index]
-        if cached
-          cached = SyntaxNode.new(input, index...(index + 1)) if cached == true
-          @index = cached.interval.end
-        end
+        @index = cached.interval.end if cached
         return cached
       end
 
@@ -3350,10 +3230,7 @@ module Carat
       start_index = index
       if node_cache[:array_brackets].has_key?(index)
         cached = node_cache[:array_brackets][index]
-        if cached
-          cached = SyntaxNode.new(input, index...(index + 1)) if cached == true
-          @index = cached.interval.end
-        end
+        @index = cached.interval.end if cached
         return cached
       end
 
@@ -3511,10 +3388,7 @@ module Carat
       start_index = index
       if node_cache[:argument_list].has_key?(index)
         cached = node_cache[:argument_list][index]
-        if cached
-          cached = SyntaxNode.new(input, index...(index + 1)) if cached == true
-          @index = cached.interval.end
-        end
+        @index = cached.interval.end if cached
         return cached
       end
 
@@ -3567,10 +3441,7 @@ module Carat
       start_index = index
       if node_cache[:bracketed_argument_list].has_key?(index)
         cached = node_cache[:bracketed_argument_list][index]
-        if cached
-          cached = SyntaxNode.new(input, index...(index + 1)) if cached == true
-          @index = cached.interval.end
-        end
+        @index = cached.interval.end if cached
         return cached
       end
 
@@ -3778,6 +3649,10 @@ module Carat
       def tail
         elements[3]
       end
+
+      def block_node
+        elements[4]
+      end
     end
 
     module UnbracketedArgumentList2
@@ -3790,10 +3665,7 @@ module Carat
       start_index = index
       if node_cache[:unbracketed_argument_list].has_key?(index)
         cached = node_cache[:unbracketed_argument_list][index]
-        if cached
-          cached = SyntaxNode.new(input, index...(index + 1)) if cached == true
-          @index = cached.interval.end
-        end
+        @index = cached.interval.end if cached
         return cached
       end
 
@@ -3887,6 +3759,15 @@ module Carat
             end
             r8 = instantiate_node(SyntaxNode,input, i8...index, s8)
             s1 << r8
+            if r8
+              r17 = _nt_block
+              if r17
+                r16 = r17
+              else
+                r16 = instantiate_node(SyntaxNode,input, index...index)
+              end
+              s1 << r16
+            end
           end
         end
       end
@@ -3900,28 +3781,28 @@ module Carat
       if r1
         r0 = r1
       else
-        i16, s16 = index, []
+        i18, s18 = index, []
         if has_terminal?('', false, index)
-          r17 = instantiate_node(SyntaxNode,input, index...(index + 0))
+          r19 = instantiate_node(SyntaxNode,input, index...(index + 0))
           @index += 0
         else
           terminal_parse_failure('')
-          r17 = nil
+          r19 = nil
         end
-        s16 << r17
-        if r17
-          r18 = _nt_block
-          s16 << r18
+        s18 << r19
+        if r19
+          r20 = _nt_block
+          s18 << r20
         end
-        if s16.last
-          r16 = instantiate_node(ArgumentList,input, i16...index, s16)
-          r16.extend(UnbracketedArgumentList2)
+        if s18.last
+          r18 = instantiate_node(ArgumentList,input, i18...index, s18)
+          r18.extend(UnbracketedArgumentList2)
         else
-          @index = i16
-          r16 = nil
+          @index = i18
+          r18 = nil
         end
-        if r16
-          r0 = r16
+        if r18
+          r0 = r18
         else
           @index = i0
           r0 = nil
@@ -3943,10 +3824,7 @@ module Carat
       start_index = index
       if node_cache[:argument_list_item].has_key?(index)
         cached = node_cache[:argument_list_item][index]
-        if cached
-          cached = SyntaxNode.new(input, index...(index + 1)) if cached == true
-          @index = cached.interval.end
-        end
+        @index = cached.interval.end if cached
         return cached
       end
 
@@ -4012,10 +3890,7 @@ module Carat
       start_index = index
       if node_cache[:block].has_key?(index)
         cached = node_cache[:block][index]
-        if cached
-          cached = SyntaxNode.new(input, index...(index + 1)) if cached == true
-          @index = cached.interval.end
-        end
+        @index = cached.interval.end if cached
         return cached
       end
 
@@ -4053,10 +3928,7 @@ module Carat
       start_index = index
       if node_cache[:braces_block].has_key?(index)
         cached = node_cache[:braces_block][index]
-        if cached
-          cached = SyntaxNode.new(input, index...(index + 1)) if cached == true
-          @index = cached.interval.end
-        end
+        @index = cached.interval.end if cached
         return cached
       end
 
@@ -4137,10 +4009,7 @@ module Carat
       start_index = index
       if node_cache[:do_block].has_key?(index)
         cached = node_cache[:do_block][index]
-        if cached
-          cached = SyntaxNode.new(input, index...(index + 1)) if cached == true
-          @index = cached.interval.end
-        end
+        @index = cached.interval.end if cached
         return cached
       end
 
@@ -4201,10 +4070,7 @@ module Carat
       start_index = index
       if node_cache[:variable].has_key?(index)
         cached = node_cache[:variable][index]
-        if cached
-          cached = SyntaxNode.new(input, index...(index + 1)) if cached == true
-          @index = cached.interval.end
-        end
+        @index = cached.interval.end if cached
         return cached
       end
 
@@ -4231,10 +4097,7 @@ module Carat
       start_index = index
       if node_cache[:local_variable_or_method_call].has_key?(index)
         cached = node_cache[:local_variable_or_method_call][index]
-        if cached
-          cached = SyntaxNode.new(input, index...(index + 1)) if cached == true
-          @index = cached.interval.end
-        end
+        @index = cached.interval.end if cached
         return cached
       end
 
@@ -4250,10 +4113,7 @@ module Carat
       start_index = index
       if node_cache[:local_variable].has_key?(index)
         cached = node_cache[:local_variable][index]
-        if cached
-          cached = SyntaxNode.new(input, index...(index + 1)) if cached == true
-          @index = cached.interval.end
-        end
+        @index = cached.interval.end if cached
         return cached
       end
 
@@ -4275,10 +4135,7 @@ module Carat
       start_index = index
       if node_cache[:instance_variable].has_key?(index)
         cached = node_cache[:instance_variable][index]
-        if cached
-          cached = SyntaxNode.new(input, index...(index + 1)) if cached == true
-          @index = cached.interval.end
-        end
+        @index = cached.interval.end if cached
         return cached
       end
 
@@ -4312,10 +4169,7 @@ module Carat
       start_index = index
       if node_cache[:keyword].has_key?(index)
         cached = node_cache[:keyword][index]
-        if cached
-          cached = SyntaxNode.new(input, index...(index + 1)) if cached == true
-          @index = cached.interval.end
-        end
+        @index = cached.interval.end if cached
         return cached
       end
 
@@ -4453,10 +4307,7 @@ module Carat
       start_index = index
       if node_cache[:method_name].has_key?(index)
         cached = node_cache[:method_name][index]
-        if cached
-          cached = SyntaxNode.new(input, index...(index + 1)) if cached == true
-          @index = cached.interval.end
-        end
+        @index = cached.interval.end if cached
         return cached
       end
 
@@ -4488,10 +4339,7 @@ module Carat
       start_index = index
       if node_cache[:basic_method_name].has_key?(index)
         cached = node_cache[:basic_method_name][index]
-        if cached
-          cached = SyntaxNode.new(input, index...(index + 1)) if cached == true
-          @index = cached.interval.end
-        end
+        @index = cached.interval.end if cached
         return cached
       end
 
@@ -4582,10 +4430,7 @@ module Carat
       start_index = index
       if node_cache[:special_method_name].has_key?(index)
         cached = node_cache[:special_method_name][index]
-        if cached
-          cached = SyntaxNode.new(input, index...(index + 1)) if cached == true
-          @index = cached.interval.end
-        end
+        @index = cached.interval.end if cached
         return cached
       end
 
@@ -4814,10 +4659,7 @@ module Carat
       start_index = index
       if node_cache[:identifier].has_key?(index)
         cached = node_cache[:identifier][index]
-        if cached
-          cached = SyntaxNode.new(input, index...(index + 1)) if cached == true
-          @index = cached.interval.end
-        end
+        @index = cached.interval.end if cached
         return cached
       end
 
@@ -4878,10 +4720,7 @@ module Carat
       start_index = index
       if node_cache[:local_identifier].has_key?(index)
         cached = node_cache[:local_identifier][index]
-        if cached
-          cached = SyntaxNode.new(input, index...(index + 1)) if cached == true
-          @index = cached.interval.end
-        end
+        @index = cached.interval.end if cached
         return cached
       end
 
@@ -4942,10 +4781,7 @@ module Carat
       start_index = index
       if node_cache[:constant].has_key?(index)
         cached = node_cache[:constant][index]
-        if cached
-          cached = SyntaxNode.new(input, index...(index + 1)) if cached == true
-          @index = cached.interval.end
-        end
+        @index = cached.interval.end if cached
         return cached
       end
 
@@ -4992,10 +4828,7 @@ module Carat
       start_index = index
       if node_cache[:number].has_key?(index)
         cached = node_cache[:number][index]
-        if cached
-          cached = SyntaxNode.new(input, index...(index + 1)) if cached == true
-          @index = cached.interval.end
-        end
+        @index = cached.interval.end if cached
         return cached
       end
 
@@ -5049,10 +4882,7 @@ module Carat
       start_index = index
       if node_cache[:array].has_key?(index)
         cached = node_cache[:array][index]
-        if cached
-          cached = SyntaxNode.new(input, index...(index + 1)) if cached == true
-          @index = cached.interval.end
-        end
+        @index = cached.interval.end if cached
         return cached
       end
 
@@ -5224,10 +5054,7 @@ module Carat
       start_index = index
       if node_cache[:string].has_key?(index)
         cached = node_cache[:string][index]
-        if cached
-          cached = SyntaxNode.new(input, index...(index + 1)) if cached == true
-          @index = cached.interval.end
-        end
+        @index = cached.interval.end if cached
         return cached
       end
 
@@ -5340,10 +5167,7 @@ module Carat
       start_index = index
       if node_cache[:boolean].has_key?(index)
         cached = node_cache[:boolean][index]
-        if cached
-          cached = SyntaxNode.new(input, index...(index + 1)) if cached == true
-          @index = cached.interval.end
-        end
+        @index = cached.interval.end if cached
         return cached
       end
 
@@ -5382,10 +5206,7 @@ module Carat
       start_index = index
       if node_cache[:nil].has_key?(index)
         cached = node_cache[:nil][index]
-        if cached
-          cached = SyntaxNode.new(input, index...(index + 1)) if cached == true
-          @index = cached.interval.end
-        end
+        @index = cached.interval.end if cached
         return cached
       end
 
@@ -5409,10 +5230,7 @@ module Carat
       start_index = index
       if node_cache[:terminator].has_key?(index)
         cached = node_cache[:terminator][index]
-        if cached
-          cached = SyntaxNode.new(input, index...(index + 1)) if cached == true
-          @index = cached.interval.end
-        end
+        @index = cached.interval.end if cached
         return cached
       end
 
@@ -5469,10 +5287,7 @@ module Carat
       start_index = index
       if node_cache[:space].has_key?(index)
         cached = node_cache[:space][index]
-        if cached
-          cached = SyntaxNode.new(input, index...(index + 1)) if cached == true
-          @index = cached.interval.end
-        end
+        @index = cached.interval.end if cached
         return cached
       end
 
@@ -5506,10 +5321,7 @@ module Carat
       start_index = index
       if node_cache[:multiline_space].has_key?(index)
         cached = node_cache[:multiline_space][index]
-        if cached
-          cached = SyntaxNode.new(input, index...(index + 1)) if cached == true
-          @index = cached.interval.end
-        end
+        @index = cached.interval.end if cached
         return cached
       end
 

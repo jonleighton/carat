@@ -17,7 +17,7 @@ module Carat::AST
         if receiver_object.has_instance_method?(name)
           receiver_object.call(name, arguments, location, &continuation)
         else
-          runtime.raise :NoMethodError, "undefined method '#{name}'"
+          runtime.raise :NoMethodError, "undefined method '#{name}' for object #{receiver_object}"
         end
       end
     end

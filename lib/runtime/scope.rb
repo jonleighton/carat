@@ -3,7 +3,9 @@ class Carat::Runtime
     attr_reader :symbols, :parent
     attr_writer :block
     
-    def initialize(self_object = nil, parent = nil)
+    def initialize(self_object, parent = nil)
+      raise ArgumentError if self_object.nil?
+      
       @symbols = { :self => self_object }
       @parent  = parent
     end
@@ -39,7 +41,12 @@ class Carat::Runtime
     
     # Create a new scope using this one as the parent
     def extend(self_object = nil)
+      self_object ||= self[:self]
       Scope.new(self_object, self)
+    end
+    
+    def inspect
+      @symbols.inspect
     end
   end
 end

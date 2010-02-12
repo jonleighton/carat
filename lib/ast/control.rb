@@ -63,6 +63,9 @@ module Carat::AST
     end
     
     def failure_continuation(&continuation)
+      scope_stack_length = scope_stack.length
+      call_stack_length = call_stack.length
+      
       lambda do |exception, location|
         # Remove this failure continuation from the stack
         failure_continuation_stack.pop
@@ -72,7 +75,14 @@ module Carat::AST
         eval_error_type do |error_type_object|
           exception.call(:is_a?, [error_type_object]) do |exception_match|
             if exception_match == runtime.true
+              # Remove the parts of the scope stack and call stack between here and where the exception
+              # was raised
+              scope_stack.slice!(scope_stack_length..-1)
+              call_stack.slice!(call_stack_length..-1)
+              
+              # Assign the exception to the given variable
               exception_variable.assign(exception) unless exception_variable.nil?
+              
               eval_child(contents, &continuation)
             else
               current_failure_continuation.call(exception, location)
