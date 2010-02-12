@@ -12,7 +12,6 @@
 \usepackage[a4paper]{geometry}
 \usepackage{textcomp}
 \usepackage{setspace}
-\usepackage[hypertoc=true]{glossary}
 \usepackage{amsmath}
 
 \usepackage{tikz}
@@ -101,24 +100,28 @@ rulecolor=\color{lightgrey}
 {keywords={rule,end},string=[b]{'}}
 
 \setmainfont[Mapping=tex-text-with-ligs]{GaramondClassico}
+\newfontface\GaramondClassicoSC{GaramondClassicoSC}
+
 \onehalfspace
 \pagestyle{headings}
 
 \numberwithin{figure}{section}
 
-\makeglossary
-\include{glossary}
+\def\gettitle{Carat: An interpreter written in Ruby}
+\def\getauthor{Jonathan Leighton}
+\def\getdate{\today}
 
-\title{Carat: An interpreter written in Ruby}
-\author{Jonathan Leighton}
-\date{\today}
+\title{\gettitle}
+\author{\getauthor}
+\date{\getdate}
+
 \ifpdf
 \pdfinfo {
-	/Author (Jonathan Leighton)
-	/Title (Carat: An interpreter written in Ruby)
-	/Subject (Carat: An interpreter written in Ruby)
+	/Author (\getauthor)
+	/Title (\gettitle)
+	/Subject (\gettitle)
 	/Keywords ()
-	/CreationDate (\today)
+	/CreationDate (\getdate)
 }
 \fi
 
@@ -140,13 +143,7 @@ rulecolor=\color{lightgrey}
 }
 
 \begin{document}
-	\maketitle
-	
-	\input{wordcount.txt} words
-	
-	\begin{abstract}
-	Abstract (TODO)
-	\end{abstract}
+  \include{titlepage}
 	
 	\tableofcontents
 	
@@ -154,10 +151,15 @@ rulecolor=\color{lightgrey}
   \setlength{\parskip}{2ex}
 	
 	\include{introduction}
-	% \include{research}
-	\include{background}
 	\include{implementation}
+	\include{implementation_specifics}
+	\include{complex_example}
+	\include{testing}
+	\include{conclusions}
+	\include{references}
 	
-	\printglossary
+	\appendix
+	\include{classes_index}
+	\include{language_overview}
 \end{document}
 

@@ -1,3 +1,52 @@
 \section{Introduction}
 
-Objectives, overview of report
+\subsection{Objectives}
+
+Broadly, this project was to write a language implementation. Two key objectives were identified:
+
+\begin{enumerate}
+  \item The code should be concise and elegant, focusing on the essence of a language rather than the full set of useful features which are desirable in a ``serious" implementation;
+  \item Despite the above, the language should not be a basic one. Interesting and powerful language features should be explored and implemented.
+\end{enumerate}
+
+On this basis, Ruby was chosen at a very early stage as a desirable language for the implementation. This was because I was already very familiar with Ruby, and it is a high level, powerful and dynamic language which would facilitate the objective of concise, elegant code.
+
+Initially I set out to implement a subset of the Ruby language, using a readily available parser. This quickly proved too restrictive given objective number 2. Instead, I wrote my own parser which allowed a lot more flexibility to change the syntax and semantics of the language. Whilst still being heavily inspired by Ruby, my language has deviated in certain areas or deliberately left certain features out. A comparison between my language and Ruby is given in section \ref{sec:ruby_comparison}.
+
+\subsection{Overview of Report}
+
+It's fun to think up quirky names for projects, so I have chosen to name my language ``Carat" (the carat is a measure of purity in gold alloys).
+
+This report starts by presenting a very basic example program and giving a detailed overview of how it is executed. Many of the key language features are discussed through this, but some which deserve further explanation are presented in the next section. A more complex example program is then given and its execution is explained at a slightly higher level. The testing strategy is given, before a concluding section which compares Carat to Ruby and presents further ideas for the project.
+
+\subsection{Definitions}
+
+\begin{description}
+	\item[Implementation language] refers to the environment in which the implementation is written: the collection of Ruby code which forms the project
+	\item[Target language] refers to the environment of the ``Carat" language actually being implemented
+	\item[AST] is an acronym for ``Abstract Syntax Tree"
+\end{description}
+
+\subsection{Notation}
+
+\begin{itemize}
+  \item Classes have capitalised names and are shown by grey boxes in diagrams: \\
+    \begin{tikzpicture}
+    \node[class] {ExpressionList};
+    \end{tikzpicture}
+  
+  \item Modules have capitalised names and are shown by green boxes in diagrams: \\
+    \begin{tikzpicture}
+    \node[module] {Kernel};
+    \end{tikzpicture}
+  
+  \item Singleton classes have the name of their singleton with an apostrophe appended. They are shown by red boxes in digrams: \\
+    \begin{tikzpicture}
+    \node[sclass] {Apple'};
+    \end{tikzpicture}
+  
+  \item Other objects have lower case names and are shown by blue boxes in diagrams: \\
+    \begin{tikzpicture}
+    \node[object] {apple};
+    \end{tikzpicture}
+\end{itemize}
