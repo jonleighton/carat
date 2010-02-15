@@ -197,7 +197,7 @@ It is useful to be able to identify the class from which an object was created, 
 
 \subsubsection{\code{ModuleInstance}}
 
-A module is a container of methods. It cannot be instantiated, but it can be included within other classes or modules. A \code{ModuleInstance} is initialized with the following signature:
+A module is a container of methods. It cannot be instantiated, but it can be included within classes. A \code{ModuleInstance} is initialized with the following signature:
 
 \begin{lstlisting}
 ModuleInstance.new(runtime, klass, name = nil)
@@ -207,8 +207,6 @@ A \code{ModuleInstance} has a \defn{method table}, which maps method names to \c
 
 Being a type of object, a module can have singleton methods which are analogous to ``class methods" in other languages. Unlike normal objects, modules create their singleton class immediately rather than waiting for it to be needed.
 
-A module may also have a \defn{super} pointer, which facilitates the inclusion of one module within another through an \code{IncludeClassInstance} (see [section]).
-
 \subsubsection{\code{ClassInstance}}
 
 A class is like a module, but can be instantiated. A \code{ClassInstance} is initialized with the following signature:
@@ -217,9 +215,9 @@ A class is like a module, but can be instantiated. A \code{ClassInstance} is ini
 ClassInstance.new(runtime, klass, superclass, name = nil)
 \end{lstlisting}
 
-The \code{super} pointer gets set to the \code{superclass} provided. Generally, the \code{super} may be an include class or a normal class; the \code{superclass} method returns the first object in the \code{super} hierarchy which is a normal class.
+Classes have a \defn{super} pointer, which is initially set to the \code{superclass} provided. But in general, the \code{super} may be either an include class or a normal class (see \ref{sec:module_inclusion}); the \code{superclass} method returns the first object in the \code{super} hierarchy which is a normal class.
 
-Singleton classes are created in a slightly different way than for normal objects, because the inheritance hierarchy needs to be respected for ``class methods" as well as instance methods. When a class creates its singleton class, it uses the singleton class of its superclass as the superclass of its singleton class. In this way, classes and their singleton classes are positioned in parallel (figure \ref{fig:singleton_class_inheritance}).
+Singleton classes are created in a slightly different way than for normal objects because the inheritance hierarchy needs to be respected for ``class methods" as well as instance methods. When a class creates its singleton class, it uses the singleton class of its superclass as the superclass of its singleton class. In this way, classes and their singleton classes are positioned in parallel (figure \ref{fig:singleton_class_inheritance}).
 
 \begin{figure}
 \begin{center}
@@ -458,10 +456,11 @@ The following happens when a call is sent:
 This is one of the key places where a lambda is used to return to the trampoline method.
 
 \subsection{Module inclusion}
+\label{sec:module_inclusion}
 
 In the example, \code{self} is an \code{Object} instance. \code{Object} does not have a \code{puts} method, but it includes the \code{Kernel} module, which does.
 
-As explained above, the only way methods are found is by walking up the \code{super} chain. So, when a module is included within another module or class, it must be inserted within the \code{super} chain. If inserted directly, the module's \code{super} would need to take the original value of the \code{super} of the object including the module. This would be problematic if the module was included more than once.
+As explained above, the only way methods are found is by walking up the \code{super} chain. So when a module is included within a class, it must be inserted somewhere in the \code{super} chain. If inserted directly, the module's \code{super} would need to take the original value of the \code{super} of the object including the module. This would be problematic if the module was included more than once.
 
 Instead, an \defn{include class} is created and the actual module's \code{super} is unchanged. The method table of an include class is a direct reference to the method table of the module it represents. Note that this implementation means including a module \textit{does not} make its singleton methods available. Module inclusion is shown in figure \ref{fig:module_inclusion}.
 
