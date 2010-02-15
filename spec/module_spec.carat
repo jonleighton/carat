@@ -6,6 +6,16 @@ module ModuleSpecA
   end
 end
 
+describe "Module" do
+  it "should have a superclass of Object" do
+    Module.superclass.should == Object
+  end
+  
+  it "should have a class of Class" do
+    Module.class.should == Class
+  end
+end
+
 describe "A module" do
   it "should respond to singleton method calls" do
     ModuleSpecA.foo.should == 4

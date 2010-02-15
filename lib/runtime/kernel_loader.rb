@@ -15,24 +15,24 @@ class Carat::Runtime
     end
     
     def run
-      # Create SingletonClass - it has no class or super at this stage
+      # Create SingletonClass and Object. The super pointers of SingletonClass, SingletonClass',
+      # Object and Object' will be nil. The klass pointers of SingletonClass' and Object' will also
+      # be nil.
       @singleton_class = constants[:SingletonClass] = SingletonClassClass.new(runtime, nil, nil)
+      @object          = constants[:Object]         = ObjectClass.new(runtime, nil, nil)
       
-      # The class of a singleton class is the singleton class of SingletonClass. In this case it's
-      # a reference to itself.
-      @singleton_class.singleton_class.klass = @singleton_class.singleton_class
+      # Set the klass pointers of SingletonClass' and Object'
+      # The class of any singleton class is SingletonClass
+      @singleton_class.singleton_class.klass = @singleton_class
+      @object.singleton_class.klass          = @singleton_class
       
-      @object = constants[:Object] = ObjectClass.new(runtime, nil, nil)
-      
-      # Object's singleton class is a SingletonClass, so set the super pointer
-      @object.singleton_class.super = @singleton_class
-      
-      # The class of a singleton class is the singleton class of SingletonClass
-      @object.singleton_class.klass = @singleton_class.singleton_class
-      
-      # Module and Class should now set themselves up correctly
+      # Create Module and Class. The super and klass pointers can be inferred correctly at this 
+      # stage based on the superclass given.
       @module = constants[:Module] = ModuleClass.new(runtime, nil, @object)
       @class  = constants[:Class]  = ClassClass.new(runtime, nil, @module)
+      
+      # Special case: The super of Object's singleton class is Class
+      @object.singleton_class.super = @class
       
       # Now position SingletonClass as a subclass of Class
       @singleton_class.super = @class

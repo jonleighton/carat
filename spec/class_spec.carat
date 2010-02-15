@@ -28,6 +28,16 @@ class ClassSpecD
   include ClassSpecC
 end
 
+describe "Class" do
+  it "should have a class of Class" do
+    Class.class.should == Class
+  end
+  
+  it "should have a superclass of Module" do
+    Class.superclass.should == Module
+  end
+end
+
 describe "A class (in general)" do
   it "should return Object as the superclass" do
     ClassSpecA.superclass.should == Object
