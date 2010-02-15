@@ -31,6 +31,14 @@ module Carat::Data
       instance_of?(IncludeClassInstance)
     end
     
+    def ancestors
+      if self.super
+        [self] + self.super.ancestors
+      else
+        [self]
+      end
+    end
+    
     def to_s
       "<module:#{name}>"
     end

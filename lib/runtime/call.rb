@@ -34,44 +34,42 @@ class Carat::Runtime
     # Location that the call was made
     attr_reader :location
     
-    attr_reader :arguments, :argument_objects, :block_from_arguments, :return_continuation
+    attr_reader :arguments, :argument_objects, :block_from_arguments, :continuation
     
     extend Forwardable
     def_delegators :callable, :argument_pattern, :contents
     def_delegators :execution_scope, :block
     
-    def initialize(runtime, location, callable, execution_scope, argument_list)
+    def initialize(runtime, location, callable, execution_scope, argument_list, &continuation)
       @runtime, @location, @callable   = runtime, location, callable
       @execution_scope, @argument_list = execution_scope, argument_list
       
+      @continuation = continuation
       @caller_scope = runtime.current_scope
     end
     
     # Merge the arguments into the execution scope, which becomes the scope for the contents, and
     # then evaluate it
-    def send(&continuation)
-      raise ArgumentError, "no continuation given" unless block_given?
-      
+    def send
+      apply_arguments do
+        if contents.nil?
+          continuation.call(runtime.nil)
+        else
+          lambda do
+            frame = Frame.new(execution_scope, self)
+            contents.eval_in_frame(frame, &continuation)
+          end
+        end
+      end
+    end
+    
+    def apply_arguments(&continuation)
       eval_block_from_arguments do |block_from_arguments|
         execution_scope.block = block_from_arguments unless block_from_arguments.nil?
         
         eval_arguments do |arguments|
           execution_scope.merge!(arguments)
-          
-          if contents.nil?
-            yield runtime.nil
-          else
-            runtime.call_stack  << self
-            runtime.scope_stack << execution_scope
-            
-            @return_continuation = lambda do |result|
-              runtime.call_stack.pop
-              runtime.scope_stack.pop
-              yield result
-            end
-            
-            lambda { contents.eval(&return_continuation) }
-          end
+          yield
         end
       end
     end
@@ -131,6 +129,22 @@ class Carat::Runtime
       end
       result << "]"
       result
+    end
+  end
+  
+  class MainMethodCall
+    attr_reader :location
+    
+    def initialize(location)
+      @location = location
+    end
+    
+    def to_s
+      "main"
+    end
+    
+    def inspect
+      "Call[main]"
     end
   end
 end

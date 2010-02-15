@@ -3,15 +3,14 @@ module Carat
     require RUNTIME_PATH + "/kernel_loader"
     require RUNTIME_PATH + "/scope"
     require RUNTIME_PATH + "/call"
+    require RUNTIME_PATH + "/stack"
     
-    attr_reader :constants, :call_stack, :scope_stack, :failure_continuation_stack, :accessed_files
+    attr_reader :stack, :constants, :accessed_files
+    
+    extend Forwardable
+    def_delegators :stack, :current_scope, :current_call, :current_failure_continuation
     
     def initialize
-      # Initialise stacks
-      @call_stack                 = []
-      @scope_stack                = []
-      @failure_continuation_stack = [default_failure_continuation]
-      
       # Constants are defined globally
       @constants = {}
       
@@ -22,28 +21,18 @@ module Carat
       KernelLoader.new(self).run
     end
     
-    def current_call
-      call_stack.last
-    end
-    
-    def current_scope
-      scope_stack.last
-    end
-    
-    def current_failure_continuation
-      failure_continuation_stack.last
-    end
-    
-    def current_return_continuation
-      current_call.return_continuation
-    end
-    
     def current_location
       current_call.location
     end
     
     def current_object
       current_scope[:self]
+    end
+    
+    # Returns a list of calls from the stack. (Note that not all stack frames have a call associated
+    # with them.)
+    def call_stack
+      stack.to_a.map(&:call).compact
     end
     
     def false
@@ -94,56 +83,36 @@ module Carat
     
     # Create a +Call+ and send it
     def call(location, callable, scope, argument_list = [], &continuation)
-      call = Call.new(self, location, callable, scope, argument_list)
-      call.send(&continuation)
+      call = Call.new(self, location, callable, scope, argument_list, &continuation)
+      call.send
     end
     
     # Raises an exception in the object language
-    def raise(exception_name, message, *args)
-      args = [constants[:String].new(message)] + args
-      constants[exception_name].call(:new, args) do |exception|
-        current_failure_continuation.call(exception, current_location)
+    def raise(exception_name, message)
+      constants[exception_name].call(:new, [message]) do |exception|
+        exception.generate_backtrace(current_location)
+        stack.unwind_to(:failure_continuation)
+        current_failure_continuation.call(exception)
       end
     end
     
     def default_failure_continuation
-      lambda do |exception, location|
+      lambda do |exception|
         exception.call(:to_s) do |exception_string|
           puts "#{exception.real_klass.name}: #{exception_string}"
-          
-          locations       = [location] + call_stack.reverse.map(&:location)
-          enclosing_calls = call_stack.reverse + [nil]
-          backtrace       = locations.zip(enclosing_calls)[0..-2]
-          
-          backtrace.each do |location, enclosing_call|
-            puts "  #{location} in #{enclosing_call}"
-          end
-          
+          puts exception.backtrace.map { |line| "  " + line }.join("\n")
           exit 1
         end
       end
     end
     
-    def main_method(contents)
-      argument_pattern = Carat::AST::ArgumentPattern.new
-      method = constants[:Method].new(:main, argument_pattern, contents)
-      argument_pattern.runtime = contents.runtime = self
-      method
-    end
-    
-    def main_object
-      constants[:Object].new
-    end
-    
-    def main_scope
-      Scope.new(main_object)
-    end
-    
     def call_main_method(contents)
-      contents ||= Carat::AST::ExpressionList.new
-      call(contents.location, main_method(contents), main_scope) do |final_result|
-        nil
-      end
+      scope = Scope.new(constants[:Object].new)
+      call  = MainMethodCall.new(contents.location)
+      frame = Frame.new(scope, call, default_failure_continuation)
+      
+      contents.runtime = self
+      contents.eval_in_frame(frame) { |final_result| nil }
     end
     
     # This is the starting point for executing an AST.
@@ -159,8 +128,9 @@ module Carat
     # solves the problem of tail call recursion. This is what the while loop is doing. This
     # technique is called "trampolining".
     def execute(root)
-      current_result = call_main_method(root)
+      @stack = Stack.new
       
+      current_result = call_main_method(root)
       while current_result.is_a?(Proc)
         current_result = current_result.call
       end
@@ -192,7 +162,7 @@ module Carat
             puts "Call Stack"
             puts "=========="
             puts
-            puts call_stack.reverse.map(&:inspect).join("\n\n")
+            puts call_stack.reverse.map(&:inspect).join("\n")
         end
         exit 1
       end

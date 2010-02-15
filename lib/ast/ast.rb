@@ -38,8 +38,8 @@ module Carat
       attr_reader :runtime, :location
       
       extend Forwardable
-      def_delegators :runtime, :constants, :scope_stack, :failure_continuation_stack, :call_stack,
-                     :current_call, :current_scope, :current_object, :current_failure_continuation
+      def_delegators :runtime, :constants, :stack, :current_object, :current_location,
+                               :current_scope, :current_failure_continuation
       
       def initialize(location = nil, *attributes)
         @location = location
@@ -73,20 +73,33 @@ module Carat
       end
       
       def eval_in_scope(scope, &continuation)
-        scope_stack << scope
+        eval_in_frame(Carat::Runtime::Frame.new(scope), &continuation)
+      end
+      
+      def eval_with_failure_continuation(failure_continuation, &continuation)
+        eval_in_frame(Carat::Runtime::Frame.new(nil, nil, failure_continuation), &continuation)
+      end
+      
+      def eval_in_frame(frame, &continuation)
+        stack << frame
         
         eval do |result|
-          scope_stack.pop
+          stack.pop
           yield result
         end
       end
       
-      def eval_child(node, new_scope = nil, &continuation)
+      def eval_child(node, scope_or_failure_continuation = nil, &continuation)
         if node.nil?
           yield runtime.nil
         else
-          if new_scope
-            node.eval_in_scope(new_scope, &continuation)
+          if scope_or_failure_continuation
+            case scope_or_failure_continuation
+              when Carat::Runtime::Scope
+                node.eval_in_scope(scope_or_failure_continuation, &continuation)
+              when Proc
+                node.eval_with_failure_continuation(scope_or_failure_continuation, &continuation)
+            end
           else
             node.eval(&continuation)
           end

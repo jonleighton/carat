@@ -20,9 +20,8 @@ module Carat::Data
     attr_accessor :klass
     
     extend Forwardable
-    def_delegators :runtime, :constants, :call_stack, :scope_stack, :current_return_continuation,
-                   :current_call, :current_scope, :current_object, :current_failure_continuation,
-                   :current_location
+    def_delegators :runtime, :constants, :stack, :current_location, :current_failure_continuation,
+                   :current_call, :current_scope, :current_object, :call_stack
     
     # TODO: Can this be done automatically in primitive_include?
     include KernelModule

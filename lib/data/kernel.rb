@@ -27,15 +27,38 @@ module Carat::Data
     
     # Throw away the current continuation and call the failure continuation
     def primitive_raise(exception, &continuation)
+      # Store the location of the call to Kernel#raise
       location = current_location
-      prepare_to_jump
-      current_failure_continuation.call(exception, location)
+      
+      # Remove the frame for the Kernel#raise call
+      stack.pop
+      
+      # Generate the exception's backtrace before we modify the stack
+      exception.generate_backtrace(location)
+      
+      # Unwind the stack until we get to a failure continuation
+      stack.unwind_to(:failure_continuation)
+      
+      # Call the failure continuation which is now at the top of the stack
+      current_failure_continuation.call(exception)
     end
     
     # Return from a method on the call stack without doing any further computation
     def primitive_return(value, &continuation)
-      prepare_to_jump
-      current_return_continuation.call(value)
+      # Remove the frame for the Kernel#return call
+      stack.pop
+      
+      # Unwind the stack until we get to a call
+      stack.unwind_to(:call)
+      
+      # Store the continuation of the call
+      continuation = current_call.continuation
+      
+      # Pop the call as we are returning from it
+      stack.pop
+      
+      # Now call the continuation
+      continuation.call(value)
     end
     
     def primitive_require(file, &continuation)
@@ -47,14 +70,6 @@ module Carat::Data
         runtime.run_file(file_location + ".carat")
         yield runtime.true
       end
-    end
-    
-    # Remove the current call and current scope from their respective stacks, as these relate
-    # to the method which called this primitive, and we are going to jump somewhere else without
-    # returning to that method.
-    def prepare_to_jump
-      call_stack.pop
-      scope_stack.pop
     end
   end
 end

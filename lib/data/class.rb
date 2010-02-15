@@ -50,10 +50,10 @@ module Carat::Data
       # For example, if this class is +FixnumClass+, the +instance_class+ will be +FixnumInstance+
       def instance_class
         @instance_class ||= begin
-          if Carat::Data.const_defined?("#{name}Instance")
-            Carat::Data.const_get("#{name}Instance")
-          else
-            Carat::Data::ObjectInstance
+          ancestors.each do |ancestor|
+            if Carat::Data.const_defined?("#{ancestor.name}Instance")
+              return Carat::Data.const_get("#{ancestor.name}Instance")
+            end
           end
         end
       end

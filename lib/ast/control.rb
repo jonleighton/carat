@@ -41,11 +41,8 @@ module Carat::AST
     child :rescue
     
     def eval(&continuation)
-      self.rescue.setup(&continuation)
-      eval_child(contents) do |result|
-        self.rescue.teardown
-        yield result
-      end
+      failure_continuation = self.rescue.failure_continuation(&continuation) if self.rescue
+      eval_child(contents, failure_continuation, &continuation)
     end
   end
   
@@ -62,42 +59,31 @@ module Carat::AST
       end
     end
     
-    def failure_continuation(&continuation)
-      scope_stack_length = scope_stack.length
-      call_stack_length = call_stack.length
-      
-      lambda do |exception, location|
-        # Remove this failure continuation from the stack
-        failure_continuation_stack.pop
-        
-        # If this failure continuation matches the error, evaluate its contents. Otherwise, call
-        # the failure continuation which is now at the top of the stack
-        eval_error_type do |error_type_object|
-          exception.call(:is_a?, [error_type_object]) do |exception_match|
-            if exception_match == runtime.true
-              # Remove the parts of the scope stack and call stack between here and where the exception
-              # was raised
-              scope_stack.slice!(scope_stack_length..-1)
-              call_stack.slice!(call_stack_length..-1)
-              
-              # Assign the exception to the given variable
-              exception_variable.assign(exception) unless exception_variable.nil?
-              
-              eval_child(contents, &continuation)
-            else
-              current_failure_continuation.call(exception, location)
-            end
-          end
+    def check_error_type(exception, &continuation)
+      eval_error_type do |error_type_object|
+        exception.call(:is_a?, [error_type_object]) do |exception_match|
+          yield exception_match == runtime.true
         end
       end
     end
     
-    def setup(&continuation)
-      failure_continuation_stack << failure_continuation(&continuation)
-    end
-    
-    def teardown
-      failure_continuation_stack.pop
+    def failure_continuation(&continuation)
+      lambda do |exception|
+        # Remove the frame for this failure continuation from the stack
+        stack.pop
+        
+        # If this failure continuation matches the error, evaluate its contents. Otherwise, unwind
+        # the stack to the frame of the next failure continuation, and call that.
+        check_error_type(exception) do |error_type_matches|
+          if error_type_matches
+            exception_variable.assign(exception) unless exception_variable.nil?
+            eval_child(contents, &continuation)
+          else
+            stack.unwind_to(:failure_continuation)
+            current_failure_continuation.call(exception)
+          end
+        end
+      end
     end
   end
   
