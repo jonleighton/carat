@@ -323,7 +323,7 @@ The core classes and their relationships are constructed by \code{KernelLoader}.
 \draw (SingletonClass) -- node[right] {super} (Class);
 
 \draw (Object') -- ($(Object') + (0,10mm)$) -- node[above] {super} ($(p24) + (0,10mm)$) --
-      (p74) -- (p70) -- ($(p40) - (0,7.5mm)$) -- ($(Class) - (5mm,7.5mm)$) -- ($(Class.south) - (5mm,0)$);
+      (p74) -- (p70) -- ($(p40) - (0,10mm)$) -- ($(Class) - (5mm,10mm)$) -- ($(Class.south) - (5mm,0)$);
 
 \draw (Module') -- node[right] {super} (Object');
 \draw (Class') -- node[right] {super} (Module');
