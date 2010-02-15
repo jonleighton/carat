@@ -4335,6 +4335,9 @@ module Carat
     module BasicMethodName0
     end
 
+    module BasicMethodName1
+    end
+
     def _nt_basic_method_name
       start_index = index
       if node_cache[:basic_method_name].has_key?(index)
@@ -4390,11 +4393,46 @@ module Carat
             if r7
               r5 = r7
             else
-              if has_terminal?('=', false, index)
-                r8 = instantiate_node(SyntaxNode,input, index...(index + 1))
-                @index += 1
+              i8, s8 = index, []
+              r10 = _nt_space
+              if r10
+                r9 = r10
               else
-                terminal_parse_failure('=')
+                r9 = instantiate_node(SyntaxNode,input, index...index)
+              end
+              s8 << r9
+              if r9
+                if has_terminal?('=', false, index)
+                  r11 = instantiate_node(SyntaxNode,input, index...(index + 1))
+                  @index += 1
+                else
+                  terminal_parse_failure('=')
+                  r11 = nil
+                end
+                s8 << r11
+                if r11
+                  i12 = index
+                  if has_terminal?('=', false, index)
+                    r13 = instantiate_node(SyntaxNode,input, index...(index + 1))
+                    @index += 1
+                  else
+                    terminal_parse_failure('=')
+                    r13 = nil
+                  end
+                  if r13
+                    r12 = nil
+                  else
+                    @index = i12
+                    r12 = instantiate_node(SyntaxNode,input, index...index)
+                  end
+                  s8 << r12
+                end
+              end
+              if s8.last
+                r8 = instantiate_node(SyntaxNode,input, i8...index, s8)
+                r8.extend(BasicMethodName0)
+              else
+                @index = i8
                 r8 = nil
               end
               if r8
@@ -4415,7 +4453,7 @@ module Carat
       end
       if s0.last
         r0 = instantiate_node(SyntaxNode,input, i0...index, s0)
-        r0.extend(BasicMethodName0)
+        r0.extend(BasicMethodName1)
       else
         @index = i0
         r0 = nil

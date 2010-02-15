@@ -1,7 +1,7 @@
 class Object
   include Kernel
   
-  def initialize(*args, &block)
+  def initialize
     # Do nothing by default
   end
   

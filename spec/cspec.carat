@@ -13,6 +13,10 @@ module CSpec
     @current_set << CSpecItem.new(expectation, &block)
   end
   
+  def self.before(&block)
+    @current_set.before_block = block
+  end
+  
   def self.run
     sets.each do |set|
       set.run
@@ -27,13 +31,23 @@ class CSpecSet
     @items = []
   end
   
+  def before_block=(block)
+    @before_block = block
+  end
+  
   def <<(item)
     @items << item
   end
   
   def run
     puts @name
-    @items.each { |item| item.run }
+    @items.each do |item|
+      if @before_block
+        @before_block.call
+      end
+      
+      item.run
+    end
   end
 end
 
@@ -64,6 +78,10 @@ module Kernel
   
   def it(expectation, &block)
     CSpec.it(expectation, &block)
+  end
+  
+  def before(&block)
+    CSpec.before(&block)
   end
 end
 

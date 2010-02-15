@@ -407,7 +407,7 @@ module Carat
     
     module MethodName
       def to_sym
-        text_value.to_sym
+        text_value.gsub(/\s/, '').to_sym
       end
     end
     
