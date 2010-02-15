@@ -90,20 +90,20 @@ module Carat
     end
     
     rule times_divide_expression
-      left:unary_expression space?
+      left:method_call_expression space?
       name:('*' / '/') multiline_space?
       right:times_divide_expression <BinaryMethodCall>
       /
-      unary_expression
-    end
-    
-    rule unary_expression
-      name:('-' / '+' / '!') multiline_space? receiver:unary_expression <UnaryMethodCall> /
       method_call_expression
     end
     
     rule method_call_expression
-      method_call_chain / primary
+      method_call_chain / unary_expression
+    end
+    
+    rule unary_expression
+      name:('-' / '+' / '!') multiline_space? receiver:primary <UnaryMethodCall> /
+      primary
     end
     
     rule primary
@@ -227,7 +227,7 @@ module Carat
     # the form "foo.bar(...).baz(...)" and we have to convert this to several MethodCall instances
     # when creating the AST.
     rule method_call_chain
-      receiver:primary tail:method_call_chain_tail <MethodCallChain> /
+      receiver:unary_expression tail:method_call_chain_tail <MethodCallChain> /
       head:(method_name:identifier argument_list) tail:method_call_chain_tail? <ImplicitMethodCallChain>
     end
     

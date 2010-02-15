@@ -1,0 +1,11 @@
+require 'cspec'
+
+describe "Fixnum" do
+  it "should use the same object for two instances of the same number" do
+    24.object_id.should == 24.object_id
+  end
+  
+  it "should support negative numbers" do
+    -6.should == (0 - 6)
+  end
+end

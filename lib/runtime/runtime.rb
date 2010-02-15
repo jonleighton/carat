@@ -5,7 +5,7 @@ module Carat
     require RUNTIME_PATH + "/call"
     require RUNTIME_PATH + "/stack"
     
-    attr_reader :stack, :constants, :accessed_files
+    attr_reader :stack, :constants, :loaded_files
     
     extend Forwardable
     def_delegators :stack, :current_scope, :current_call, :current_failure_continuation

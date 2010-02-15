@@ -1,2 +1,2 @@
 require 'cspec'
-require 'cspec_spec'
+require 'fixnum_spec'

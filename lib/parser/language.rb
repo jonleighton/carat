@@ -1154,7 +1154,7 @@ module Carat
 
       i0 = index
       i1, s1 = index, []
-      r2 = _nt_unary_expression
+      r2 = _nt_method_call_expression
       s1 << r2
       if r2
         r4 = _nt_space
@@ -1216,7 +1216,7 @@ module Carat
       if r1
         r0 = r1
       else
-        r11 = _nt_unary_expression
+        r11 = _nt_method_call_expression
         if r11
           r0 = r11
         else
@@ -1226,6 +1226,33 @@ module Carat
       end
 
       node_cache[:times_divide_expression][start_index] = r0
+
+      r0
+    end
+
+    def _nt_method_call_expression
+      start_index = index
+      if node_cache[:method_call_expression].has_key?(index)
+        cached = node_cache[:method_call_expression][index]
+        @index = cached.interval.end if cached
+        return cached
+      end
+
+      i0 = index
+      r1 = _nt_method_call_chain
+      if r1
+        r0 = r1
+      else
+        r2 = _nt_unary_expression
+        if r2
+          r0 = r2
+        else
+          @index = i0
+          r0 = nil
+        end
+      end
+
+      node_cache[:method_call_expression][start_index] = r0
 
       r0
     end
@@ -1296,7 +1323,7 @@ module Carat
         end
         s1 << r6
         if r6
-          r8 = _nt_unary_expression
+          r8 = _nt_primary
           s1 << r8
         end
       end
@@ -1310,7 +1337,7 @@ module Carat
       if r1
         r0 = r1
       else
-        r9 = _nt_method_call_expression
+        r9 = _nt_primary
         if r9
           r0 = r9
         else
@@ -1320,33 +1347,6 @@ module Carat
       end
 
       node_cache[:unary_expression][start_index] = r0
-
-      r0
-    end
-
-    def _nt_method_call_expression
-      start_index = index
-      if node_cache[:method_call_expression].has_key?(index)
-        cached = node_cache[:method_call_expression][index]
-        @index = cached.interval.end if cached
-        return cached
-      end
-
-      i0 = index
-      r1 = _nt_method_call_chain
-      if r1
-        r0 = r1
-      else
-        r2 = _nt_primary
-        if r2
-          r0 = r2
-        else
-          @index = i0
-          r0 = nil
-        end
-      end
-
-      node_cache[:method_call_expression][start_index] = r0
 
       r0
     end
@@ -2916,7 +2916,7 @@ module Carat
 
       i0 = index
       i1, s1 = index, []
-      r2 = _nt_primary
+      r2 = _nt_unary_expression
       s1 << r2
       if r2
         r3 = _nt_method_call_chain_tail
