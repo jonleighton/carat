@@ -1,0 +1,33 @@
+require 'cspec'
+
+class ClassSpecA
+end
+class ClassSpecB < ClassSpecA
+  def initialize(*args, &block)
+    @args = args
+    @block = block
+  end
+  
+  def args
+    @args
+  end
+  
+  def block
+    @block
+  end
+end
+
+describe "Class" do
+  it "should return the superclass" do
+    ClassSpecB.superclass.should == ClassSpecA
+  end
+  
+  it "should pass the args and block to the initialize method when a new instance is created" do
+    args = [3, 6, 2]
+    block = lambda { zzz }
+    object = ClassSpecB.new(*args, &block)
+    
+    object.args.should == args
+    object.block.should == block
+  end
+end
