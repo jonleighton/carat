@@ -17,8 +17,16 @@ module Carat
       # Keep track of which additional files have been accessed
       @accessed_files = []
       
+      # When a new file is run it needs a new stack. But we need to be able to return to the 
+      # previous file once that file has been run. So for that we need a stack of stacks.
+      @stack_of_stacks = []
+      
       # Load core classes
       KernelLoader.new(self).run
+    end
+    
+    def stack
+      @stack_of_stacks.last
     end
     
     def current_location
@@ -128,12 +136,14 @@ module Carat
     # solves the problem of tail call recursion. This is what the while loop is doing. This
     # technique is called "trampolining".
     def execute(root)
-      @stack = Stack.new
+      @stack_of_stacks << Stack.new
       
       current_result = call_main_method(root)
       while current_result.is_a?(Proc)
         current_result = current_result.call
       end
+      
+      @stack_of_stacks.pop
     end
     
     # Parse some code and then execute its AST
