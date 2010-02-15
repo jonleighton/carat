@@ -13,6 +13,14 @@ class Object
     end
   end
   
+  def !!
+    if self == nil || self == false
+      true
+    else
+      false
+    end
+  end
+  
   def is_a?(test_class)
     klass = self.class
     

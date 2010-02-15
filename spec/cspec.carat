@@ -89,24 +89,35 @@ class ExpectationFailure < RuntimeError
 end
 
 class Should
-  def initialize(expected)
-    @expected = expected
+  def initialize(receiver)
+    @receiver = receiver
   end
 
   def ==(actual)
-    if @expected != actual
-      raise ExpectationFailure, actual.to_s + " did not match " + @expected.to_s
+    if @receiver != actual
+      raise ExpectationFailure, actual.to_s + " did not match " + @receiver.to_s
+    end
+  end
+  
+  def raise_error(error)
+    begin
+      @receiver.call
+      raise ExpectationFailure, "no error was raised"
+    rescue Exception => e
+      if !e.is_a?(error)
+        raise ExpectationFailure, e.to_s + " was not a " + error.to_s
+      end
     end
   end
 end
 
 class ShouldNot
-  def initialize(rejected)
-    @rejected = rejected
+  def initialize(receiver)
+    @receiver = receiver
   end
   
   def ==(actual)
-    if @rejected == actual
+    if @receiver == actual
       raise ExpectationFailure, actual.to_s + " not expected"
     end
   end

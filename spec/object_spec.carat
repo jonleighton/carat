@@ -42,6 +42,10 @@ describe "An object (in general)" do
   it "should return false for is_a?(Class)" do
     @object.is_a?(Class).should == false
   end
+  
+  it "should have false as its negation" do
+    (!@object).should == false
+  end
 end
 
 class ObjectSpecA

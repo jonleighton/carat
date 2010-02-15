@@ -4,4 +4,8 @@ describe "TrueClass" do
   it "should have a single instance" do
     true.object_id.should == true.object_id
   end
+  
+  it "should have false as its negation" do
+    (!true).should == false
+  end
 end

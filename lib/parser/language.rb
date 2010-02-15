@@ -1216,7 +1216,7 @@ module Carat
       if r1
         r0 = r1
       else
-        r11 = _nt_method_call_expression
+        r11 = _nt_unary_not_expression
         if r11
           r0 = r11
         else
@@ -1226,6 +1226,71 @@ module Carat
       end
 
       node_cache[:times_divide_expression][start_index] = r0
+
+      r0
+    end
+
+    module UnaryNotExpression0
+      def name
+        elements[0]
+      end
+
+      def receiver
+        elements[2]
+      end
+    end
+
+    def _nt_unary_not_expression
+      start_index = index
+      if node_cache[:unary_not_expression].has_key?(index)
+        cached = node_cache[:unary_not_expression][index]
+        @index = cached.interval.end if cached
+        return cached
+      end
+
+      i0 = index
+      i1, s1 = index, []
+      if has_terminal?('!', false, index)
+        r2 = instantiate_node(SyntaxNode,input, index...(index + 1))
+        @index += 1
+      else
+        terminal_parse_failure('!')
+        r2 = nil
+      end
+      s1 << r2
+      if r2
+        r4 = _nt_multiline_space
+        if r4
+          r3 = r4
+        else
+          r3 = instantiate_node(SyntaxNode,input, index...index)
+        end
+        s1 << r3
+        if r3
+          r5 = _nt_unary_not_expression
+          s1 << r5
+        end
+      end
+      if s1.last
+        r1 = instantiate_node(UnaryMethodCall,input, i1...index, s1)
+        r1.extend(UnaryNotExpression0)
+      else
+        @index = i1
+        r1 = nil
+      end
+      if r1
+        r0 = r1
+      else
+        r6 = _nt_method_call_expression
+        if r6
+          r0 = r6
+        else
+          @index = i0
+          r0 = nil
+        end
+      end
+
+      node_cache[:unary_not_expression][start_index] = r0
 
       r0
     end
@@ -1243,7 +1308,7 @@ module Carat
       if r1
         r0 = r1
       else
-        r2 = _nt_unary_expression
+        r2 = _nt_unary_plus_minus_expression
         if r2
           r0 = r2
         else
@@ -1257,7 +1322,7 @@ module Carat
       r0
     end
 
-    module UnaryExpression0
+    module UnaryPlusMinusExpression0
       def name
         elements[0]
       end
@@ -1267,10 +1332,10 @@ module Carat
       end
     end
 
-    def _nt_unary_expression
+    def _nt_unary_plus_minus_expression
       start_index = index
-      if node_cache[:unary_expression].has_key?(index)
-        cached = node_cache[:unary_expression][index]
+      if node_cache[:unary_plus_minus_expression].has_key?(index)
+        cached = node_cache[:unary_plus_minus_expression][index]
         @index = cached.interval.end if cached
         return cached
       end
@@ -1278,58 +1343,47 @@ module Carat
       i0 = index
       i1, s1 = index, []
       i2 = index
-      if has_terminal?('-', false, index)
+      if has_terminal?('+', false, index)
         r3 = instantiate_node(SyntaxNode,input, index...(index + 1))
         @index += 1
       else
-        terminal_parse_failure('-')
+        terminal_parse_failure('+')
         r3 = nil
       end
       if r3
         r2 = r3
       else
-        if has_terminal?('+', false, index)
+        if has_terminal?('-', false, index)
           r4 = instantiate_node(SyntaxNode,input, index...(index + 1))
           @index += 1
         else
-          terminal_parse_failure('+')
+          terminal_parse_failure('-')
           r4 = nil
         end
         if r4
           r2 = r4
         else
-          if has_terminal?('!', false, index)
-            r5 = instantiate_node(SyntaxNode,input, index...(index + 1))
-            @index += 1
-          else
-            terminal_parse_failure('!')
-            r5 = nil
-          end
-          if r5
-            r2 = r5
-          else
-            @index = i2
-            r2 = nil
-          end
+          @index = i2
+          r2 = nil
         end
       end
       s1 << r2
       if r2
-        r7 = _nt_multiline_space
-        if r7
-          r6 = r7
-        else
-          r6 = instantiate_node(SyntaxNode,input, index...index)
-        end
-        s1 << r6
+        r6 = _nt_multiline_space
         if r6
-          r8 = _nt_primary
-          s1 << r8
+          r5 = r6
+        else
+          r5 = instantiate_node(SyntaxNode,input, index...index)
+        end
+        s1 << r5
+        if r5
+          r7 = _nt_unary_plus_minus_expression
+          s1 << r7
         end
       end
       if s1.last
         r1 = instantiate_node(UnaryMethodCall,input, i1...index, s1)
-        r1.extend(UnaryExpression0)
+        r1.extend(UnaryPlusMinusExpression0)
       else
         @index = i1
         r1 = nil
@@ -1337,16 +1391,16 @@ module Carat
       if r1
         r0 = r1
       else
-        r9 = _nt_primary
-        if r9
-          r0 = r9
+        r8 = _nt_primary
+        if r8
+          r0 = r8
         else
           @index = i0
           r0 = nil
         end
       end
 
-      node_cache[:unary_expression][start_index] = r0
+      node_cache[:unary_plus_minus_expression][start_index] = r0
 
       r0
     end
@@ -2916,7 +2970,7 @@ module Carat
 
       i0 = index
       i1, s1 = index, []
-      r2 = _nt_unary_expression
+      r2 = _nt_unary_plus_minus_expression
       s1 << r2
       if r2
         r3 = _nt_method_call_chain_tail

@@ -4,4 +4,8 @@ describe "NilClass" do
   it "should have a single instance" do
     nil.object_id.should == nil.object_id
   end
+  
+  it "should have true as its negation" do
+    (!nil).should == true
+  end
 end

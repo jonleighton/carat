@@ -1,0 +1,26 @@
+require 'cspec'
+
+describe "A lambda" do
+  it "should not create any variables in its enclosing scope" do
+    lambda do
+      lambda do |x|
+        x + 1
+        y = 2
+      end.call(3)
+      x
+    end.should.raise_error(NameError)
+  end
+  
+  it "should change variables in the enclosing scope if they are already defined" do
+    a = 5
+    b = 2
+    lambda { |b| a = 7 }.call(8)
+    a.should == 7
+    b.should == 8
+  end
+  
+  it "should be able to access variables in the enclosing scope" do
+    a = 3
+    lambda { a + 7 }.call.should == 10
+  end
+end
