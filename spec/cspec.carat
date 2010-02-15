@@ -14,7 +14,10 @@ module CSpec
   end
   
   def self.run
-    sets.each { |set| set.run }
+    sets.each do |set|
+      set.run
+      puts
+    end
   end
 end
 

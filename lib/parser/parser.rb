@@ -3,8 +3,10 @@ module Carat
   require "treetop"
   
   if ENV["DYNAMIC_PARSER"] == "true"
+    Treetop.load(PARSER_PATH + "/comment")
     Treetop.load(PARSER_PATH + "/language")
   else
+    require PARSER_PATH + "/comment"
     require PARSER_PATH + "/language"
   end
   
@@ -27,7 +29,7 @@ module Carat
     
     # The line contents with an arrow underneath pointing at the column
     def diagram
-      line_contents + "\n" + (" " * (column - 1)) + "^"
+      line_contents.to_s + "\n" + (" " * (column - 1)) + "^"
     end
     
     def full_message
@@ -68,14 +70,17 @@ module Carat
       end
     end
     
-    # Strips any comments from the input. These can either be multi-line comments, which start and 
-    # end with '##', or single-line comments which start with '#' and end with \n.
-    # 
-    # It is important to preserve \n characters from inside block comments, as otherwise the line
-    # numbers in backtraces wouldn't make sense.
     def input_without_comments
-      input.gsub(/##.*?(##|\z)/m) { |match| match.to_s.gsub(/./, '') }.
-            gsub(/#[^\n]*/, '')
+      parser = CommentParser.new
+      parse_tree = parser.parse(@input)
+      
+      unless parse_tree
+        puts "Comment parser failed"
+        puts parser.failure_reason
+        exit 1
+      end
+      
+      parse_tree.strip
     end
     
     def expected_message

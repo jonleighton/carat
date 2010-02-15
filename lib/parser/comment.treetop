@@ -1,0 +1,74 @@
+module Carat
+  # This is a simple parser which strips comments from the source code before that code is actually
+  # parsed. It is simpler to keep this step separate.
+  # 
+  # There are two kinds of comment:
+  # 
+  #   1. Starts with '#' and finished with \n
+  #   2. Starts with '##' and finishes with next occurrence of '##'
+  # 
+  # With the second kind, newlines are preserved when stripping, so that error message which
+  # involve line numbers still make sense.
+  grammar Comment
+    rule program
+      head:line tail:("\n" line)* "\n"? {
+        def lines
+          [head] + tail.elements.map(&:line)
+        end
+        
+        def strip
+          lines.map(&:strip).join("\n")
+        end
+      }
+      /
+      '' {
+        def strip
+          ''
+        end
+      }
+    end
+    
+    rule line
+      parts:(string / non_string)* comment:comment? {
+        def stripped_comment
+          comment.empty? ? '' : comment.strip
+        end
+      
+        def strip
+          parts.text_value + stripped_comment
+        end
+      }
+    end
+    
+    rule non_string
+      [^\#\n\"\']+
+    end
+    
+    rule string
+      '"' [^\"]* '"' /
+      "'" [^\']* "'"
+    end
+    
+    rule comment
+      multi_line_comment /
+      single_line_comment
+    end
+    
+    rule multi_line_comment
+      '##' (!'##' .)* '##' {
+        def strip
+          # Keep the new lines so that error messages which refer to a line number still make sense
+          text_value.gsub(/[^\n]/, "")
+        end
+      }
+    end
+    
+    rule single_line_comment
+      '#' [^\n]* {
+        def strip
+          ''
+        end
+      }
+    end
+  end
+end

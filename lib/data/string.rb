@@ -39,5 +39,13 @@ module Carat::Data
       contents << other.contents
       yield self
     end
+    
+    def primitive_equal_to(other)
+      if contents == other.contents
+        yield runtime.true
+      else
+        yield runtime.false
+      end
+    end
   end
 end

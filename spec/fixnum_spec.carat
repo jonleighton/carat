@@ -5,7 +5,35 @@ describe "Fixnum" do
     24.object_id.should == 24.object_id
   end
   
-  it "should support negative numbers" do
+  it "should support the negative unary prefix" do
     -6.should == (0 - 6)
+  end
+  
+  it "should support the positive unary prefix" do
+    +3.should == 3
+  end
+  
+  it "should return its value as a string with to_s" do
+    52.to_s.should == "52"
+    -52.to_s.should == "-52"
+  end
+  
+  it "should return its value as a string with inspect" do
+    52.inspect.should == "52"
+    -52.inspect.should == "-52"
+  end
+end
+
+describe "Fixnum#<=>" do
+  it "should return -1 for 1 <=> 2" do
+    (1 <=> 2).should == -1
+  end
+  
+  it "should return 1 for 2 <=> 1" do
+    (2 <=> 1).should == 1
+  end
+  
+  it "should return 0 for 1 <=> 1" do
+    (1 <=> 1).should == 0
   end
 end
