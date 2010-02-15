@@ -405,8 +405,16 @@ module Carat
     end
     
     rule string
-      "'" value:[^\']* "'" <String> /
-      '"' value:[^\"]* '"' <String>
+      string_without_interpolation /
+      string_with_interpolation
+    end
+    
+    rule string_without_interpolation
+      "'" value:[^\']* "'" <StringWithoutInterpolation>
+    end
+    
+    rule string_with_interpolation
+      '"' value:[^\"]* '"' <StringWithInterpolation>
     end
     
     rule boolean

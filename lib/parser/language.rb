@@ -5036,20 +5036,6 @@ module Carat
       r0
     end
 
-    module String0
-      def value
-        elements[1]
-      end
-
-    end
-
-    module String1
-      def value
-        elements[1]
-      end
-
-    end
-
     def _nt_string
       start_index = index
       if node_cache[:string].has_key?(index)
@@ -5059,99 +5045,13 @@ module Carat
       end
 
       i0 = index
-      i1, s1 = index, []
-      if has_terminal?("'", false, index)
-        r2 = instantiate_node(SyntaxNode,input, index...(index + 1))
-        @index += 1
-      else
-        terminal_parse_failure("'")
-        r2 = nil
-      end
-      s1 << r2
-      if r2
-        s3, i3 = [], index
-        loop do
-          if has_terminal?('\G[^\\\']', true, index)
-            r4 = true
-            @index += 1
-          else
-            r4 = nil
-          end
-          if r4
-            s3 << r4
-          else
-            break
-          end
-        end
-        r3 = instantiate_node(SyntaxNode,input, i3...index, s3)
-        s1 << r3
-        if r3
-          if has_terminal?("'", false, index)
-            r5 = instantiate_node(SyntaxNode,input, index...(index + 1))
-            @index += 1
-          else
-            terminal_parse_failure("'")
-            r5 = nil
-          end
-          s1 << r5
-        end
-      end
-      if s1.last
-        r1 = instantiate_node(String,input, i1...index, s1)
-        r1.extend(String0)
-      else
-        @index = i1
-        r1 = nil
-      end
+      r1 = _nt_string_without_interpolation
       if r1
         r0 = r1
       else
-        i6, s6 = index, []
-        if has_terminal?('"', false, index)
-          r7 = instantiate_node(SyntaxNode,input, index...(index + 1))
-          @index += 1
-        else
-          terminal_parse_failure('"')
-          r7 = nil
-        end
-        s6 << r7
-        if r7
-          s8, i8 = [], index
-          loop do
-            if has_terminal?('\G[^\\"]', true, index)
-              r9 = true
-              @index += 1
-            else
-              r9 = nil
-            end
-            if r9
-              s8 << r9
-            else
-              break
-            end
-          end
-          r8 = instantiate_node(SyntaxNode,input, i8...index, s8)
-          s6 << r8
-          if r8
-            if has_terminal?('"', false, index)
-              r10 = instantiate_node(SyntaxNode,input, index...(index + 1))
-              @index += 1
-            else
-              terminal_parse_failure('"')
-              r10 = nil
-            end
-            s6 << r10
-          end
-        end
-        if s6.last
-          r6 = instantiate_node(String,input, i6...index, s6)
-          r6.extend(String1)
-        else
-          @index = i6
-          r6 = nil
-        end
-        if r6
-          r0 = r6
+        r2 = _nt_string_with_interpolation
+        if r2
+          r0 = r2
         else
           @index = i0
           r0 = nil
@@ -5159,6 +5059,136 @@ module Carat
       end
 
       node_cache[:string][start_index] = r0
+
+      r0
+    end
+
+    module StringWithoutInterpolation0
+      def value
+        elements[1]
+      end
+
+    end
+
+    def _nt_string_without_interpolation
+      start_index = index
+      if node_cache[:string_without_interpolation].has_key?(index)
+        cached = node_cache[:string_without_interpolation][index]
+        @index = cached.interval.end if cached
+        return cached
+      end
+
+      i0, s0 = index, []
+      if has_terminal?("'", false, index)
+        r1 = instantiate_node(SyntaxNode,input, index...(index + 1))
+        @index += 1
+      else
+        terminal_parse_failure("'")
+        r1 = nil
+      end
+      s0 << r1
+      if r1
+        s2, i2 = [], index
+        loop do
+          if has_terminal?('\G[^\\\']', true, index)
+            r3 = true
+            @index += 1
+          else
+            r3 = nil
+          end
+          if r3
+            s2 << r3
+          else
+            break
+          end
+        end
+        r2 = instantiate_node(SyntaxNode,input, i2...index, s2)
+        s0 << r2
+        if r2
+          if has_terminal?("'", false, index)
+            r4 = instantiate_node(SyntaxNode,input, index...(index + 1))
+            @index += 1
+          else
+            terminal_parse_failure("'")
+            r4 = nil
+          end
+          s0 << r4
+        end
+      end
+      if s0.last
+        r0 = instantiate_node(StringWithoutInterpolation,input, i0...index, s0)
+        r0.extend(StringWithoutInterpolation0)
+      else
+        @index = i0
+        r0 = nil
+      end
+
+      node_cache[:string_without_interpolation][start_index] = r0
+
+      r0
+    end
+
+    module StringWithInterpolation0
+      def value
+        elements[1]
+      end
+
+    end
+
+    def _nt_string_with_interpolation
+      start_index = index
+      if node_cache[:string_with_interpolation].has_key?(index)
+        cached = node_cache[:string_with_interpolation][index]
+        @index = cached.interval.end if cached
+        return cached
+      end
+
+      i0, s0 = index, []
+      if has_terminal?('"', false, index)
+        r1 = instantiate_node(SyntaxNode,input, index...(index + 1))
+        @index += 1
+      else
+        terminal_parse_failure('"')
+        r1 = nil
+      end
+      s0 << r1
+      if r1
+        s2, i2 = [], index
+        loop do
+          if has_terminal?('\G[^\\"]', true, index)
+            r3 = true
+            @index += 1
+          else
+            r3 = nil
+          end
+          if r3
+            s2 << r3
+          else
+            break
+          end
+        end
+        r2 = instantiate_node(SyntaxNode,input, i2...index, s2)
+        s0 << r2
+        if r2
+          if has_terminal?('"', false, index)
+            r4 = instantiate_node(SyntaxNode,input, index...(index + 1))
+            @index += 1
+          else
+            terminal_parse_failure('"')
+            r4 = nil
+          end
+          s0 << r4
+        end
+      end
+      if s0.last
+        r0 = instantiate_node(StringWithInterpolation,input, i0...index, s0)
+        r0.extend(StringWithInterpolation0)
+      else
+        @index = i0
+        r0 = nil
+      end
+
+      node_cache[:string_with_interpolation][start_index] = r0
 
       r0
     end

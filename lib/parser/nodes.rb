@@ -275,7 +275,22 @@ module Carat
     
     class String < Treetop::Runtime::SyntaxNode
       def to_ast
-        Carat::AST::String.new(location, value.text_value)
+        Carat::AST::String.new(location, contents)
+      end
+    end
+    
+    class StringWithoutInterpolation < String
+      def contents
+        value.text_value
+      end
+    end
+    
+    class StringWithInterpolation < String
+      def contents
+        value.text_value.
+          gsub('\n', "\n").
+          gsub('\r', "\r").
+          gsub('\t', "\t")
       end
     end
     
