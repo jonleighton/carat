@@ -80,20 +80,30 @@ ExpressionList:
 
 This can be read as an expression list with one item: a call to the method `puts'. The object receiving the call is not explicitly given. The argument list contains one item, which is the literal string ``Goodbye Cruel World".
 
-\subsection{Setting up the Runtime}
+\subsection{The Runtime}
 
-\code{Carat::Runtime} is the fundamental class responsible for executing a program. When initialized it sets up the runtime environment by:
+\code{Carat::Runtime} is the starting point for running a program. When initialised it:
 
 \begin{enumerate}
-  \item Initialising the stacks. Three stacks are used:
-    \begin{enumerate}
-      \item The \textit{call stack} contains \code{Call} objects which represent a call to a method or lambda (see [section])
-      \item The \textit{scope stack} contains \code{Scope} objects which represent variable scopes (see [section])
-      \item The \textit{failure continuation stack} contains objects representing what to do if an exception occurs (see [section])
-    \end{enumerate}
-  \item Creating a hash mapping the names of constants to their values. Constants are globally defined, so are not stored by scopes
-  \item Running the \code{KernelLoader} which sets up the core classes in the target language (\code{Object}, \code{Class}, \code{Array}, \code{String}, ...). While some code is needed in the implementation language, most of this is done by interpreting class definitions written in the target language. To optimise this, the parsing is done ahead-of-time and the AST nodes are stored as binary data in files. These files are then loaded directly.
+  \item Creates an empty \defn{stack of stacks}. When a program is being executed, its state is stored by a stack. But a program can load additional files which need to execute with their own stack, before returning to the previous stack. For this we need a stack of stacks.
+  \item Creates an empty hash for \defn{constants}. Constants are globally defined, so are not stored on a stack.
+  \item Creates an empty list of \defn{loaded files} to prevent the same file being loaded more than once.
+  \item Runs the \code{KernelLoader} which sets up the core classes in the target language (\code{Object}, \code{Class}, \code{Array}, \code{String}, ...). While some code is needed in the implementation language, most of this is done by interpreting class definitions written in the target language. To optimise this, the parsing is done ahead-of-time and the AST nodes are stored as binary data in files. These files are then loaded directly.
 \end{enumerate}
+
+\subsection{The Stack}
+
+Whenever the \defn{stack} is referred to, this is the stack at the top of the stack of stacks. The stack contains one or more \defn{frames}. Frames can contain:
+
+\begin{enumerate}
+  \item A \defn{scope}, which stores the values of local variables
+  \item A \defn{call}, which represents a method or lambda call
+  \item A \defn{failure continuation}, which describes what to do when an exception is raised
+\end{enumerate}
+
+All of these values are optional because they can all change independently of each other during program execution. But in practise a frame has at least one or it will be quite useless.
+
+Within the runtime, the ``current scope", ``current call" or ``current failure continuation" refers to whichever value is in a frame closest to the top of the stack.
 
 \subsection{The Object Model}
 \label{sec:object_model}
@@ -336,29 +346,49 @@ The core classes and their relationships are constructed by \code{KernelLoader}.
 
 The interpreter works out the result of a program by ``walking" the AST. An AST node with children probably needs to evaluate its child nodes before it can return its own answer. The obvious way to do this is to literally evaluate the children by calling the relevant evaluation methods, and then compute the answer to return.
 
-This problem with this approach is it does not allow for ``jumps". Jumps occur when the program needs to move to a different node in the AST without first returning the answer of the current node. This can happen when a return call or an exception is encountered. The problem is that the execution of the AST is tied to the call stack of the implementation language, which can't be directly manipulated.
+This problem with this approach is it does not allow for ``jumps". Jumps occur when the program needs to move to a different node in the AST without first returning the answer of the current node. This can happen when a return call or an exception is encountered. The problem is that the execution of the AST is intrinsically linked to the stack of the implementation language, which can't be directly manipulated.
 
 To solve this, the interepreter is written in \defn{continuation passing style} (CPS). Any method involved in the evaluation of AST nodes expects to be called with a \defn{continuation}. Abstractly, this is an object which represents the computation still to be done once an answer has been found. In this implementation, continuations are represented as lambdas, which expect one argument: the current result.
 
-Some AST nodes can return a result immediately, without further computation (such as the literal \code{Nil} node). In this case, the node should simply call the continuation, passing its immediate value to the continuation.
+Some AST nodes can return a result immediately, without further computation (such as the literal \code{Nil} node). In this case, the node should simply call the continuation, passing its immediate value as the argument.
 
-Most nodes need to evaluate other nodes before they can produce an answer. In this case, instead of evaluating the child nodes and waiting for the answer, they evaluate the child node and pass a continuation which captures what needs to be done with the answer. This way, nodes have a choice about whether to continue a computation by calling the continuation, or by calling some other continuation which jumps to another part of the program.
+Most nodes need to evaluate other nodes before they can produce an answer. In this case, instead of evaluating a given child node and waiting for the answer, they evaluate the child node and pass a continuation which captures what needs to be done with the answer. This way, nodes have a choice about whether to continue a computation by calling the continuation, or by calling some other continuation which jumps to another part of the program. The difference is illustrated in the following psuedocode:
+
+\begin{lstlisting}[title={\textbf{Without CPS}}]
+def eval
+  child_value = eval(child_node)
+  compute_value(child_value)
+end
+\end{lstlisting}
+
+\begin{lstlisting}[title={\textbf{With CPS}}]
+def eval(&continuation)
+  eval(child_node) do |child_value|
+    yield compute_value(child_value)
+  end
+end
+\end{lstlisting}
 
 \subsection{Execution}
 
 An AST is executed by passing its root node to \code{Runtime\#execute}:
 
+\begin{minipage}{\textwidth}
 \begin{lstlisting}
 def execute(root)
-  current_result = call_main_method(root)
+  @stack_of_stacks << Stack.new
   
+  current_result = call_main_method(root)
   while current_result.is_a?(Proc)
     current_result = current_result.call
   end
+  
+  @stack_of_stacks.pop
 end
 \end{lstlisting}
+\end{minipage}
 
-The root node is wrapped in a method named ``\code{main}" and then that method is called.
+A new stack is pushed onto the stack of stacks. The root node is wrapped in a method named ``\code{main}" and then that method is called.
 
 \subsubsection{Trampoline}
 
@@ -366,33 +396,28 @@ One outcome of CPS is that all evaluation methods have calls to other evaluation
 
 To solve this, \code{execute} uses a \defn{trampoline}. In certain places where an evaluation method would usually call another evaluation method, it instead wraps that call in a lambda which is returned. This causes the stack in the implementation language to ``collapse" right back down to \code{execute}, which simply calls the lambda to resume execution. The \code{while} loop does this repeatedly until an answer which is not a lambda is returned.
 
-\subsubsection{The main scope}
+\subsubsection{The main method}
 
-Every method must be executed within a \code{Scope}. Every \code{Scope} must have a value for \code{self}, which is used when looking up instance variables and evaluating method calls with no explicit receiver. For the main method, a new instance of \code{Object} is used as the \code{self} value of the execution scope.
+The main method call is constructed like so:
 
-\subsubsection{Calling the main method}
-
-Methods and lambdas are called by \code{Runtime\#call}:
-
+\begin{minipage}{\textwidth}
 \begin{lstlisting}
-def call(location, callable, scope, argument_list = [], &continuation)
-  call = Call.new(self, location, callable, scope, argument_list)
-  call.send(&continuation)
+def call_main_method(contents)
+  scope = Scope.new(constants[:Object].new)
+  call  = MainMethodCall.new(contents.location)
+  frame = Frame.new(scope, call, default_failure_continuation)
+  
+  contents.runtime = self
+  contents.eval_in_frame(frame) { |final_result| nil }
 end
 \end{lstlisting}
+\end{minipage}
 
-A \code{Call} object represents the call, and its \code{send} method actually evaluates that call. Roughly speaking, the following happens when a method call is sent:
+An initial scope is created. Every \code{Scope} must have a value for \code{self}, which is used when looking up instance variables and evaluating method calls with no explicit receiver. In the main method, an instance of \code{Object} is used.
 
-\begin{enumerate}
-  \item The argument list is evaluated to produce the argument values
-  \item The argument values are assigned within the execution scope, according to the argument pattern of the callable (this is discussed in section ?)
-  \item The \code{Call} is pushed onto the call stack
-  \item The execution scope is pushed onto the scope stack
-  \item The call's \defn{return continuation} is set, which pops the call and execution stacks before continuing with the result
-  \item The \code{eval} method for the AST node of the method contents is called
-\end{enumerate}
+A special \code{MainMethodCall} object is also created. This is just so the main method call is present on the stack and can be used when exceptions generate a backtrace.
 
-\code{Call\#send} is one of the places where a lambda is used to collapse the implementation language call stack.
+An initial frame is created using the scope, call and default failure continuation. The AST node's \code{eval\_in\_frame} method is called, which adds the frame to the stack, evaluates the node, and then ensures the frame is subsequently removed from the stack. The continuation given does nothing with the final answer, because the end of the program has been reached.
 
 \subsection{Sequential evaluation}
 
@@ -407,9 +432,30 @@ The only item in the expression list is a \code{MethodCall[:puts]} with no recei
 \begin{enumerate}
   \item Evaluate the receiver. If there is no explicit receiver, the \code{self} object in the current scope (the one at the top of the scope stack) is used.
   \item Check whether the receiver object has an instance method with the given name. The advantage of the object model discussed in section \ref{sec:object_model} is that method look-up is very simple. When an object looks for an instance method, it asks its \code{klass} to look up that method. If the class contains the method in its method table, it returns it. Otherwise, it asks its \code{super}. Eventually, when there is no \code{super} (i.e. for \code{Object}), no method has been found so \code{nil} is returned.
-  \item If the method is found, use the receiver object's \code{call} method (which then uses \code{Runtime\#call}) to dispatch the call.
-  \item Otherwise, an exception is raised (see section ?)
+  \item If the method is found, use the receiver object's \code{call} method. This in turn uses \code{Runtime\#call}, which creates a \code{Call} object and ``sends" it.
+  \item If the method is not found, an exception is raised (see section ?)
 \end{enumerate}
+
+A \code{Call} object has the following important attributes:
+
+\begin{enumerate}
+  \item The \defn{callable}, which is the method or lambda being called.
+  \item The \defn{execution scope}, which is the scope which the callable should be evaluated within. For method calls, this starts as an empty scope where \code{self} is the receiver object.
+  \item The \defn{caller scope}, which is the scope from which the call was made. (The current scope of the runtime when the \code{Call} was created.)
+  \item The \defn{argument list}, which is the \code{ArgumentList} AST node represting the arguments passed to the call. (It can also be an array of objects, for convenience when making calls within the implementation language.)
+  \item The \defn{continuation}, describing the computation to be done once the call has been sent.
+\end{enumerate}
+
+The following happens when a call is sent:
+
+\begin{enumerate}
+  \item The argument list is evaluated to produce the argument values
+  \item The argument values are assigned within the execution scope, according to the argument pattern of the callable (see section ? for a fuller explanation)
+  \item A frame containing the execution scope and the call is created
+  \item The \code{eval\_in\_frame} method of the AST node of the callable's contents is called with the frame
+\end{enumerate}
+
+This is one of the key places where a lambda is used to return to the trampoline method.
 
 \subsection{Module inclusion}
 
@@ -488,6 +534,6 @@ The \code{Primitive} class is represented by \code{Carat::Data::PrimitiveClass} 
   \item Prepend ``\code{primitive\_}" to the method name and call that method on the object, passing the evaluated arguments
 \end{enumerate}
 
-For the example, \code{self} is an \code{Object}, but the method is in \code{Kernel}. The \code{primitive\_puts} method is actually defined the \code{Carat::Data::KernelModule} module. When a module inclusion happens in the target language, the implementation checks whether there is a corresponding module in the implementation language. If there is, that module is included in the implementation language. For example, when \code{Object} included \code{Kernel} in the target language, \code{ObjectInstance} includes \code{KernelModule} in the implementation language.
+For the example, \code{self} is an \code{Object}, but the method is in \code{Kernel}. The \code{primitive\_puts} method is actually defined the \code{Carat::Data::KernelModule} module. When a module inclusion happens in the target language, the implementation checks whether there is a corresponding module in the implementation language. If there is, that module is included in the implementation language. For example, when \code{Object} includes \code{Kernel} in the target language, \code{ObjectInstance} includes \code{KernelModule} in the implementation language.
 
-When \code{KernelModule\#primitive\_puts} is finally called, it converts the object given as an argument to a Ruby string, and uses Ruby's \code{Kernel.puts} method to output it.
+When \code{KernelModule\#primitive\_puts} is finally called, it converts the object given as an argument to a Ruby string and uses Ruby's \code{Kernel.puts} method to output it.

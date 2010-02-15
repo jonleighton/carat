@@ -11,15 +11,15 @@ module Carat
     def_delegators :stack, :current_scope, :current_call, :current_failure_continuation
     
     def initialize
-      # Constants are defined globally
-      @constants = {}
-      
-      # Keep track of which additional files have been accessed
-      @accessed_files = []
-      
       # When a new file is run it needs a new stack. But we need to be able to return to the 
       # previous file once that file has been run. So for that we need a stack of stacks.
       @stack_of_stacks = []
+      
+      # Constants are defined globally
+      @constants = {}
+      
+      # Keep track of which additional files have been loaded
+      @loaded_files = []
       
       # Load core classes
       KernelLoader.new(self).run
