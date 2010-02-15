@@ -44,15 +44,16 @@ class CSpecItem
   end
   
   def run
-    line = " - " + @expectation
+    puts " - " + @expectation
     
     begin
       @contents.call
     rescue ExpectationFailure => e
-      line << " (FAILED: " + e.to_s + ")"
+      puts
+      puts "FAILED: " + e.to_s
+      puts e.backtrace.join("\n")
+      puts
     end
-    
-    puts line
   end
 end
 
@@ -81,8 +82,24 @@ class Should
   end
 end
 
+class ShouldNot
+  def initialize(rejected)
+    @rejected = rejected
+  end
+  
+  def ==(actual)
+    if @rejected == actual
+      raise ExpectationFailure, actual.to_s + " not expected"
+    end
+  end
+end
+
 class Object
   def should
     Should.new(self)
+  end
+  
+  def should_not
+    ShouldNot.new(self)
   end
 end

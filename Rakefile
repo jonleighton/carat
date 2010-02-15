@@ -11,7 +11,7 @@ task :compile_kernel do
 end
 
 task :spec do
-  system "bin/cspec"
+  system "bin/cspec spec/all.carat"
 end
 
 task :test do

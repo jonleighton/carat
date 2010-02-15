@@ -22,6 +22,14 @@ describe "Fixnum" do
     52.inspect.should == "52"
     -52.inspect.should == "-52"
   end
+  
+  it "should add two numbers" do
+    (4 + 2).should == 6
+  end
+  
+  it "should subtract two numbers" do
+    (7 - 2).should == 5
+  end
 end
 
 describe "Fixnum#<=>" do

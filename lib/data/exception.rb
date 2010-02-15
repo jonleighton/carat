@@ -14,5 +14,10 @@ module Carat::Data
         "#{location} in #{enclosing_call}"
       end
     end
+    
+    def primitive_backtrace
+      backtrace = @backtrace.map { |line| constants[:String].new(line) }
+      yield constants[:Array].new(backtrace)
+    end
   end
 end

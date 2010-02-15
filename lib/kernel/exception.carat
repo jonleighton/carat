@@ -6,6 +6,10 @@ class Exception
   def to_s
     @message
   end
+  
+  def backtrace
+    Primitive.backtrace
+  end
 end
 
 class StandardError < Exception; end

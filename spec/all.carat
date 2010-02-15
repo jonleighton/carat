@@ -1,2 +1,3 @@
 require 'cspec'
 require 'fixnum_spec'
+require 'string_spec'

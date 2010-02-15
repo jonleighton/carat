@@ -10,7 +10,7 @@ class String
   def <<(other)
     Primitive.push(other)
   end
-
+  
   def to_s
     self
   end

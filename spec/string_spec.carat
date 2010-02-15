@@ -1,0 +1,46 @@
+require 'cspec'
+
+describe "String" do
+  it "should support concatenation to form a new string" do
+    a = "Bob"
+    b = "Dylan"
+    c = a + b
+    
+    aid = a.object_id
+    bid = b.object_id
+    cid = c.object_id
+    
+    c.should == "BobDylan"
+    cid.should_not == aid
+    cid.should_not == bid
+  end
+  
+  it "should support pushing a string onto the end of an existing string" do
+    a = "Bob"
+    aid = a.object_id
+    a << "Dylan"
+    
+    a.should == "BobDylan"
+    a.object_id.should == aid
+  end
+  
+  it "should return its literal representation with inspect" do
+    "Jokerman".inspect.should == '"Jokerman"'
+  end
+  
+  it "should return itself with to_s" do
+    a = "Hurricane"
+    b = a.to_s
+    
+    a.should == b
+    a.object_id.should == b.object_id
+  end
+  
+  it "should support equality between two non-identical strings with the same contents" do
+    a = "Willie McTell"
+    b = "Willie McTell"
+    
+    a.object_id.should_not == b.object_id
+    a.should == b
+  end
+end
