@@ -1,0 +1,7 @@
+require 'cspec'
+
+describe "FalseClass" do
+  it "should have a single instance" do
+    false.object_id.should == false.object_id
+  end
+end
