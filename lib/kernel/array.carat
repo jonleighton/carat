@@ -19,6 +19,22 @@ class Array
     Primitive.at(index)
   end
   
+  def ==(other)
+    if length != other.length
+      return false
+    end
+    
+    i = 0
+    while i != length
+      if self[i] != other[i]
+        return false
+      end
+      i += 1
+    end
+    
+    return true
+  end
+  
   def to_a
     self
   end

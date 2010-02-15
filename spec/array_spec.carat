@@ -1,0 +1,76 @@
+require 'cspec'
+
+describe "Array" do
+  it "should support initialisation through the literal syntax" do
+    a = [3, 2, 6]
+    a.should == [3, 2, 6]
+  end
+  
+  it "should support initialisation through Array.new" do
+    a = Array.new(4, 5)
+    a.should == [4, 5]
+  end
+  
+  it "should return individual elements when they are accessed" do
+    a = [6, 2, 3]
+    
+    a[0].should == 6
+    a[1].should == 2
+    a[2].should == 3
+  end
+  
+  it "should return nil for elements which don't exist" do
+    a = [4, 2]
+    a[2].should == nil
+  end
+  
+  it "should return its length" do
+    a = [2, 7, 5, 2]
+    a.length.should == 4
+  end
+  
+  it "should support pushing elements onto the end of an existing array" do
+    a = [2, 3]
+    a << 6
+    a.should == [2, 3, 6]
+  end
+  
+  it "should return itself with to_a" do
+    a = [4]
+    aid = a.object_id
+    
+    a.to_a.object_id.should == aid
+  end
+  
+  it "should return a string representing the array literally with inspect" do
+    a = [4, 2, 7]
+    a.inspect.should == "[4, 2, 7]"
+  end
+  
+  it "should return each element separated by a newline with to_s" do
+    a = [4, 2, 7]
+    a.to_s.should == "4\n2\n7"
+  end
+  
+  it "should support iterating over each element" do
+    a = [7, 2, 4]
+    b = ""
+    a.each do |item|
+      b << item.to_s
+    end
+    b.should == "724"
+  end
+  
+  it "should support mapping the array to a new array" do
+    a = [6, 2, 8]
+    b = a.map { |item| item + 1 }
+    b.should == [7, 3, 9]
+  end
+  
+  it "should support joining all the elements into a string with a given separator" do
+    a = [2, 7, 2, 2]
+    b = a.join(";")
+    
+    b.should == "2;7;2;2"
+  end
+end
