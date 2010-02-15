@@ -23,8 +23,8 @@ module Kernel
     Lambda.new(&block)
   end
   
-  def yield(*args)
-    Primitive.yield(*args)
+  def yield(*args, &block)
+    Primitive.yield(*args, &block)
   end
   
   def return(value)

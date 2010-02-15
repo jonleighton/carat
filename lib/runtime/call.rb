@@ -34,7 +34,8 @@ class Carat::Runtime
     # Location that the call was made
     attr_reader :location
     
-    attr_reader :arguments, :argument_objects, :block_from_arguments, :continuation
+    # The continuation of this call - i.e. the computation to be done afterwards
+    attr_reader :continuation
     
     extend Forwardable
     def_delegators :callable, :argument_pattern, :contents
@@ -65,6 +66,8 @@ class Carat::Runtime
     
     def apply_arguments(&continuation)
       eval_block_from_arguments do |block_from_arguments|
+        # If there are a block given by the arguments, then make that the current block. But don't
+        # change it to nil if there is already a value (perhaps from a parent scope).
         execution_scope.block = block_from_arguments unless block_from_arguments.nil?
         
         eval_arguments do |arguments|
@@ -78,12 +81,8 @@ class Carat::Runtime
     # array that does not need evaluating.
     def eval_argument_objects(&continuation)
       if argument_list.is_a?(Carat::AST::ArgumentList)
-        argument_list.eval_in_scope(caller_scope) do |argument_objects|
-          @argument_objects = argument_objects
-          yield @argument_objects
-        end
+        argument_list.eval_in_scope(caller_scope, &continuation)
       else
-        @argument_objects = argument_list
         yield argument_list
       end
     end
@@ -91,10 +90,7 @@ class Carat::Runtime
     # Return a hash where the argument names of this method are assigned the given values
     def eval_arguments(&continuation)
       eval_argument_objects do |argument_objects|
-        argument_pattern.match_to(argument_objects.clone, block) do |arguments|
-          @arguments = arguments
-          yield @arguments
-        end
+        argument_pattern.match_to(argument_objects.clone, block, &continuation)
       end
     end
     
@@ -106,10 +102,7 @@ class Carat::Runtime
     #      items.map(&block)
     def eval_block_from_arguments(&continuation)
       if argument_list.is_a?(Carat::AST::ArgumentList) && argument_list.block
-        argument_list.block.eval_in_scope(caller_scope) do |block_from_arguments|
-          @block_from_arguments = block_from_arguments
-          yield block_from_arguments
-        end
+        argument_list.block.eval_in_scope(caller_scope, &continuation)
       else
         yield nil
       end
@@ -120,15 +113,7 @@ class Carat::Runtime
     end
     
     def inspect
-      result = "Call[#{callable}"
-      if @argument_objects
-        result << ", " unless @argument_objects.empty?
-        result << @argument_objects.map(&:to_s).join(', ')
-      else
-        result << ", <unevaluated args>"
-      end
-      result << "]"
-      result
+      "Call[#{callable}]"
     end
   end
   

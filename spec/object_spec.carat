@@ -31,8 +31,12 @@ describe "An object (in general)" do
     @object.class.should == Object
   end
   
-  it "should return '<Object:[object id]>' with inspect" do
+  it "should return '<Object:[object id]>' for inspect" do
     @object.inspect.should == "<Object:" + @object.object_id.to_s + ">"
+  end
+  
+  it "should return the same as inspect for to_s" do
+    @object.to_s.should == @object.inspect
   end
   
   it "should return true for is_a?(Object)" do

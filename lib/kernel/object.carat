@@ -50,4 +50,8 @@ class Object
   def inspect
     "<" + self.class.to_s + ":" + object_id.to_s + ">"
   end
+  
+  def to_s
+    inspect
+  end
 end

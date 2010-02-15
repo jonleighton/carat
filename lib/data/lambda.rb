@@ -30,7 +30,9 @@ module Carat::Data
     ##### PRIMITIVES #####
     
     def primitive_call(*args, &continuation)
-      runtime.call(argument_pattern.location, self, evaluation_scope, args, &continuation)
+      scope = evaluation_scope
+      scope.block = current_call.block
+      runtime.call(argument_pattern.location, self, scope, args, &continuation)
     end
   end
 end

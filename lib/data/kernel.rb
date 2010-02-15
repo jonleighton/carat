@@ -19,7 +19,7 @@ module Carat::Data
       block = current_call.caller_scope.block
       
       if block
-        block.call(:call, args, &continuation)
+        block.primitive_call(*args, &continuation)
       else
         runtime.raise :ArgumentError, "no block given"
       end
