@@ -255,8 +255,8 @@ The most important four classes in the language are \code{Object}, \code{Module}
 
 \begin{enumerate}
   \item For \textit{all classes except \code{Object}}, the superclass of the singleton class is the singleton class of the superclass (as explained above)
-  \item \code{Object} does not have a superclass; the superclass of \code{Object}'s singleton class is \code{SingletonClass}
-  \item The class of \textit{any} singleton class is the singleton class of \code{SingletonClass}
+  \item \code{Object} does not have a superclass, but its singleton class must have one because otherwise the property that ``everything is an object" would be violated. Intuitively, the real class of any class must be \code{Class}, so this must be the superclass of \code{Object}'s singleton class.
+  \item The class of \textit{any} singleton class is \code{SingletonClass}.
 \end{enumerate}
 
 The core classes and their relationships are constructed by \code{KernelLoader}. They are shown in figure \ref{fig:core_relationships}.
@@ -274,36 +274,43 @@ The core classes and their relationships are constructed by \code{KernelLoader}.
 \matrix (matrix)
   [row sep=15mm]
   {
-    \node (nil) {nil};
+    &[5mm]
+    \node (nil) {\textbf{nil}};
     &[20mm]
     &[20mm]
     &[5mm] \\
     
+    &
     \node[class] (Object) {Object}; &
     \node[sclass] (Object') {Object'}; &
     \node[point] (p23) {}; &
     \node[point] (p24) {}; \\
     
+    &
     \node[class] (Module) {Module}; &
     \node[sclass] (Module') {Module'}; &
     \node[point] (p33) {}; &
     & \\
     
+    \node[point] (p40) {}; &
     \node[class] (Class) {Class}; &
     \node[sclass] (Class') {Class'}; &
     \node[point] (p43) {}; &
     & \\
     
+    &
     \node[class,multiline node] (SingletonClass) {Singleton\\Class}; &
     \node[sclass,multiline node] (SingletonClass') {Singleton\\Class'}; &
     \node[point] (p53) {}; &
     & \\[-10mm]
     
     &
+    \node[point] (p61) {}; &
     \node[point] (p62) {}; &
     \node[point] (p63) {}; &
     & \\[-10mm]
     
+    \node[point] (p70) {}; &
     \node[point] (p71) {}; &
     &
     &
@@ -315,7 +322,9 @@ The core classes and their relationships are constructed by \code{KernelLoader}.
 \draw (Class) -- node[right] {super} (Module);
 \draw (SingletonClass) -- node[right] {super} (Class);
 
-\draw (Object') -- ($(Object') + (0,10mm)$) -- node[above] {super} ($(p24) + (0,10mm)$) -- (p74) -- (p71) -- (SingletonClass);
+\draw (Object') -- ($(Object') + (0,10mm)$) -- node[above] {super} ($(p24) + (0,10mm)$) --
+      (p74) -- (p70) -- ($(p40) - (0,7.5mm)$) -- ($(Class) - (5mm,7.5mm)$) -- ($(Class.south) - (5mm,0)$);
+
 \draw (Module') -- node[right] {super} (Object');
 \draw (Class') -- node[right] {super} (Module');
 \draw (SingletonClass') -- node[right] {super} (Class');
@@ -325,7 +334,7 @@ The core classes and their relationships are constructed by \code{KernelLoader}.
 \draw (Class) -- node[above] {klass} (Class');
 \draw (SingletonClass) -- node[above] {klass} (SingletonClass');
 
-\draw (Object') -- node[above] {klass} (p23) -- (p63) -- (p62) -- (SingletonClass');
+\draw (Object') -- node[above] {klass} (p23) -- (p63) -- (p61) -- (SingletonClass);
 \draw (Module') -- node[above] {klass} (p33);
 \draw (Class') -- node[above] {klass} (p43);
 \draw (SingletonClass') -- node[above] {klass} (p53);
