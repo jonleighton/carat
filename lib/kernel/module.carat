@@ -1,8 +1,4 @@
 class Module
-  def include(mod)
-    Primitive.include(mod)
-  end
-  
   def name
     Primitive.name
   end

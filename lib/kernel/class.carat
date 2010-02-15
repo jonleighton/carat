@@ -7,6 +7,10 @@ class Class < Module
     Primitive.superclass
   end
   
+  def include(mod)
+    Primitive.include(mod)
+  end
+  
   def new(*args, &block)
     object = self.allocate
     object.initialize(*args, &block)

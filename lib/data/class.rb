@@ -6,16 +6,29 @@ module Carat::Data
   end
   
   class ClassInstance < ModuleInstance
+    attr_accessor :super
+    
     def initialize(runtime, klass, superclass, name = nil)
       @super = superclass
       super(runtime, klass, name || inferred_name)
     end
     
-    # The super may be an include class for a module, but we want the first ancestor which is a 
-    # "proper" class
+    def lookup_method(name)
+      method_table[name] || (@super && @super.lookup_method(name))
+    end
+    
+    def ancestors
+      if @super
+        [self] + @super.ancestors
+      else
+        [self]
+      end
+    end
+    
+    # The super may be an include class, so we want the first ancestor which is a "proper" class
     def superclass
       if @super.is_a?(IncludeClassInstance)
-        @super && @super.super
+        @super && @super.superclass
       else
         @super
       end
@@ -68,6 +81,11 @@ module Carat::Data
     
     def primitive_superclass
       yield superclass || runtime.nil
+    end
+    
+    def primitive_include(mod)
+      @super = IncludeClassInstance.new(runtime, mod, @super)
+      yield mod
     end
   end
 end

@@ -1,8 +1,6 @@
 require 'cspec'
 
 class ClassSpecA
-end
-class ClassSpecB < ClassSpecA
   def initialize(*args, &block)
     @args = args
     @block = block
@@ -17,17 +15,43 @@ class ClassSpecB < ClassSpecA
   end
 end
 
-describe "Class" do
-  it "should return the superclass" do
-    ClassSpecB.superclass.should == ClassSpecA
+class ClassSpecB < ClassSpecA
+end
+
+module ClassSpecC
+  def foo
+    24
+  end
+end
+
+class ClassSpecD
+  include ClassSpecC
+end
+
+describe "A class (in general)" do
+  it "should return Object as the superclass" do
+    ClassSpecA.superclass.should == Object
   end
   
   it "should pass the args and block to the initialize method when a new instance is created" do
     args = [3, 6, 2]
     block = lambda { zzz }
-    object = ClassSpecB.new(*args, &block)
+    object = ClassSpecA.new(*args, &block)
     
     object.args.should == args
     object.block.should == block
+    object.class.should == ClassSpecA
+  end
+end
+
+describe "A class which subclasses another class" do
+  it "should return its superclass" do
+    ClassSpecB.superclass.should == ClassSpecA
+  end
+end
+
+describe "An instance of a class which includes a module" do
+  it "should respond to the module's methods" do
+    ClassSpecD.new.foo.should == 24
   end
 end

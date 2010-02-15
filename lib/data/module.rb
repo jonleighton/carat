@@ -7,7 +7,6 @@ module Carat::Data
   
   class ModuleInstance < ObjectInstance
     attr_reader   :name, :method_table
-    attr_accessor :super
     
     def initialize(runtime, klass, name = nil)
       @name         = name
@@ -19,24 +18,12 @@ module Carat::Data
       create_singleton_class unless include_class? || singleton?
     end
     
-    def lookup_method(name)
-      method_table[name] || (@super && @super.lookup_method(name))
-    end
-    
     def singleton?
       instance_of?(SingletonClassInstance)
     end
     
     def include_class?
       instance_of?(IncludeClassInstance)
-    end
-    
-    def ancestors
-      if self.super
-        [self] + self.super.ancestors
-      else
-        [self]
-      end
     end
     
     def to_s
@@ -67,11 +54,6 @@ module Carat::Data
     public
     
     # ***** Primitives ***** #
-    
-    def primitive_include(mod)
-      @super = IncludeClassInstance.new(runtime, mod, @super)
-      yield mod
-    end
     
     def primitive_name
       yield constants[:String].new(name)
