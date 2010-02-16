@@ -1,4 +1,6 @@
 require 'cspec'
+
+# Objects
 require 'fixnum_spec'
 require 'string_spec'
 require 'array_spec'
@@ -12,3 +14,6 @@ require 'lambda_spec'
 require 'kernel_spec'
 require 'comparable_spec'
 require 'exception_spec'
+
+# Syntax
+require 'if_expression_spec'

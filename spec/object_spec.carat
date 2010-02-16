@@ -10,7 +10,7 @@ describe "Object" do
   end
 end
 
-describe "An object (in general)" do
+describe "An instance of Object" do
   before do
     @object = Object.new
   end
@@ -73,5 +73,30 @@ describe "An instance of a subclass" do
   
   it "should return true for is_a?(Object)" do
     @object.is_a?(Object).should == true
+  end
+end
+
+class ObjectSpecC
+  def a
+    @flip = "flop"
+  end
+  
+  def b
+    @flip
+  end
+end
+
+describe "An instance of a class" do
+  before do
+    @object = ObjectSpecC.new
+  end
+  
+  it "should return nil as the value of an uninitialised instance variable" do
+    @object.b.should == nil
+  end
+  
+  it "should allow an instance variable to be set and then retrieved" do
+    @object.a
+    @object.b.should == "flop"
   end
 end

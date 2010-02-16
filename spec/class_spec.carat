@@ -13,19 +13,10 @@ class ClassSpecA
   def block
     @block
   end
-end
-
-class ClassSpecB < ClassSpecA
-end
-
-module ClassSpecC
-  def foo
-    24
+  
+  def self.quack
+    "QUACK!"
   end
-end
-
-class ClassSpecD
-  include ClassSpecC
 end
 
 describe "Class" do
@@ -52,6 +43,13 @@ describe "A class (in general)" do
     object.block.should == block
     object.class.should == ClassSpecA
   end
+  
+  it "should respond to singleton methods" do
+    ClassSpecA.quack.should == "QUACK!"
+  end
+end
+
+class ClassSpecB < ClassSpecA
 end
 
 describe "A class which subclasses another class" do
@@ -60,8 +58,42 @@ describe "A class which subclasses another class" do
   end
 end
 
+module ClassSpecC
+  def foo
+    24
+  end
+end
+
+class ClassSpecD
+  include ClassSpecC
+end
+
 describe "An instance of a class which includes a module" do
   it "should respond to the module's methods" do
     ClassSpecD.new.foo.should == 24
+  end
+end
+
+class ClassSpecE
+  def a
+    1
+  end
+  
+  def b
+    2
+  end
+end
+
+class ClassSpecE
+  def a
+    3
+  end
+end
+
+describe "A class which has been re-opened" do
+  it "should not lose the methods defined in its original definition unless they are redefined" do
+    object = ClassSpecE.new
+    object.a.should == 3
+    object.b.should == 2  
   end
 end

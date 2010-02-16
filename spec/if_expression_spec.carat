@@ -1,0 +1,65 @@
+require 'cspec'
+
+describe "An if expression" do
+  it "should run the first branch and not the second branch if the condition is true" do
+    if true
+      a = "PASS"
+    else
+      flunk
+    end
+    a.should == "PASS"
+    
+    if true
+      b = "PASS"
+    end
+    b.should == "PASS"
+  end
+  
+  it "should run the second branch and not the first branch if the condition is false" do
+    if false
+      flunk
+    else
+      a = "PASS"
+    end
+    a.should == "PASS"
+    
+    if false
+      flunk
+    end
+  end
+  
+  it "run an elsif branch if the first condition is false but the elseif condition is true" do
+    if false
+      flunk
+    elsif true
+      a = "PASS"
+    else
+      flunk
+    end
+    a.should == "PASS"
+    
+    if false
+      flunk
+    elsif true
+      b = "PASS"
+    end
+    b.should == "PASS"
+  end
+  
+  it "should not run an elsif branch if that condition is also false" do
+    if false
+      flunk
+    elsif false
+      flunk
+    else
+      a = "PASS"
+    end
+    a.should == "PASS"
+    
+    if false
+      flunk
+    elsif false
+      flunk
+    end
+  end
+end

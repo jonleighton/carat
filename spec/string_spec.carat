@@ -1,6 +1,12 @@
 require 'cspec'
 
-describe "String" do
+describe "String#new" do
+  it "should return an empty string" do
+    String.new.should == ""
+  end
+end
+
+describe "A string" do
   it "should support concatenation to form a new string" do
     a = "Bob"
     b = "Dylan"
