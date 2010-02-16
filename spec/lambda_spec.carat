@@ -23,4 +23,22 @@ describe "A lambda" do
     a = 3
     lambda { a + 7 }.call.should == 10
   end
+  
+  it "should be created by Lambda.new or Kernel#lambda" do
+    lambda { 3 }.call.should == 3
+    Lambda.new { 3 }.call.should == 3
+  end
+  
+  it "should take an argument list and a block when called" do
+    args = [5, 2]
+    block = lambda { zzz }
+    
+    args2 = nil
+    block2 = nil
+    
+    lambda { |*args2, &block2| }.call(*args, &block)
+    
+    args2.should == args
+    block2.should == block
+  end
 end
