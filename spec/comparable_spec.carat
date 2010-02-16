@@ -1,0 +1,27 @@
+require 'cspec'
+
+describe "Comparable" do
+  it "should support less than" do
+    (1 < 2).should == true
+    (2 < 1).should == false
+    (1 < 1).should == false
+  end
+  
+  it "should support greater than" do
+    (2 > 1).should == true
+    (1 > 2).should == false
+    (1 > 1).should == false
+  end
+  
+  it "should support less than or equal to" do
+    (1 <= 2).should == true
+    (2 <= 1).should == false
+    (1 <= 1).should == true
+  end
+  
+  it "should support greater than or equal to" do
+    (2 >= 1).should == true
+    (1 >= 2).should == false
+    (1 >= 1).should == true
+  end
+end
