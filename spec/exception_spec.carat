@@ -1,0 +1,41 @@
+require 'cspec'
+
+describe "An exception with no message specified" do
+  before do
+    @exception = Exception.new
+  end
+  
+  it "should return '(no message)' from to_s" do
+    @exception.to_s.should == "(no message)"
+  end
+end
+
+describe "StandardError" do
+  it "should subclass Exception" do
+    StandardError.superclass.should == Exception
+  end
+end
+
+describe "NameError" do
+  it "should subclass StandardError" do
+    NameError.superclass.should == StandardError
+  end
+end
+
+describe "NoMethodError" do
+  it "should subclass NameError" do
+    NoMethodError.superclass.should == NameError
+  end
+end
+
+describe "ArgumentError" do
+  it "should subclass StandardError" do
+    ArgumentError.superclass.should == StandardError
+  end
+end
+
+describe "RuntimeError" do
+  it "should subclass StandardError" do
+    RuntimeError.superclass.should == StandardError
+  end
+end
