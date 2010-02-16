@@ -113,7 +113,7 @@ class Carat::Runtime
     end
     
     def inspect
-      "Call[#{callable}]"
+      "Call[#{callable}, #{location}]"
     end
   end
   

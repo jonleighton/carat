@@ -96,9 +96,9 @@ module Carat
     end
     
     # Raises an exception in the object language
-    def raise(exception_name, message)
+    def raise(exception_name, message, location = current_location)
       constants[exception_name].call(:new, [message]) do |exception|
-        exception.generate_backtrace(current_location)
+        exception.generate_backtrace(location)
         stack.unwind_to(:failure_continuation)
         current_failure_continuation.call(exception)
       end

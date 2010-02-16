@@ -235,36 +235,48 @@ module Carat
       end
 
       i0, s0 = index, []
-      r1 = _nt_variable
+      i1 = index
+      r2 = _nt_method_call_chain
+      if r2
+        r1 = r2
+      else
+        r3 = _nt_variable
+        if r3
+          r1 = r3
+        else
+          @index = i1
+          r1 = nil
+        end
+      end
       s0 << r1
       if r1
-        r3 = _nt_space
-        if r3
-          r2 = r3
+        r5 = _nt_space
+        if r5
+          r4 = r5
         else
-          r2 = instantiate_node(SyntaxNode,input, index...index)
+          r4 = instantiate_node(SyntaxNode,input, index...index)
         end
-        s0 << r2
-        if r2
+        s0 << r4
+        if r4
           if has_terminal?('=', false, index)
-            r4 = instantiate_node(SyntaxNode,input, index...(index + 1))
+            r6 = instantiate_node(SyntaxNode,input, index...(index + 1))
             @index += 1
           else
             terminal_parse_failure('=')
-            r4 = nil
+            r6 = nil
           end
-          s0 << r4
-          if r4
-            r6 = _nt_multiline_space
-            if r6
-              r5 = r6
+          s0 << r6
+          if r6
+            r8 = _nt_multiline_space
+            if r8
+              r7 = r8
             else
-              r5 = instantiate_node(SyntaxNode,input, index...index)
+              r7 = instantiate_node(SyntaxNode,input, index...index)
             end
-            s0 << r5
-            if r5
-              r7 = _nt_assignment_expression
-              s0 << r7
+            s0 << r7
+            if r7
+              r9 = _nt_assignment_expression
+              s0 << r9
             end
           end
         end
@@ -305,107 +317,119 @@ module Carat
       end
 
       i0, s0 = index, []
-      r1 = _nt_variable
+      i1 = index
+      r2 = _nt_method_call_chain
+      if r2
+        r1 = r2
+      else
+        r3 = _nt_variable
+        if r3
+          r1 = r3
+        else
+          @index = i1
+          r1 = nil
+        end
+      end
       s0 << r1
       if r1
-        r3 = _nt_space
-        if r3
-          r2 = r3
+        r5 = _nt_space
+        if r5
+          r4 = r5
         else
-          r2 = instantiate_node(SyntaxNode,input, index...index)
+          r4 = instantiate_node(SyntaxNode,input, index...index)
         end
-        s0 << r2
-        if r2
-          i4 = index
+        s0 << r4
+        if r4
+          i6 = index
           if has_terminal?('<<', false, index)
-            r5 = instantiate_node(SyntaxNode,input, index...(index + 2))
+            r7 = instantiate_node(SyntaxNode,input, index...(index + 2))
             @index += 2
           else
             terminal_parse_failure('<<')
-            r5 = nil
+            r7 = nil
           end
-          if r5
-            r4 = r5
+          if r7
+            r6 = r7
           else
             if has_terminal?('>>', false, index)
-              r6 = instantiate_node(SyntaxNode,input, index...(index + 2))
+              r8 = instantiate_node(SyntaxNode,input, index...(index + 2))
               @index += 2
             else
               terminal_parse_failure('>>')
-              r6 = nil
+              r8 = nil
             end
-            if r6
-              r4 = r6
+            if r8
+              r6 = r8
             else
               if has_terminal?('+', false, index)
-                r7 = instantiate_node(SyntaxNode,input, index...(index + 1))
+                r9 = instantiate_node(SyntaxNode,input, index...(index + 1))
                 @index += 1
               else
                 terminal_parse_failure('+')
-                r7 = nil
+                r9 = nil
               end
-              if r7
-                r4 = r7
+              if r9
+                r6 = r9
               else
                 if has_terminal?('-', false, index)
-                  r8 = instantiate_node(SyntaxNode,input, index...(index + 1))
+                  r10 = instantiate_node(SyntaxNode,input, index...(index + 1))
                   @index += 1
                 else
                   terminal_parse_failure('-')
-                  r8 = nil
+                  r10 = nil
                 end
-                if r8
-                  r4 = r8
+                if r10
+                  r6 = r10
                 else
                   if has_terminal?('*', false, index)
-                    r9 = instantiate_node(SyntaxNode,input, index...(index + 1))
+                    r11 = instantiate_node(SyntaxNode,input, index...(index + 1))
                     @index += 1
                   else
                     terminal_parse_failure('*')
-                    r9 = nil
+                    r11 = nil
                   end
-                  if r9
-                    r4 = r9
+                  if r11
+                    r6 = r11
                   else
                     if has_terminal?('/', false, index)
-                      r10 = instantiate_node(SyntaxNode,input, index...(index + 1))
+                      r12 = instantiate_node(SyntaxNode,input, index...(index + 1))
                       @index += 1
                     else
                       terminal_parse_failure('/')
-                      r10 = nil
+                      r12 = nil
                     end
-                    if r10
-                      r4 = r10
+                    if r12
+                      r6 = r12
                     else
-                      @index = i4
-                      r4 = nil
+                      @index = i6
+                      r6 = nil
                     end
                   end
                 end
               end
             end
           end
-          s0 << r4
-          if r4
+          s0 << r6
+          if r6
             if has_terminal?('=', false, index)
-              r11 = instantiate_node(SyntaxNode,input, index...(index + 1))
+              r13 = instantiate_node(SyntaxNode,input, index...(index + 1))
               @index += 1
             else
               terminal_parse_failure('=')
-              r11 = nil
+              r13 = nil
             end
-            s0 << r11
-            if r11
-              r13 = _nt_multiline_space
-              if r13
-                r12 = r13
+            s0 << r13
+            if r13
+              r15 = _nt_multiline_space
+              if r15
+                r14 = r15
               else
-                r12 = instantiate_node(SyntaxNode,input, index...index)
+                r14 = instantiate_node(SyntaxNode,input, index...index)
               end
-              s0 << r12
-              if r12
-                r14 = _nt_assignment_expression
-                s0 << r14
+              s0 << r14
+              if r14
+                r16 = _nt_assignment_expression
+                s0 << r16
               end
             end
           end
@@ -447,63 +471,75 @@ module Carat
       end
 
       i0, s0 = index, []
-      r1 = _nt_variable
+      i1 = index
+      r2 = _nt_method_call_chain
+      if r2
+        r1 = r2
+      else
+        r3 = _nt_variable
+        if r3
+          r1 = r3
+        else
+          @index = i1
+          r1 = nil
+        end
+      end
       s0 << r1
       if r1
-        r3 = _nt_space
-        if r3
-          r2 = r3
+        r5 = _nt_space
+        if r5
+          r4 = r5
         else
-          r2 = instantiate_node(SyntaxNode,input, index...index)
+          r4 = instantiate_node(SyntaxNode,input, index...index)
         end
-        s0 << r2
-        if r2
-          i4 = index
+        s0 << r4
+        if r4
+          i6 = index
           if has_terminal?('||', false, index)
-            r5 = instantiate_node(SyntaxNode,input, index...(index + 2))
+            r7 = instantiate_node(SyntaxNode,input, index...(index + 2))
             @index += 2
           else
             terminal_parse_failure('||')
-            r5 = nil
+            r7 = nil
           end
-          if r5
-            r4 = r5
+          if r7
+            r6 = r7
           else
             if has_terminal?('&&', false, index)
-              r6 = instantiate_node(SyntaxNode,input, index...(index + 2))
+              r8 = instantiate_node(SyntaxNode,input, index...(index + 2))
               @index += 2
             else
               terminal_parse_failure('&&')
+              r8 = nil
+            end
+            if r8
+              r6 = r8
+            else
+              @index = i6
               r6 = nil
             end
-            if r6
-              r4 = r6
-            else
-              @index = i4
-              r4 = nil
-            end
           end
-          s0 << r4
-          if r4
+          s0 << r6
+          if r6
             if has_terminal?('=', false, index)
-              r7 = instantiate_node(SyntaxNode,input, index...(index + 1))
+              r9 = instantiate_node(SyntaxNode,input, index...(index + 1))
               @index += 1
             else
               terminal_parse_failure('=')
-              r7 = nil
+              r9 = nil
             end
-            s0 << r7
-            if r7
-              r9 = _nt_multiline_space
-              if r9
-                r8 = r9
+            s0 << r9
+            if r9
+              r11 = _nt_multiline_space
+              if r11
+                r10 = r11
               else
-                r8 = instantiate_node(SyntaxNode,input, index...index)
+                r10 = instantiate_node(SyntaxNode,input, index...index)
               end
-              s0 << r8
-              if r8
-                r10 = _nt_assignment_expression
-                s0 << r10
+              s0 << r10
+              if r10
+                r12 = _nt_assignment_expression
+                s0 << r12
               end
             end
           end
@@ -4147,6 +4183,13 @@ module Carat
       r0
     end
 
+    module LocalVariableOrMethodCall0
+      def local_identifier
+        elements[0]
+      end
+
+    end
+
     def _nt_local_variable_or_method_call
       start_index = index
       if node_cache[:local_variable_or_method_call].has_key?(index)
@@ -4155,12 +4198,37 @@ module Carat
         return cached
       end
 
-      r0 = _nt_local_identifier
-      r0.extend(LocalVariableOrMethodCall)
+      i0, s0 = index, []
+      r1 = _nt_local_identifier
+      s0 << r1
+      if r1
+        if has_terminal?('', false, index)
+          r2 = instantiate_node(SyntaxNode,input, index...(index + 0))
+          @index += 0
+        else
+          terminal_parse_failure('')
+          r2 = nil
+        end
+        s0 << r2
+      end
+      if s0.last
+        r0 = instantiate_node(LocalVariableOrMethodCall,input, i0...index, s0)
+        r0.extend(LocalVariableOrMethodCall0)
+      else
+        @index = i0
+        r0 = nil
+      end
 
       node_cache[:local_variable_or_method_call][start_index] = r0
 
       r0
+    end
+
+    module LocalVariable0
+      def local_identifier
+        elements[0]
+      end
+
     end
 
     def _nt_local_variable
@@ -4171,8 +4239,26 @@ module Carat
         return cached
       end
 
-      r0 = _nt_local_identifier
-      r0.extend(LocalVariable)
+      i0, s0 = index, []
+      r1 = _nt_local_identifier
+      s0 << r1
+      if r1
+        if has_terminal?('', false, index)
+          r2 = instantiate_node(SyntaxNode,input, index...(index + 0))
+          @index += 0
+        else
+          terminal_parse_failure('')
+          r2 = nil
+        end
+        s0 << r2
+      end
+      if s0.last
+        r0 = instantiate_node(LocalVariable,input, i0...index, s0)
+        r0.extend(LocalVariable0)
+      else
+        @index = i0
+        r0 = nil
+      end
 
       node_cache[:local_variable][start_index] = r0
 
@@ -4389,9 +4475,6 @@ module Carat
     module BasicMethodName0
     end
 
-    module BasicMethodName1
-    end
-
     def _nt_basic_method_name
       start_index = index
       if node_cache[:basic_method_name].has_key?(index)
@@ -4447,46 +4530,11 @@ module Carat
             if r7
               r5 = r7
             else
-              i8, s8 = index, []
-              r10 = _nt_space
-              if r10
-                r9 = r10
+              if has_terminal?('=', false, index)
+                r8 = instantiate_node(SyntaxNode,input, index...(index + 1))
+                @index += 1
               else
-                r9 = instantiate_node(SyntaxNode,input, index...index)
-              end
-              s8 << r9
-              if r9
-                if has_terminal?('=', false, index)
-                  r11 = instantiate_node(SyntaxNode,input, index...(index + 1))
-                  @index += 1
-                else
-                  terminal_parse_failure('=')
-                  r11 = nil
-                end
-                s8 << r11
-                if r11
-                  i12 = index
-                  if has_terminal?('=', false, index)
-                    r13 = instantiate_node(SyntaxNode,input, index...(index + 1))
-                    @index += 1
-                  else
-                    terminal_parse_failure('=')
-                    r13 = nil
-                  end
-                  if r13
-                    r12 = nil
-                  else
-                    @index = i12
-                    r12 = instantiate_node(SyntaxNode,input, index...index)
-                  end
-                  s8 << r12
-                end
-              end
-              if s8.last
-                r8 = instantiate_node(SyntaxNode,input, i8...index, s8)
-                r8.extend(BasicMethodName0)
-              else
-                @index = i8
+                terminal_parse_failure('=')
                 r8 = nil
               end
               if r8
@@ -4507,7 +4555,7 @@ module Carat
       end
       if s0.last
         r0 = instantiate_node(SyntaxNode,input, i0...index, s0)
-        r0.extend(BasicMethodName1)
+        r0.extend(BasicMethodName0)
       else
         @index = i0
         r0 = nil

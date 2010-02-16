@@ -24,19 +24,19 @@ module Carat
     end
     
     rule simple_assignment
-      receiver:variable space?
+      receiver:(method_call_chain / variable) space?
       '=' multiline_space?
       value:assignment_expression <Assignment>
     end
     
     rule binary_method_assignment
-      receiver:variable space?
+      receiver:(method_call_chain / variable) space?
       name:('<<' / '>>' / '+' / '-' / '*' / '/') '=' multiline_space?
       value:assignment_expression <BinaryMethodAssignment>
     end
     
     rule binary_operation_assignment
-      receiver:variable space?
+      receiver:(method_call_chain / variable) space?
       name:('||' / '&&') '=' multiline_space?
       value:assignment_expression <BinaryOperationAssignment>
     end
@@ -332,12 +332,12 @@ module Carat
     # This is the same as local_variable except that it may also be a method call with an implicit
     # receiver, no parentheses and no arguments. This ambiguity has to be resolved at runtime.
     rule local_variable_or_method_call
-      local_identifier <LocalVariableOrMethodCall>
+      local_identifier '' <LocalVariableOrMethodCall>
     end
     
     # A local variable when we know it is definitely a variable (not a method)
     rule local_variable
-      local_identifier <LocalVariable>
+      local_identifier '' <LocalVariable>
     end
     
     rule instance_variable
@@ -357,7 +357,7 @@ module Carat
     
     # Keywords are allowed
     rule basic_method_name
-      [a-zA-Z_] [a-zA-Z0-9_]* ('?' / '!' / space? '=' !'=')?
+      [a-zA-Z_] [a-zA-Z0-9_]* ('?' / '!' / '=')?
     end
     
     # Match in order of number of characters so we don't get conflict, e.g. if '<' is tested before

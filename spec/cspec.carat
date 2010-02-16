@@ -3,6 +3,22 @@ module CSpec
     @sets ||= []
   end
   
+  def self.example_count
+    @example_count ||= 0
+  end
+  
+  def self.example_count=(x)
+    @example_count = x
+  end
+  
+  def self.assertion_count
+    @assertion_count ||= 0
+  end
+  
+  def self.assertion_count=(x)
+    @assertion_count = x
+  end
+  
   def self.describe(name, &block)
     @current_set = CSpecSet.new(name)
     self.sets << @current_set
@@ -22,6 +38,8 @@ module CSpec
       set.run
       puts
     end
+    puts example_count.to_s + " examples, " +
+         assertion_count.to_s + " assertions"
   end
 end
 
@@ -55,6 +73,7 @@ class CSpecItem
   def initialize(expectation, &contents)
     @expectation = expectation
     @contents    = contents
+    CSpec.example_count += 1
   end
   
   def run
@@ -91,6 +110,7 @@ end
 class Should
   def initialize(receiver)
     @receiver = receiver
+    CSpec.assertion_count += 1
   end
 
   def ==(expected)
@@ -118,6 +138,7 @@ end
 class ShouldNot
   def initialize(receiver)
     @receiver = receiver
+    CSpec.assertion_count += 1
   end
   
   def ==(unexpected)

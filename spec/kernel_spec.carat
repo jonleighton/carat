@@ -1,5 +1,8 @@
 require 'cspec'
 
+# Unfortunately it's not possible to spec Kernel#puts and Kernel#p without adding more functionality
+# to deal with I/O, which is undesirable as it will bloat the code base.
+
 class KernelSpecA < Exception
 end
 
@@ -43,5 +46,15 @@ describe "Kernel#yield" do
     
     args2.should == args
     block2.should == block
+  end
+end
+
+describe "Kernel#return" do
+  it "should halt the execution of the current call and return the value" do
+    lambda do
+      a = 5
+      return a
+      a = 9
+    end.call.should == 5
   end
 end
