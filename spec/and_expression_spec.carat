@@ -1,0 +1,19 @@
+require 'cspec'
+
+describe "An '&&' expression" do
+  it "should be true if the left and right are true" do
+    (true && true).should == true
+  end
+  
+  it "should be false if either the left or the right or both is false" do
+    (false && false).should == false
+    (false && true).should == false
+    (true && false).should == false
+  end
+  
+  it "should short-circuit if the left is false" do
+    a = nil
+    false && a = 1
+    a.should == nil
+  end
+end

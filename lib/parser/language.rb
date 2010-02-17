@@ -275,7 +275,7 @@ module Carat
             end
             s0 << r7
             if r7
-              r9 = _nt_assignment_expression
+              r9 = _nt_expression
               s0 << r9
             end
           end
@@ -428,7 +428,7 @@ module Carat
               end
               s0 << r14
               if r14
-                r16 = _nt_assignment_expression
+                r16 = _nt_expression
                 s0 << r16
               end
             end
@@ -538,7 +538,7 @@ module Carat
               end
               s0 << r10
               if r10
-                r12 = _nt_assignment_expression
+                r12 = _nt_expression
                 s0 << r12
               end
             end
@@ -610,7 +610,7 @@ module Carat
             end
             s1 << r6
             if r6
-              r8 = _nt_or_expression
+              r8 = _nt_expression
               s1 << r8
             end
           end
@@ -692,7 +692,7 @@ module Carat
             end
             s1 << r6
             if r6
-              r8 = _nt_and_expression
+              r8 = _nt_expression
               s1 << r8
             end
           end
@@ -1303,7 +1303,7 @@ module Carat
         end
         s1 << r3
         if r3
-          r5 = _nt_unary_not_expression
+          r5 = _nt_expression
           s1 << r5
         end
       end
