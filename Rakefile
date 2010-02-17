@@ -14,11 +14,7 @@ task :spec do
   system "bin/cspec spec/all.carat"
 end
 
-task :test do
-  system "ruby test/carat_test.rb"
-end
-
-task :default => :test
+task :default => :spec
 
 task :sloccount do
   files = Rake::FileList['lib/**/*.rb', 'lib/**/*.treetop'].
