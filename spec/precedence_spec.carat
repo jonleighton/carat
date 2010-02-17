@@ -42,6 +42,11 @@ class PrecedenceA
     @last = "++"
     self
   end
+  
+  def *(x)
+    @last = '*'
+    self
+  end
 end
 
 describe "Precedence" do
@@ -81,8 +86,12 @@ describe "Precedence" do
     (@test + 1 << 1).last.should == '<<'
   end
   
-  it "'!!' should bind tighter than '+'" do
-    (!@test + 1).last.should == '+'
+  it "'*' should bind tighter than '+'" do
+    (@test * 1 + 1).last.should == '+'
+  end
+  
+  it "'!!' should bind tighter than '*'" do
+    (!@test * 1).last.should == '*'
   end
   
   it "'.' should bind tighter than '!!'" do
