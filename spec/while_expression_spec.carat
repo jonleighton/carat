@@ -1,0 +1,11 @@
+require 'cspec'
+
+describe "A while expression" do
+  it "should repeatedly run its contents until the condition becomes false" do
+    i = 0
+    while i < 5
+      i += 1
+    end
+    i.should == 5
+  end
+end

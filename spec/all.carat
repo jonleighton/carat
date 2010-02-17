@@ -17,6 +17,7 @@ require 'exception_spec'
 
 # Syntax
 require 'if_expression_spec'
+require 'while_expression_spec'
 require 'and_expression_spec'
 require 'or_expression_spec'
 require 'precedence_spec'
