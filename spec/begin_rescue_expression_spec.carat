@@ -1,0 +1,59 @@
+require 'cspec'
+
+class BeginRescueExpressionSpecA < RuntimeError
+end
+
+describe "A begin ... rescue ... end expression" do
+  it "should not run the rescue block if no exception is raised" do
+    begin
+      a = 1
+    rescue
+      a = 2
+    end
+    
+    a.should == 1
+  end
+  
+  it "should run the rescue block if an exception is raised" do
+    begin
+      a = 1
+      raise
+    rescue
+      a = 2
+    end
+    
+    a.should == 2
+  end
+  
+  it "should only rescue from exceptions which match the type given, if one is given" do
+    begin
+      a = 1
+      raise BeginRescueExpressionSpecA
+    rescue BeginRescueExpressionSpecA
+      a = 2
+    end
+    
+    a.should == 2
+    
+    begin
+      begin
+        a = 1
+        raise RuntimeError
+      rescue BeginRescueExpressionSpecA
+        a = 2
+      end
+    rescue
+    end
+    
+    a.should == 1
+  end
+  
+  it "should assign the exception raised to a variable, if one is given" do
+    begin
+      raise "test"
+    rescue RuntimeError => e
+    end
+    e.class.should == RuntimeError
+    e.to_s.should == "test"
+  end
+end
