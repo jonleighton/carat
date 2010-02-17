@@ -1,13 +1,95 @@
 require 'cspec'
 
-describe "Precedence examples" do
-  it "'1 < 2 && 3 > 2' = '(1 < 2) && (3 > 2)'" do
-    (1 < 2 && 3 > 2).should == ((1 < 2) && (3 > 2))
+# The idea of this is that it allows us to check which was the last method called on the object
+# (stored in the @last) variable. So we can chain operators together without parentheses and check
+# the precedence.
+class PrecedenceA
+  def last
+    @last
+  end
+
+  def +(x)
+    @last = '+'
+    self
+  end
+
+  def <<(x)
+    @last = '<<'
+    self
   end
   
-  it "'true && a = 1' = '(true) && (a = 1)'" do
-    (true && a = 1).should == ((true) && (a = 1))
+  def <(x)
+    @last = '<'
+    self
   end
   
+  def ==(x)
+    @last = '=='
+    self
+  end
   
+  def !!
+    @last = '!!'
+    self
+  end
+  
+  def foo
+    @last = "foo"
+    self
+  end
+  
+  def ++
+    @last = "++"
+    self
+  end
+end
+
+describe "Precedence" do
+  before do
+    @test = PrecedenceA.new
+  end
+
+  it "'||' should bind tighter than '='" do
+    a = true || false
+    a.should == true
+  end
+  
+  it "'&&' should bind tighter than '||'" do
+    order = []
+    (order << 1) && (order << 2) || (order << 3) && (order << 4)
+    
+    # The || short-circuits after the && is evaluated. If || bound tighter, order would be
+    # [1, 2, 4] instead.
+    order.should == [1, 2]
+  end
+  
+  it "'==' should bind tighter than '&&'" do
+    # The && short-circuits because 1 == 2 is false. If && bound tighter, it would be true because
+    # (2 && 1) is equal to 1.
+    (1 == 2 && 1).should == false
+  end
+  
+  it "'<' should bind tighter than '=='" do
+    (@test < 1 == 1).last.should == '=='
+  end
+  
+  it "'<<' should bind tighter than '<'" do
+    (@test << 1 < 1).last.should == '<'
+  end
+  
+  it "'+' should bind tighter than '<<'" do
+    (@test + 1 << 1).last.should == '<<'
+  end
+  
+  it "'!!' should bind tighter than '+'" do
+    (!@test + 1).last.should == '+'
+  end
+  
+  it "'.' should bind tighter than '!!'" do
+    (!@test.foo).last.should == '!!'
+  end
+  
+  it "'++' should bind tighter than '.'" do
+    (+@test.foo).last.should == 'foo'
+  end
 end

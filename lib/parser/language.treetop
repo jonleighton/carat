@@ -90,7 +90,7 @@ module Carat
     end
     
     rule unary_not_expression
-      name:'!' multiline_space? receiver:expression <UnaryMethodCall> /
+      name:'!' multiline_space? receiver:unary_not_expression <UnaryMethodCall> /
       method_call_expression
     end
     

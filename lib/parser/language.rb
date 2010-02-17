@@ -1141,7 +1141,7 @@ module Carat
         end
         s1 << r3
         if r3
-          r5 = _nt_expression
+          r5 = _nt_unary_not_expression
           s1 << r5
         end
       end
