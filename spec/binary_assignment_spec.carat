@@ -1,0 +1,33 @@
+require 'cspec'
+
+describe "Binary assignment" do
+  it "should support <<=" do
+    a = "foo"
+    a <<= "bar"
+    a.should == "foobar"
+  end
+  
+  it "should support +=" do
+    a = "foo"
+    a += "bar"
+    a.should == "foobar"
+  end
+  
+  it "should support -=" do
+    a = 5
+    a -= 2
+    a.should == 3
+  end
+  
+  it "should support &&=" do
+    a = true
+    a &&= false
+    a.should == false
+  end
+  
+  it "should support ||=" do
+    a = false
+    a ||= true
+    a.should == true
+  end
+end

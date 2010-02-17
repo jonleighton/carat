@@ -351,85 +351,52 @@ module Carat
           if r7
             r6 = r7
           else
-            if has_terminal?('>>', false, index)
-              r8 = instantiate_node(SyntaxNode,input, index...(index + 2))
-              @index += 2
+            if has_terminal?('+', false, index)
+              r8 = instantiate_node(SyntaxNode,input, index...(index + 1))
+              @index += 1
             else
-              terminal_parse_failure('>>')
+              terminal_parse_failure('+')
               r8 = nil
             end
             if r8
               r6 = r8
             else
-              if has_terminal?('+', false, index)
+              if has_terminal?('-', false, index)
                 r9 = instantiate_node(SyntaxNode,input, index...(index + 1))
                 @index += 1
               else
-                terminal_parse_failure('+')
+                terminal_parse_failure('-')
                 r9 = nil
               end
               if r9
                 r6 = r9
               else
-                if has_terminal?('-', false, index)
-                  r10 = instantiate_node(SyntaxNode,input, index...(index + 1))
-                  @index += 1
-                else
-                  terminal_parse_failure('-')
-                  r10 = nil
-                end
-                if r10
-                  r6 = r10
-                else
-                  if has_terminal?('*', false, index)
-                    r11 = instantiate_node(SyntaxNode,input, index...(index + 1))
-                    @index += 1
-                  else
-                    terminal_parse_failure('*')
-                    r11 = nil
-                  end
-                  if r11
-                    r6 = r11
-                  else
-                    if has_terminal?('/', false, index)
-                      r12 = instantiate_node(SyntaxNode,input, index...(index + 1))
-                      @index += 1
-                    else
-                      terminal_parse_failure('/')
-                      r12 = nil
-                    end
-                    if r12
-                      r6 = r12
-                    else
-                      @index = i6
-                      r6 = nil
-                    end
-                  end
-                end
+                @index = i6
+                r6 = nil
               end
             end
           end
           s0 << r6
           if r6
             if has_terminal?('=', false, index)
-              r13 = instantiate_node(SyntaxNode,input, index...(index + 1))
+              r10 = instantiate_node(SyntaxNode,input, index...(index + 1))
               @index += 1
             else
               terminal_parse_failure('=')
-              r13 = nil
+              r10 = nil
             end
-            s0 << r13
-            if r13
-              r15 = _nt_multiline_space
-              if r15
-                r14 = r15
+            s0 << r10
+            if r10
+              r12 = _nt_multiline_space
+              if r12
+                r11 = r12
               else
-                r14 = instantiate_node(SyntaxNode,input, index...index)
+                r11 = instantiate_node(SyntaxNode,input, index...index)
               end
-              s0 << r14
-              if r14
-                r16 = _nt_expression
-                s0 << r16
+              s0 << r11
+              if r11
+                r13 = _nt_expression
+                s0 << r13
               end
             end
           end
@@ -778,44 +745,33 @@ module Carat
             if r7
               r5 = r7
             else
-              if has_terminal?('===', false, index)
+              if has_terminal?('<=>', false, index)
                 r8 = instantiate_node(SyntaxNode,input, index...(index + 3))
                 @index += 3
               else
-                terminal_parse_failure('===')
+                terminal_parse_failure('<=>')
                 r8 = nil
               end
               if r8
                 r5 = r8
               else
-                if has_terminal?('<=>', false, index)
-                  r9 = instantiate_node(SyntaxNode,input, index...(index + 3))
-                  @index += 3
-                else
-                  terminal_parse_failure('<=>')
-                  r9 = nil
-                end
-                if r9
-                  r5 = r9
-                else
-                  @index = i5
-                  r5 = nil
-                end
+                @index = i5
+                r5 = nil
               end
             end
           end
           s1 << r5
           if r5
-            r11 = _nt_multiline_space
-            if r11
-              r10 = r11
-            else
-              r10 = instantiate_node(SyntaxNode,input, index...index)
-            end
-            s1 << r10
+            r10 = _nt_multiline_space
             if r10
-              r12 = _nt_comparison_expression
-              s1 << r12
+              r9 = r10
+            else
+              r9 = instantiate_node(SyntaxNode,input, index...index)
+            end
+            s1 << r9
+            if r9
+              r11 = _nt_comparison_expression
+              s1 << r11
             end
           end
         end
@@ -830,9 +786,9 @@ module Carat
       if r1
         r0 = r1
       else
-        r13 = _nt_inequality_expression
-        if r13
-          r0 = r13
+        r12 = _nt_inequality_expression
+        if r12
+          r0 = r12
         else
           @index = i0
           r0 = nil
@@ -1001,43 +957,25 @@ module Carat
         end
         s1 << r3
         if r3
-          i5 = index
           if has_terminal?('<<', false, index)
-            r6 = instantiate_node(SyntaxNode,input, index...(index + 2))
+            r5 = instantiate_node(SyntaxNode,input, index...(index + 2))
             @index += 2
           else
             terminal_parse_failure('<<')
-            r6 = nil
-          end
-          if r6
-            r5 = r6
-          else
-            if has_terminal?('>>', false, index)
-              r7 = instantiate_node(SyntaxNode,input, index...(index + 2))
-              @index += 2
-            else
-              terminal_parse_failure('>>')
-              r7 = nil
-            end
-            if r7
-              r5 = r7
-            else
-              @index = i5
-              r5 = nil
-            end
+            r5 = nil
           end
           s1 << r5
           if r5
-            r9 = _nt_multiline_space
-            if r9
-              r8 = r9
+            r7 = _nt_multiline_space
+            if r7
+              r6 = r7
             else
-              r8 = instantiate_node(SyntaxNode,input, index...index)
+              r6 = instantiate_node(SyntaxNode,input, index...index)
             end
-            s1 << r8
-            if r8
-              r10 = _nt_shift_expression
-              s1 << r10
+            s1 << r6
+            if r6
+              r8 = _nt_shift_expression
+              s1 << r8
             end
           end
         end
@@ -1052,9 +990,9 @@ module Carat
       if r1
         r0 = r1
       else
-        r11 = _nt_add_subtract_expression
-        if r11
-          r0 = r11
+        r9 = _nt_add_subtract_expression
+        if r9
+          r0 = r9
         else
           @index = i0
           r0 = nil
@@ -1090,7 +1028,7 @@ module Carat
 
       i0 = index
       i1, s1 = index, []
-      r2 = _nt_times_divide_expression
+      r2 = _nt_unary_not_expression
       s1 << r2
       if r2
         r4 = _nt_space
@@ -1152,106 +1090,6 @@ module Carat
       if r1
         r0 = r1
       else
-        r11 = _nt_times_divide_expression
-        if r11
-          r0 = r11
-        else
-          @index = i0
-          r0 = nil
-        end
-      end
-
-      node_cache[:add_subtract_expression][start_index] = r0
-
-      r0
-    end
-
-    module TimesDivideExpression0
-      def left
-        elements[0]
-      end
-
-      def name
-        elements[2]
-      end
-
-      def right
-        elements[4]
-      end
-    end
-
-    def _nt_times_divide_expression
-      start_index = index
-      if node_cache[:times_divide_expression].has_key?(index)
-        cached = node_cache[:times_divide_expression][index]
-        @index = cached.interval.end if cached
-        return cached
-      end
-
-      i0 = index
-      i1, s1 = index, []
-      r2 = _nt_method_call_expression
-      s1 << r2
-      if r2
-        r4 = _nt_space
-        if r4
-          r3 = r4
-        else
-          r3 = instantiate_node(SyntaxNode,input, index...index)
-        end
-        s1 << r3
-        if r3
-          i5 = index
-          if has_terminal?('*', false, index)
-            r6 = instantiate_node(SyntaxNode,input, index...(index + 1))
-            @index += 1
-          else
-            terminal_parse_failure('*')
-            r6 = nil
-          end
-          if r6
-            r5 = r6
-          else
-            if has_terminal?('/', false, index)
-              r7 = instantiate_node(SyntaxNode,input, index...(index + 1))
-              @index += 1
-            else
-              terminal_parse_failure('/')
-              r7 = nil
-            end
-            if r7
-              r5 = r7
-            else
-              @index = i5
-              r5 = nil
-            end
-          end
-          s1 << r5
-          if r5
-            r9 = _nt_multiline_space
-            if r9
-              r8 = r9
-            else
-              r8 = instantiate_node(SyntaxNode,input, index...index)
-            end
-            s1 << r8
-            if r8
-              r10 = _nt_times_divide_expression
-              s1 << r10
-            end
-          end
-        end
-      end
-      if s1.last
-        r1 = instantiate_node(BinaryMethodCall,input, i1...index, s1)
-        r1.extend(TimesDivideExpression0)
-      else
-        @index = i1
-        r1 = nil
-      end
-      if r1
-        r0 = r1
-      else
         r11 = _nt_unary_not_expression
         if r11
           r0 = r11
@@ -1261,7 +1099,7 @@ module Carat
         end
       end
 
-      node_cache[:times_divide_expression][start_index] = r0
+      node_cache[:add_subtract_expression][start_index] = r0
 
       r0
     end

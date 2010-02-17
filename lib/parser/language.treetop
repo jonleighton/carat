@@ -31,7 +31,7 @@ module Carat
     
     rule binary_method_assignment
       receiver:(method_call_chain / variable) space?
-      name:('<<' / '>>' / '+' / '-' / '*' / '/') '=' multiline_space?
+      name:('<<' / '+' / '-') '=' multiline_space?
       value:expression <BinaryMethodAssignment>
     end
     
@@ -59,7 +59,7 @@ module Carat
     
     rule comparison_expression
       left:inequality_expression space?
-      name:('==' / '!=' / '===' / '<=>') multiline_space?
+      name:('==' / '!=' / '<=>') multiline_space?
       right:comparison_expression <BinaryMethodCall>
       /
       inequality_expression
@@ -75,24 +75,16 @@ module Carat
     
     rule shift_expression
       left:add_subtract_expression space?
-      name:('<<' / '>>') multiline_space?
+      name:('<<') multiline_space?
       right:shift_expression <BinaryMethodCall>
       /
       add_subtract_expression
     end
     
     rule add_subtract_expression
-      left:times_divide_expression space?
+      left:unary_not_expression space?
       name:('+' / '-') multiline_space?
       right:add_subtract_expression <BinaryMethodCall>
-      /
-      times_divide_expression
-    end
-    
-    rule times_divide_expression
-      left:method_call_expression space?
-      name:('*' / '/') multiline_space?
-      right:times_divide_expression <BinaryMethodCall>
       /
       unary_not_expression
     end
