@@ -35,8 +35,12 @@ module Carat::Data
       yield self
     end
     
-    def primitive_at(i)
+    def primitive_get(i)
       yield @contents[i.value] || runtime.nil
+    end
+    
+    def primitive_set(i, value)
+      yield @contents[i.value] = value
     end
   end
 end

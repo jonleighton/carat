@@ -16,7 +16,11 @@ class Array
   end
   
   def [](index)
-    Primitive.at(index)
+    Primitive.get(index)
+  end
+  
+  def []=(index, value)
+    Primitive.set(index, value)
   end
   
   def ==(other)
