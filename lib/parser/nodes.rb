@@ -195,14 +195,6 @@ module Carat
         optional_part.find { |item| item.mandatory? }.nil?
       end
       
-      def unique_item_names
-        items.map { |item| item.name }.uniq
-      end
-      
-      def duplicate_names?
-        items.length > unique_item_names.length
-      end
-      
       def validate_items
         # There can only be one splat, otherwise there could be multiple ways to map arguments onto
         # the pattern
@@ -217,10 +209,6 @@ module Carat
         
         unless mandatory_before_optional?
           error "all mandatory arguments must come before any optional ones"
-        end
-        
-        if duplicate_names?
-          error "duplicate argument name(s)"
         end
       end
       
@@ -239,10 +227,6 @@ module Carat
         default.expression.to_ast if respond_to?(:default) && !default.empty?
       end
       
-      def name
-        local_identifier.text_value.to_sym
-      end
-      
       def type
         case text_value.chars.first
           when '*'
@@ -255,7 +239,7 @@ module Carat
       end
       
       def to_ast
-        Carat::AST::ArgumentPattern::Item.new(location, name, type, default_value_ast)
+        Carat::AST::ArgumentPattern::Item.new(location, assignee.to_ast, type, default_value_ast)
       end
     end
     

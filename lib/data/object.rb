@@ -49,7 +49,7 @@ module Carat::Data
     # Call the method with a given name, with the given argument list (AST::ArgumentList or Array).
     # This should only be called when we know the method exists. If the method does not exist an
     # exception will be raised.
-    def call(name, argument_list = [], location = nil, &continuation)
+    def call(name, argument_list = [], location = current_location, &continuation)
       method = lookup_instance_method!(name)
       runtime.call(location, method, method_scope, argument_list, &continuation)
     end

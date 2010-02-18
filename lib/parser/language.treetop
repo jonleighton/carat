@@ -217,8 +217,10 @@ module Carat
     end
     
     rule argument_pattern_item
-      local_identifier default:(multiline_space? '=' multiline_space? expression)? <ArgumentPatternItem> /
-      ('*' / '&') multiline_space? local_identifier <ArgumentPatternItem>
+      assignee:variable
+      default:(multiline_space? '=' multiline_space? expression)?
+      <ArgumentPatternItem> /
+      ('*' / '&') multiline_space? assignee:variable <ArgumentPatternItem>
     end
     
     # A literal object, e.g. a number, string, true, false, etc

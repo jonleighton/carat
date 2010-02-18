@@ -102,7 +102,7 @@ module Carat::AST
   
   class ArgumentPattern < NodeList
     class Item < Node
-      property :name
+      child    :assignee
       property :type,    :default => :normal
       child    :default, :default => nil
       
@@ -166,12 +166,12 @@ module Carat::AST
       values.shift(values.length - normal_items_after_splat.length)
     end
     
-    def match_value(item, values, block, &continuation)
+    def value_for(item, values, &continuation)
       case item.type
         when :splat
           yield runtime.constants[:Array].new(values_for_splat(values))
         when :block_pass
-          yield block || runtime.nil
+          yield current_scope.block || runtime.nil
         else
           value = values.shift
           
@@ -183,16 +183,16 @@ module Carat::AST
       end
     end
     
-    def match_to(values, block, &continuation)
+    def assign(values, &continuation)
       if arity.include?(values.length)
-        match_operation = lambda do |item, arguments, &match_continuation|
-          match_value(item, values, block) do |value|
-            arguments[item.name] = value
-            match_continuation.call(arguments)
+        assign_item_operation = lambda do |item, &each_continuation|
+          value_for(item, values) do |value|
+            item.assignee.assign(value)
+            each_continuation.call
           end
         end
         
-        runtime.fold({}, match_operation, items, &continuation)
+        runtime.each(assign_item_operation, items, &continuation)
       else
         runtime.raise :ArgumentError, "wrong number of arguments (#{values.length} supplied, " +
                                       "#{arity_as_string} required)"

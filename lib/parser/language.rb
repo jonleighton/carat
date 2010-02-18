@@ -2781,7 +2781,7 @@ module Carat
     end
 
     module ArgumentPatternItem1
-      def local_identifier
+      def assignee
         elements[0]
       end
 
@@ -2791,7 +2791,7 @@ module Carat
     end
 
     module ArgumentPatternItem2
-      def local_identifier
+      def assignee
         elements[2]
       end
     end
@@ -2806,7 +2806,7 @@ module Carat
 
       i0 = index
       i1, s1 = index, []
-      r2 = _nt_local_identifier
+      r2 = _nt_variable
       s1 << r2
       if r2
         i4, s4 = index, []
@@ -2900,7 +2900,7 @@ module Carat
           end
           s11 << r15
           if r15
-            r17 = _nt_local_identifier
+            r17 = _nt_variable
             s11 << r17
           end
         end

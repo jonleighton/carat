@@ -51,14 +51,9 @@ module Carat::Data
       # Unwind the stack until we get to a call
       stack.unwind_to(:call)
       
-      # Store the continuation of the call
-      continuation = current_call.continuation
-      
-      # Pop the call as we are returning from it
-      stack.pop
-      
-      # Now call the continuation
-      continuation.call(value)
+      # Call the return continuation of the current call (which will take care of popping the call
+      # off the stack)
+      current_call.return_continuation.call(value)
     end
     
     def primitive_require(file, &continuation)

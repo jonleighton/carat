@@ -28,6 +28,10 @@ class ArgumentSpecA
   def g(*a, b = 1)
     [a, b]
   end
+  
+  def h(@a, b)
+    [@a, b]
+  end
 end
 
 class ArgumentSpecB
@@ -63,6 +67,10 @@ describe "Argument patterns" do
   
   it "should support splats with block passes" do
     @test.f(1, 2, 3, 4, &@block).should == [1, [2, 3], 4, @block]
+  end
+  
+  it "should support assigning to instance variables" do
+    @test.h(1, 2).should == [1, 2]
   end
 end
 

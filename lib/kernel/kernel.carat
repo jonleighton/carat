@@ -27,7 +27,7 @@ module Kernel
     Primitive.yield(*args, &block)
   end
   
-  def return(value)
+  def return(value = nil)
     Primitive.return(value)
   end
   

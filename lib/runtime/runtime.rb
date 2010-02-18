@@ -77,7 +77,7 @@ module Carat
     end
     
     # This is an 'each' function written in continuation passing style
-    def each(operation, items, final_answer, start = 0, &continuation)
+    def each(operation, items, final_answer = true, start = 0, &continuation)
       if start == items.length
         yield final_answer
       else
@@ -97,7 +97,7 @@ module Carat
     
     # Raises an exception in the object language
     def raise(exception_name, message, location = current_location)
-      constants[exception_name].call(:new, [message]) do |exception|
+      constants[exception_name].call(:new, [constants[:String].new(message)]) do |exception|
         exception.generate_backtrace(location)
         stack.unwind_to(:failure_continuation)
         current_failure_continuation.call(exception)

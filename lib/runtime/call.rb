@@ -52,59 +52,20 @@ class Carat::Runtime
     # Merge the arguments into the execution scope, which becomes the scope for the contents, and
     # then evaluate it
     def send
+      runtime.stack << frame
       apply_arguments do
         if contents.nil?
-          continuation.call(runtime.nil)
+          return_continuation.call(runtime.nil)
         else
-          lambda do
-            frame = Frame.new(execution_scope, self)
-            contents.eval_in_frame(frame, &continuation)
-          end
+          lambda { contents.eval(&return_continuation) }
         end
       end
     end
     
-    def apply_arguments(&continuation)
-      eval_block_from_arguments do |block_from_arguments|
-        # If there are a block given by the arguments, then make that the current block. But don't
-        # change it to nil if there is already a value (perhaps from a parent scope).
-        execution_scope.block = block_from_arguments unless block_from_arguments.nil?
-        
-        eval_arguments do |arguments|
-          execution_scope.merge!(arguments)
-          yield
-        end
-      end
-    end
-    
-    # If we have anything other than an ArgumentList AST node, we assume the argument list is an 
-    # array that does not need evaluating.
-    def eval_argument_objects(&continuation)
-      if argument_list.is_a?(Carat::AST::ArgumentList)
-        argument_list.eval_in_scope(caller_scope, &continuation)
-      else
-        yield argument_list
-      end
-    end
-    
-    # Return a hash where the argument names of this method are assigned the given values
-    def eval_arguments(&continuation)
-      eval_argument_objects do |argument_objects|
-        argument_pattern.match_to(argument_objects.clone, block, &continuation)
-      end
-    end
-    
-    # Gets the block from the arguments. This can be one of two things:
-    # 
-    #   1. Carat::AST::Block - when the block has been specified literally:
-    #      items.map { ... }
-    #   2. Any other AST node - when the block is passed in as an expression:
-    #      items.map(&block)
-    def eval_block_from_arguments(&continuation)
-      if argument_list.is_a?(Carat::AST::ArgumentList) && argument_list.block
-        argument_list.block.eval_in_scope(caller_scope, &continuation)
-      else
-        yield nil
+    def return_continuation
+      @return_continuation ||= lambda do |result|
+        runtime.stack.pop
+        continuation.call(result)
       end
     end
     
@@ -115,6 +76,44 @@ class Carat::Runtime
     def inspect
       "Call[#{callable}, #{location}]"
     end
+    
+    private
+    
+      def frame
+        @frame ||= Frame.new(execution_scope, self)
+      end
+      
+      def apply_arguments(&continuation)
+        eval_block_from_arguments do |block_from_arguments|
+          execution_scope.block = block_from_arguments unless block_from_arguments.nil?
+          
+          eval_argument_objects do |argument_objects|
+            argument_pattern.assign(argument_objects, &continuation)
+          end
+        end
+      end
+      
+      def eval_argument_objects(&continuation)
+        if argument_list.is_a?(Carat::AST::ArgumentList)
+          argument_list.eval_in_scope(caller_scope, &continuation)
+        else
+          yield argument_list
+        end
+      end
+      
+      # Gets the block from the arguments. This can be one of two things:
+      # 
+      #   1. Carat::AST::Block - when the block has been specified literally:
+      #      items.map { ... }
+      #   2. Any other AST node - when the block is passed in as an expression:
+      #      items.map(&block)
+      def eval_block_from_arguments(&continuation)
+        if argument_list.is_a?(Carat::AST::ArgumentList) && argument_list.block
+          argument_list.block.eval_in_scope(caller_scope, &continuation)
+        else
+          yield nil
+        end
+      end
   end
   
   class MainMethodCall
