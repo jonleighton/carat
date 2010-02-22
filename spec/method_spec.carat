@@ -1,0 +1,47 @@
+require 'cspec'
+
+class MethodSpecA
+  def test?
+    true
+  end
+  
+  def implicit_test?
+    test?
+  end
+  
+  def test!
+    true
+  end
+  
+  def implicit_test!
+    test!
+  end
+  
+  def test=(x)
+    true
+  end
+end
+
+describe "Method definition" do
+  before do
+    @object = MethodSpecA.new
+  end
+
+  it "should allow names ending in '?'" do
+    @object.test?.should == true
+    @object.implicit_test?.should == true
+  end
+  
+  it "should allow names ending in '!'" do
+    @object.test!.should == true
+    @object.implicit_test!.should == true
+  end
+  
+  it "should allow assignment methods" do
+    (@object.test=(1)).should == true
+    (@object.test=1).should == true
+    (@object.test = 1).should == true
+    (@object.test     =
+            1).should == true
+  end
+end

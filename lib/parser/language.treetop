@@ -24,19 +24,19 @@ module Carat
     end
     
     rule simple_assignment
-      receiver:(method_call_chain / variable) space?
+      receiver:(assignee_method_call_chain / variable) space?
       '=' multiline_space?
       value:expression <Assignment>
     end
     
     rule binary_method_assignment
-      receiver:(method_call_chain / variable) space?
+      receiver:(assignee_method_call_chain / variable) space?
       name:('<<' / '>>' / '+' / '-' / '*' / '/') '=' multiline_space?
       value:expression <BinaryMethodAssignment>
     end
     
     rule binary_operation_assignment
-      receiver:(method_call_chain / variable) space?
+      receiver:(assignee_method_call_chain / variable) space?
       name:('||' / '&&') '=' multiline_space?
       value:expression <BinaryOperationAssignment>
     end
@@ -234,38 +234,53 @@ module Carat
     # the form "foo.bar(...).baz(...)" and we have to convert this to several MethodCall instances
     # when creating the AST.
     rule method_call_chain
-      receiver:unary_plus_minus_expression tail:method_call_chain_tail <MethodCallChain> /
-      head:(method_name:identifier argument_list) tail:method_call_chain_tail? <ImplicitMethodCallChain>
+      receiver:unary_plus_minus_expression tail:method_call_segment+ <MethodCallChain> /
+      head:implicit_method_call            tail:method_call_segment* <ImplicitMethodCallChain>
     end
     
-    rule method_call_chain_tail
-      method_call_segment+
+    # A method call chain which can be assigned to. This means that the last call in the chain
+    # must have a 'simple' name with no special characters.
+    rule assignee_method_call_chain
+      receiver:unary_plus_minus_expression
+      middle:(method_call_segment &'.')*
+      last:assignee_method_call_segment <AssigneeMethodCallChain> /
+      
+      head:implicit_method_call
+      middle:(method_call_segment &'.')*
+      last:assignee_method_call_segment <ImplicitAssigneeMethodCallChain>
+    end
+    
+    # If the method name matches an identifier, there has to be some sort of recognisable argument
+    # list for us to be sure it is a method call. Otherwise, the method name is clearly using some
+    # characters which are specific to methods (for example a '?' at the end), so the argument
+    # list is optional.
+    rule implicit_method_call
+      method_name:identifier           argument_list /
+      method_name:implicit_method_name argument_list:argument_list?
     end
     
     rule method_call_segment
-      dot_method_call /
-      array_assign /
-      array_access
+      item:(dot_method_call / element_reference) space?
+    end
+    
+    rule assignee_method_call_segment
+      item:(assignee_dot_method_call / element_reference) space?
     end
     
     rule dot_method_call
-      '.' multiline_space? method_name argument_list:argument_list?
+      '.' multiline_space? method_name:method_name argument_list:argument_list?
     end
     
-    rule array_access
-      '' array_brackets <ArrayAccess>
+    rule assignee_dot_method_call
+      '.' multiline_space? method_name:assignee_method_name
     end
     
-    rule array_assign
-      array_brackets space? '=' multiline_space? value:argument_list_item <ArrayAssign>
-    end
-    
-    rule array_brackets
-      '[' multiline_space? ']' <ArrayBrackets> /
+    rule element_reference
+      '[' multiline_space? ']' <ElementReference> /
       '[' multiline_space?
       head:argument_list_item
       tail:(multiline_space? ',' multiline_space? argument_list_item)*
-      multiline_space? ']' <ArrayBrackets>
+      multiline_space? ']' <ElementReference>
     end
     
     # Argument list - values which are passed during a method call
@@ -353,13 +368,26 @@ module Carat
       'begin' / 'rescue'
     end
     
+    # All possible valid method names
     rule method_name
-      (basic_method_name / special_method_name) <MethodName>
+      (simple_method_name ('?' / '!' / '=')? / special_method_name) <MethodName>
+    end
+    
+    # Method names which can be used in an implicit call. These are named which are *specifically
+    # recognisable* as method calls (as opposed to local variables), hence a '?' or '!' at the end
+    # is mandatory
+    rule implicit_method_name
+      simple_method_name ('?' / '!') <MethodName>
+    end
+    
+    # Method names which can be used on the left of an assignment
+    rule assignee_method_name
+      '' simple_method_name <MethodName>
     end
     
     # Keywords are allowed
-    rule basic_method_name
-      [a-zA-Z_] [a-zA-Z0-9_]* ('?' / '!' / '=')?
+    rule simple_method_name
+      [a-zA-Z_] [a-zA-Z0-9_]*
     end
     
     # Match in order of number of characters so we don't get conflict, e.g. if '<' is tested before

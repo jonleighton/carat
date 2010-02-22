@@ -236,7 +236,7 @@ module Carat
 
       i0, s0 = index, []
       i1 = index
-      r2 = _nt_method_call_chain
+      r2 = _nt_assignee_method_call_chain
       if r2
         r1 = r2
       else
@@ -318,7 +318,7 @@ module Carat
 
       i0, s0 = index, []
       i1 = index
-      r2 = _nt_method_call_chain
+      r2 = _nt_assignee_method_call_chain
       if r2
         r1 = r2
       else
@@ -472,7 +472,7 @@ module Carat
 
       i0, s0 = index, []
       i1 = index
-      r2 = _nt_method_call_chain
+      r2 = _nt_assignee_method_call_chain
       if r2
         r1 = r2
       else
@@ -2977,16 +2977,6 @@ module Carat
     end
 
     module MethodCallChain1
-      def method_name
-        elements[0]
-      end
-
-      def argument_list
-        elements[1]
-      end
-    end
-
-    module MethodCallChain2
       def head
         elements[0]
       end
@@ -3009,7 +2999,21 @@ module Carat
       r2 = _nt_unary_plus_minus_expression
       s1 << r2
       if r2
-        r3 = _nt_method_call_chain_tail
+        s3, i3 = [], index
+        loop do
+          r4 = _nt_method_call_segment
+          if r4
+            s3 << r4
+          else
+            break
+          end
+        end
+        if s3.empty?
+          @index = i3
+          r3 = nil
+        else
+          r3 = instantiate_node(SyntaxNode,input, i3...index, s3)
+        end
         s1 << r3
       end
       if s1.last
@@ -3022,34 +3026,276 @@ module Carat
       if r1
         r0 = r1
       else
-        i4, s4 = index, []
         i5, s5 = index, []
-        r6 = _nt_identifier
+        r6 = _nt_implicit_method_call
         s5 << r6
         if r6
-          r7 = _nt_argument_list
+          s7, i7 = [], index
+          loop do
+            r8 = _nt_method_call_segment
+            if r8
+              s7 << r8
+            else
+              break
+            end
+          end
+          r7 = instantiate_node(SyntaxNode,input, i7...index, s7)
           s5 << r7
         end
         if s5.last
-          r5 = instantiate_node(SyntaxNode,input, i5...index, s5)
+          r5 = instantiate_node(ImplicitMethodCallChain,input, i5...index, s5)
           r5.extend(MethodCallChain1)
         else
           @index = i5
           r5 = nil
         end
+        if r5
+          r0 = r5
+        else
+          @index = i0
+          r0 = nil
+        end
+      end
+
+      node_cache[:method_call_chain][start_index] = r0
+
+      r0
+    end
+
+    module AssigneeMethodCallChain0
+      def method_call_segment
+        elements[0]
+      end
+
+    end
+
+    module AssigneeMethodCallChain1
+      def receiver
+        elements[0]
+      end
+
+      def middle
+        elements[1]
+      end
+
+      def last
+        elements[2]
+      end
+    end
+
+    module AssigneeMethodCallChain2
+      def method_call_segment
+        elements[0]
+      end
+
+    end
+
+    module AssigneeMethodCallChain3
+      def head
+        elements[0]
+      end
+
+      def middle
+        elements[1]
+      end
+
+      def last
+        elements[2]
+      end
+    end
+
+    def _nt_assignee_method_call_chain
+      start_index = index
+      if node_cache[:assignee_method_call_chain].has_key?(index)
+        cached = node_cache[:assignee_method_call_chain][index]
+        @index = cached.interval.end if cached
+        return cached
+      end
+
+      i0 = index
+      i1, s1 = index, []
+      r2 = _nt_unary_plus_minus_expression
+      s1 << r2
+      if r2
+        s3, i3 = [], index
+        loop do
+          i4, s4 = index, []
+          r5 = _nt_method_call_segment
+          s4 << r5
+          if r5
+            i6 = index
+            if has_terminal?('.', false, index)
+              r7 = instantiate_node(SyntaxNode,input, index...(index + 1))
+              @index += 1
+            else
+              terminal_parse_failure('.')
+              r7 = nil
+            end
+            if r7
+              @index = i6
+              r6 = instantiate_node(SyntaxNode,input, index...index)
+            else
+              r6 = nil
+            end
+            s4 << r6
+          end
+          if s4.last
+            r4 = instantiate_node(SyntaxNode,input, i4...index, s4)
+            r4.extend(AssigneeMethodCallChain0)
+          else
+            @index = i4
+            r4 = nil
+          end
+          if r4
+            s3 << r4
+          else
+            break
+          end
+        end
+        r3 = instantiate_node(SyntaxNode,input, i3...index, s3)
+        s1 << r3
+        if r3
+          r8 = _nt_assignee_method_call_segment
+          s1 << r8
+        end
+      end
+      if s1.last
+        r1 = instantiate_node(AssigneeMethodCallChain,input, i1...index, s1)
+        r1.extend(AssigneeMethodCallChain1)
+      else
+        @index = i1
+        r1 = nil
+      end
+      if r1
+        r0 = r1
+      else
+        i9, s9 = index, []
+        r10 = _nt_implicit_method_call
+        s9 << r10
+        if r10
+          s11, i11 = [], index
+          loop do
+            i12, s12 = index, []
+            r13 = _nt_method_call_segment
+            s12 << r13
+            if r13
+              i14 = index
+              if has_terminal?('.', false, index)
+                r15 = instantiate_node(SyntaxNode,input, index...(index + 1))
+                @index += 1
+              else
+                terminal_parse_failure('.')
+                r15 = nil
+              end
+              if r15
+                @index = i14
+                r14 = instantiate_node(SyntaxNode,input, index...index)
+              else
+                r14 = nil
+              end
+              s12 << r14
+            end
+            if s12.last
+              r12 = instantiate_node(SyntaxNode,input, i12...index, s12)
+              r12.extend(AssigneeMethodCallChain2)
+            else
+              @index = i12
+              r12 = nil
+            end
+            if r12
+              s11 << r12
+            else
+              break
+            end
+          end
+          r11 = instantiate_node(SyntaxNode,input, i11...index, s11)
+          s9 << r11
+          if r11
+            r16 = _nt_assignee_method_call_segment
+            s9 << r16
+          end
+        end
+        if s9.last
+          r9 = instantiate_node(ImplicitAssigneeMethodCallChain,input, i9...index, s9)
+          r9.extend(AssigneeMethodCallChain3)
+        else
+          @index = i9
+          r9 = nil
+        end
+        if r9
+          r0 = r9
+        else
+          @index = i0
+          r0 = nil
+        end
+      end
+
+      node_cache[:assignee_method_call_chain][start_index] = r0
+
+      r0
+    end
+
+    module ImplicitMethodCall0
+      def method_name
+        elements[0]
+      end
+
+      def argument_list
+        elements[1]
+      end
+    end
+
+    module ImplicitMethodCall1
+      def method_name
+        elements[0]
+      end
+
+      def argument_list
+        elements[1]
+      end
+    end
+
+    def _nt_implicit_method_call
+      start_index = index
+      if node_cache[:implicit_method_call].has_key?(index)
+        cached = node_cache[:implicit_method_call][index]
+        @index = cached.interval.end if cached
+        return cached
+      end
+
+      i0 = index
+      i1, s1 = index, []
+      r2 = _nt_identifier
+      s1 << r2
+      if r2
+        r3 = _nt_argument_list
+        s1 << r3
+      end
+      if s1.last
+        r1 = instantiate_node(SyntaxNode,input, i1...index, s1)
+        r1.extend(ImplicitMethodCall0)
+      else
+        @index = i1
+        r1 = nil
+      end
+      if r1
+        r0 = r1
+      else
+        i4, s4 = index, []
+        r5 = _nt_implicit_method_name
         s4 << r5
         if r5
-          r9 = _nt_method_call_chain_tail
-          if r9
-            r8 = r9
+          r7 = _nt_argument_list
+          if r7
+            r6 = r7
           else
-            r8 = instantiate_node(SyntaxNode,input, index...index)
+            r6 = instantiate_node(SyntaxNode,input, index...index)
           end
-          s4 << r8
+          s4 << r6
         end
         if s4.last
-          r4 = instantiate_node(ImplicitMethodCallChain,input, i4...index, s4)
-          r4.extend(MethodCallChain2)
+          r4 = instantiate_node(SyntaxNode,input, i4...index, s4)
+          r4.extend(ImplicitMethodCall1)
         else
           @index = i4
           r4 = nil
@@ -3062,38 +3308,16 @@ module Carat
         end
       end
 
-      node_cache[:method_call_chain][start_index] = r0
+      node_cache[:implicit_method_call][start_index] = r0
 
       r0
     end
 
-    def _nt_method_call_chain_tail
-      start_index = index
-      if node_cache[:method_call_chain_tail].has_key?(index)
-        cached = node_cache[:method_call_chain_tail][index]
-        @index = cached.interval.end if cached
-        return cached
+    module MethodCallSegment0
+      def item
+        elements[0]
       end
 
-      s0, i0 = [], index
-      loop do
-        r1 = _nt_method_call_segment
-        if r1
-          s0 << r1
-        else
-          break
-        end
-      end
-      if s0.empty?
-        @index = i0
-        r0 = nil
-      else
-        r0 = instantiate_node(SyntaxNode,input, i0...index, s0)
-      end
-
-      node_cache[:method_call_chain_tail][start_index] = r0
-
-      r0
     end
 
     def _nt_method_call_segment
@@ -3104,26 +3328,91 @@ module Carat
         return cached
       end
 
-      i0 = index
-      r1 = _nt_dot_method_call
-      if r1
-        r0 = r1
+      i0, s0 = index, []
+      i1 = index
+      r2 = _nt_dot_method_call
+      if r2
+        r1 = r2
       else
-        r2 = _nt_array_assign
-        if r2
-          r0 = r2
+        r3 = _nt_element_reference
+        if r3
+          r1 = r3
         else
-          r3 = _nt_array_access
-          if r3
-            r0 = r3
-          else
-            @index = i0
-            r0 = nil
-          end
+          @index = i1
+          r1 = nil
         end
+      end
+      s0 << r1
+      if r1
+        r5 = _nt_space
+        if r5
+          r4 = r5
+        else
+          r4 = instantiate_node(SyntaxNode,input, index...index)
+        end
+        s0 << r4
+      end
+      if s0.last
+        r0 = instantiate_node(SyntaxNode,input, i0...index, s0)
+        r0.extend(MethodCallSegment0)
+      else
+        @index = i0
+        r0 = nil
       end
 
       node_cache[:method_call_segment][start_index] = r0
+
+      r0
+    end
+
+    module AssigneeMethodCallSegment0
+      def item
+        elements[0]
+      end
+
+    end
+
+    def _nt_assignee_method_call_segment
+      start_index = index
+      if node_cache[:assignee_method_call_segment].has_key?(index)
+        cached = node_cache[:assignee_method_call_segment][index]
+        @index = cached.interval.end if cached
+        return cached
+      end
+
+      i0, s0 = index, []
+      i1 = index
+      r2 = _nt_assignee_dot_method_call
+      if r2
+        r1 = r2
+      else
+        r3 = _nt_element_reference
+        if r3
+          r1 = r3
+        else
+          @index = i1
+          r1 = nil
+        end
+      end
+      s0 << r1
+      if r1
+        r5 = _nt_space
+        if r5
+          r4 = r5
+        else
+          r4 = instantiate_node(SyntaxNode,input, index...index)
+        end
+        s0 << r4
+      end
+      if s0.last
+        r0 = instantiate_node(SyntaxNode,input, i0...index, s0)
+        r0.extend(AssigneeMethodCallSegment0)
+      else
+        @index = i0
+        r0 = nil
+      end
+
+      node_cache[:assignee_method_call_segment][start_index] = r0
 
       r0
     end
@@ -3190,69 +3479,31 @@ module Carat
       r0
     end
 
-    module ArrayAccess0
-      def array_brackets
-        elements[1]
+    module AssigneeDotMethodCall0
+      def method_name
+        elements[2]
       end
     end
 
-    def _nt_array_access
+    def _nt_assignee_dot_method_call
       start_index = index
-      if node_cache[:array_access].has_key?(index)
-        cached = node_cache[:array_access][index]
+      if node_cache[:assignee_dot_method_call].has_key?(index)
+        cached = node_cache[:assignee_dot_method_call][index]
         @index = cached.interval.end if cached
         return cached
       end
 
       i0, s0 = index, []
-      if has_terminal?('', false, index)
-        r1 = instantiate_node(SyntaxNode,input, index...(index + 0))
-        @index += 0
+      if has_terminal?('.', false, index)
+        r1 = instantiate_node(SyntaxNode,input, index...(index + 1))
+        @index += 1
       else
-        terminal_parse_failure('')
+        terminal_parse_failure('.')
         r1 = nil
       end
       s0 << r1
       if r1
-        r2 = _nt_array_brackets
-        s0 << r2
-      end
-      if s0.last
-        r0 = instantiate_node(ArrayAccess,input, i0...index, s0)
-        r0.extend(ArrayAccess0)
-      else
-        @index = i0
-        r0 = nil
-      end
-
-      node_cache[:array_access][start_index] = r0
-
-      r0
-    end
-
-    module ArrayAssign0
-      def array_brackets
-        elements[0]
-      end
-
-      def value
-        elements[4]
-      end
-    end
-
-    def _nt_array_assign
-      start_index = index
-      if node_cache[:array_assign].has_key?(index)
-        cached = node_cache[:array_assign][index]
-        @index = cached.interval.end if cached
-        return cached
-      end
-
-      i0, s0 = index, []
-      r1 = _nt_array_brackets
-      s0 << r1
-      if r1
-        r3 = _nt_space
+        r3 = _nt_multiline_space
         if r3
           r2 = r3
         else
@@ -3260,52 +3511,33 @@ module Carat
         end
         s0 << r2
         if r2
-          if has_terminal?('=', false, index)
-            r4 = instantiate_node(SyntaxNode,input, index...(index + 1))
-            @index += 1
-          else
-            terminal_parse_failure('=')
-            r4 = nil
-          end
+          r4 = _nt_assignee_method_name
           s0 << r4
-          if r4
-            r6 = _nt_multiline_space
-            if r6
-              r5 = r6
-            else
-              r5 = instantiate_node(SyntaxNode,input, index...index)
-            end
-            s0 << r5
-            if r5
-              r7 = _nt_argument_list_item
-              s0 << r7
-            end
-          end
         end
       end
       if s0.last
-        r0 = instantiate_node(ArrayAssign,input, i0...index, s0)
-        r0.extend(ArrayAssign0)
+        r0 = instantiate_node(SyntaxNode,input, i0...index, s0)
+        r0.extend(AssigneeDotMethodCall0)
       else
         @index = i0
         r0 = nil
       end
 
-      node_cache[:array_assign][start_index] = r0
+      node_cache[:assignee_dot_method_call][start_index] = r0
 
       r0
     end
 
-    module ArrayBrackets0
+    module ElementReference0
     end
 
-    module ArrayBrackets1
+    module ElementReference1
       def argument_list_item
         elements[3]
       end
     end
 
-    module ArrayBrackets2
+    module ElementReference2
       def head
         elements[2]
       end
@@ -3316,10 +3548,10 @@ module Carat
 
     end
 
-    def _nt_array_brackets
+    def _nt_element_reference
       start_index = index
-      if node_cache[:array_brackets].has_key?(index)
-        cached = node_cache[:array_brackets][index]
+      if node_cache[:element_reference].has_key?(index)
+        cached = node_cache[:element_reference][index]
         @index = cached.interval.end if cached
         return cached
       end
@@ -3354,8 +3586,8 @@ module Carat
         end
       end
       if s1.last
-        r1 = instantiate_node(ArrayBrackets,input, i1...index, s1)
-        r1.extend(ArrayBrackets0)
+        r1 = instantiate_node(ElementReference,input, i1...index, s1)
+        r1.extend(ElementReference0)
       else
         @index = i1
         r1 = nil
@@ -3419,7 +3651,7 @@ module Carat
                 end
                 if s12.last
                   r12 = instantiate_node(SyntaxNode,input, i12...index, s12)
-                  r12.extend(ArrayBrackets1)
+                  r12.extend(ElementReference1)
                 else
                   @index = i12
                   r12 = nil
@@ -3455,8 +3687,8 @@ module Carat
           end
         end
         if s6.last
-          r6 = instantiate_node(ArrayBrackets,input, i6...index, s6)
-          r6.extend(ArrayBrackets2)
+          r6 = instantiate_node(ElementReference,input, i6...index, s6)
+          r6.extend(ElementReference2)
         else
           @index = i6
           r6 = nil
@@ -3469,7 +3701,7 @@ module Carat
         end
       end
 
-      node_cache[:array_brackets][start_index] = r0
+      node_cache[:element_reference][start_index] = r0
 
       r0
     end
@@ -4443,6 +4675,13 @@ module Carat
       r0
     end
 
+    module MethodName0
+      def simple_method_name
+        elements[0]
+      end
+
+    end
+
     def _nt_method_name
       start_index = index
       if node_cache[:method_name].has_key?(index)
@@ -4452,14 +4691,67 @@ module Carat
       end
 
       i0 = index
-      r1 = _nt_basic_method_name
+      i1, s1 = index, []
+      r2 = _nt_simple_method_name
+      s1 << r2
+      if r2
+        i4 = index
+        if has_terminal?('?', false, index)
+          r5 = instantiate_node(SyntaxNode,input, index...(index + 1))
+          @index += 1
+        else
+          terminal_parse_failure('?')
+          r5 = nil
+        end
+        if r5
+          r4 = r5
+        else
+          if has_terminal?('!', false, index)
+            r6 = instantiate_node(SyntaxNode,input, index...(index + 1))
+            @index += 1
+          else
+            terminal_parse_failure('!')
+            r6 = nil
+          end
+          if r6
+            r4 = r6
+          else
+            if has_terminal?('=', false, index)
+              r7 = instantiate_node(SyntaxNode,input, index...(index + 1))
+              @index += 1
+            else
+              terminal_parse_failure('=')
+              r7 = nil
+            end
+            if r7
+              r4 = r7
+            else
+              @index = i4
+              r4 = nil
+            end
+          end
+        end
+        if r4
+          r3 = r4
+        else
+          r3 = instantiate_node(SyntaxNode,input, index...index)
+        end
+        s1 << r3
+      end
+      if s1.last
+        r1 = instantiate_node(SyntaxNode,input, i1...index, s1)
+        r1.extend(MethodName0)
+      else
+        @index = i1
+        r1 = nil
+      end
       if r1
         r0 = r1
         r0.extend(MethodName)
       else
-        r2 = _nt_special_method_name
-        if r2
-          r0 = r2
+        r8 = _nt_special_method_name
+        if r8
+          r0 = r8
           r0.extend(MethodName)
         else
           @index = i0
@@ -4472,13 +4764,112 @@ module Carat
       r0
     end
 
-    module BasicMethodName0
+    module ImplicitMethodName0
+      def simple_method_name
+        elements[0]
+      end
+
     end
 
-    def _nt_basic_method_name
+    def _nt_implicit_method_name
       start_index = index
-      if node_cache[:basic_method_name].has_key?(index)
-        cached = node_cache[:basic_method_name][index]
+      if node_cache[:implicit_method_name].has_key?(index)
+        cached = node_cache[:implicit_method_name][index]
+        @index = cached.interval.end if cached
+        return cached
+      end
+
+      i0, s0 = index, []
+      r1 = _nt_simple_method_name
+      s0 << r1
+      if r1
+        i2 = index
+        if has_terminal?('?', false, index)
+          r3 = instantiate_node(SyntaxNode,input, index...(index + 1))
+          @index += 1
+        else
+          terminal_parse_failure('?')
+          r3 = nil
+        end
+        if r3
+          r2 = r3
+        else
+          if has_terminal?('!', false, index)
+            r4 = instantiate_node(SyntaxNode,input, index...(index + 1))
+            @index += 1
+          else
+            terminal_parse_failure('!')
+            r4 = nil
+          end
+          if r4
+            r2 = r4
+          else
+            @index = i2
+            r2 = nil
+          end
+        end
+        s0 << r2
+      end
+      if s0.last
+        r0 = instantiate_node(MethodName,input, i0...index, s0)
+        r0.extend(ImplicitMethodName0)
+      else
+        @index = i0
+        r0 = nil
+      end
+
+      node_cache[:implicit_method_name][start_index] = r0
+
+      r0
+    end
+
+    module AssigneeMethodName0
+      def simple_method_name
+        elements[1]
+      end
+    end
+
+    def _nt_assignee_method_name
+      start_index = index
+      if node_cache[:assignee_method_name].has_key?(index)
+        cached = node_cache[:assignee_method_name][index]
+        @index = cached.interval.end if cached
+        return cached
+      end
+
+      i0, s0 = index, []
+      if has_terminal?('', false, index)
+        r1 = instantiate_node(SyntaxNode,input, index...(index + 0))
+        @index += 0
+      else
+        terminal_parse_failure('')
+        r1 = nil
+      end
+      s0 << r1
+      if r1
+        r2 = _nt_simple_method_name
+        s0 << r2
+      end
+      if s0.last
+        r0 = instantiate_node(MethodName,input, i0...index, s0)
+        r0.extend(AssigneeMethodName0)
+      else
+        @index = i0
+        r0 = nil
+      end
+
+      node_cache[:assignee_method_name][start_index] = r0
+
+      r0
+    end
+
+    module SimpleMethodName0
+    end
+
+    def _nt_simple_method_name
+      start_index = index
+      if node_cache[:simple_method_name].has_key?(index)
+        cached = node_cache[:simple_method_name][index]
         @index = cached.interval.end if cached
         return cached
       end
@@ -4508,60 +4899,16 @@ module Carat
         end
         r2 = instantiate_node(SyntaxNode,input, i2...index, s2)
         s0 << r2
-        if r2
-          i5 = index
-          if has_terminal?('?', false, index)
-            r6 = instantiate_node(SyntaxNode,input, index...(index + 1))
-            @index += 1
-          else
-            terminal_parse_failure('?')
-            r6 = nil
-          end
-          if r6
-            r5 = r6
-          else
-            if has_terminal?('!', false, index)
-              r7 = instantiate_node(SyntaxNode,input, index...(index + 1))
-              @index += 1
-            else
-              terminal_parse_failure('!')
-              r7 = nil
-            end
-            if r7
-              r5 = r7
-            else
-              if has_terminal?('=', false, index)
-                r8 = instantiate_node(SyntaxNode,input, index...(index + 1))
-                @index += 1
-              else
-                terminal_parse_failure('=')
-                r8 = nil
-              end
-              if r8
-                r5 = r8
-              else
-                @index = i5
-                r5 = nil
-              end
-            end
-          end
-          if r5
-            r4 = r5
-          else
-            r4 = instantiate_node(SyntaxNode,input, index...index)
-          end
-          s0 << r4
-        end
       end
       if s0.last
         r0 = instantiate_node(SyntaxNode,input, i0...index, s0)
-        r0.extend(BasicMethodName0)
+        r0.extend(SimpleMethodName0)
       else
         @index = i0
         r0 = nil
       end
 
-      node_cache[:basic_method_name][start_index] = r0
+      node_cache[:simple_method_name][start_index] = r0
 
       r0
     end

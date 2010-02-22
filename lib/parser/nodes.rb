@@ -322,7 +322,7 @@ module Carat
     
     class MethodCallChain < Treetop::Runtime::SyntaxNode
       def chain
-        [receiver] + tail.elements
+        [receiver] + tail.elements.map { |el| el.item }
       end
       
       # This basically resolves the associativity of a method call chain. During parsing, the chain
@@ -336,7 +336,7 @@ module Carat
           call = chain.last
           receiver = reduce(chain[0..-2])
           
-          if call.argument_list.empty?
+          if !call.respond_to?(:argument_list) || call.argument_list.empty?
             argument_list = Carat::AST::ArgumentList.new(location)
           else
             argument_list = call.argument_list.to_ast
@@ -351,35 +351,45 @@ module Carat
       end
     end
     
-    class ArrayAccess < Treetop::Runtime::SyntaxNode
+    class ImplicitMethodCallChain < MethodCallChain
+      def tail_elements
+        if tail.empty?
+          []
+        else
+          tail.elements.map { |el| el.item }
+        end
+      end
+    
+      def chain
+        [nil, head] + tail_elements
+      end
+    end
+    
+    class AssigneeMethodCallChain < MethodCallChain
+      def middle_elements
+        if middle.empty?
+          []
+        else
+          middle.elements.map { |el| el.method_call_segment.item }
+        end
+      end
+      
+      def chain
+        [receiver] + middle_elements + [last.item]
+      end
+    end
+    
+    class ImplicitAssigneeMethodCallChain < AssigneeMethodCallChain
+      def chain
+        [nil, head] + middle_elements + [last.item]
+      end
+    end
+    
+    class ElementReference < Treetop::Runtime::SyntaxNode
       def method_name
         :[]
       end
       
-      def items
-        array_brackets.items
-      end
-      
-      def argument_list
-        Carat::AST::ArgumentList.new(location, items)
-      end
-    end
-    
-    class ArrayAssign < Treetop::Runtime::SyntaxNode
-      def method_name
-        :[]=
-      end
-      
-      def items
-        array_brackets.items << value.to_ast
-      end
-      
-      def argument_list
-        Carat::AST::ArgumentList.new(location, items)
-      end
-    end
-    
-    class ArrayBrackets < Treetop::Runtime::SyntaxNode
       def items
         if respond_to?(:head)
           [head.to_ast] + tail.elements.map(&:argument_list_item).map(&:to_ast)
@@ -387,31 +397,21 @@ module Carat
           []
         end
       end
+      
+      def argument_list
+        Carat::AST::ArgumentList.new(location, items)
+      end
     end
     
     module MethodName
       def to_sym
-        text_value.gsub(/\s/, '').to_sym
+        text_value.to_sym
       end
     end
     
     module Identifier
       def to_sym
         text_value.to_sym
-      end
-    end
-    
-    class ImplicitMethodCallChain < MethodCallChain
-      def tail_elements
-        if tail.empty?
-          []
-        else
-          tail.elements
-        end
-      end
-    
-      def chain
-        [nil, head] + tail_elements
       end
     end
     
@@ -441,7 +441,7 @@ module Carat
             location, receiver_ast.receiver,
             "#{receiver_ast.name}=".to_sym,
             Carat::AST::ArgumentList.new(
-              location, [
+              location, receiver_ast.arguments.items + [
                 Carat::AST::ArgumentList::Item.new(location, value_ast)
               ]
             )
