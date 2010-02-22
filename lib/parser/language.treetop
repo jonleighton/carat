@@ -23,20 +23,24 @@ module Carat
       or_expression
     end
     
+    rule assignee
+      assignee_method_call_chain / variable
+    end
+    
     rule simple_assignment
-      receiver:(assignee_method_call_chain / variable) space?
+      receiver:assignee space?
       '=' multiline_space?
       value:expression <Assignment>
     end
     
     rule binary_method_assignment
-      receiver:(assignee_method_call_chain / variable) space?
+      receiver:assignee space?
       name:('<<' / '>>' / '+' / '-' / '*' / '/') '=' multiline_space?
       value:expression <BinaryMethodAssignment>
     end
     
     rule binary_operation_assignment
-      receiver:(assignee_method_call_chain / variable) space?
+      receiver:assignee space?
       name:('||' / '&&') '=' multiline_space?
       value:expression <BinaryOperationAssignment>
     end
@@ -127,6 +131,10 @@ module Carat
       '(' expression ')' <BracketedExpression>
     end
     
+    rule definition_body
+      terminator expression_list 'end'
+    end
+    
     rule module_definition
       'module' multiline_space
       constant
@@ -147,8 +155,34 @@ module Carat
       definition_body <MethodDefinition>
     end
     
-    rule definition_body
-      terminator expression_list 'end'
+    # The arguments defined as part of a method definition
+    rule method_argument_pattern
+      space? '(' multiline_space?
+      contents:argument_pattern_contents
+      multiline_space? ')' <ArgumentPattern> /
+      '' <ArgumentPattern>
+    end
+    
+    # The arguments defined as part of a block definition
+    rule block_argument_pattern
+      space? '|' multiline_space?
+      contents:argument_pattern_contents
+      multiline_space? '|' <ArgumentPattern> /
+      '' <ArgumentPattern>
+    end
+    
+    rule argument_pattern_contents
+      head:argument_pattern_item
+      tail:(multiline_space? ',' multiline_space? item:argument_pattern_item)* /
+      ''
+    end
+    
+    rule argument_pattern_item
+      assignee default:(
+        multiline_space? '='
+        multiline_space? expression
+      )? <ArgumentPatternItem> /
+      ('*' / '&') multiline_space? assignee <ArgumentPatternItem>
     end
     
     rule control_structure
@@ -192,35 +226,6 @@ module Carat
       type:(space expression)?
       assignment:(space? '=>' multiline_space variable)?
       multiline_space contents:expression_list <RescueExpression>
-    end
-    
-    # The arguments defined as part of a method definition
-    rule method_argument_pattern
-      space? '(' multiline_space?
-      contents:argument_pattern_contents
-      multiline_space? ')' <ArgumentPattern> /
-      '' <ArgumentPattern>
-    end
-    
-    # The arguments defined as part of a block definition
-    rule block_argument_pattern
-      space? '|' multiline_space?
-      contents:argument_pattern_contents
-      multiline_space? '|' <ArgumentPattern> /
-      '' <ArgumentPattern>
-    end
-    
-    rule argument_pattern_contents
-      head:argument_pattern_item
-      tail:(multiline_space? ',' multiline_space? item:argument_pattern_item)* /
-      ''
-    end
-    
-    rule argument_pattern_item
-      assignee:variable
-      default:(multiline_space? '=' multiline_space? expression)?
-      <ArgumentPatternItem> /
-      ('*' / '&') multiline_space? assignee:variable <ArgumentPatternItem>
     end
     
     # A literal object, e.g. a number, string, true, false, etc

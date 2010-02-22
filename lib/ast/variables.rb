@@ -3,9 +3,16 @@ module Carat::AST
     child :receiver
     child :value
     
+    # The receiver might be a local variable, instance variable, or method call. If it is a method
+    # call then the value is technically an argument to the call, so we don't want to evaluate
+    # it at this stage.
     def eval(&continuation)
-      eval_child(value) do |value_object|
-        receiver.assign(value_object, &continuation)
+      if receiver.is_a?(MethodCall)
+        receiver.assign(value, &continuation)
+      else
+        eval_child(value) do |value_object|
+          receiver.assign(value_object, &continuation)
+        end
       end
     end
   end

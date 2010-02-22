@@ -55,7 +55,7 @@ module Carat
       
       def runtime=(runtime_object)
         @runtime = runtime_object
-        children.compact.each { |child| child.runtime = runtime_object }
+        children.compact.each { |child| child.runtime = runtime_object if child.is_a?(Node) }
       end
       
       def children

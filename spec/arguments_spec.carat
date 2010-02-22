@@ -32,6 +32,14 @@ class ArgumentSpecA
   def h(@a, b)
     [@a, b]
   end
+  
+  def val=(x)
+    @val = x
+  end
+  
+  def i(self.val, b)
+    [@val, b]
+  end
 end
 
 class ArgumentSpecB
@@ -71,6 +79,10 @@ describe "Argument patterns" do
   
   it "should support assigning to instance variables" do
     @test.h(1, 2).should == [1, 2]
+  end
+  
+  it "should support assigning to methods" do
+    @test.i(1, 2).should == [1, 2]
   end
 end
 

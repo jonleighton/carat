@@ -67,6 +67,14 @@ module Carat::AST
       end
     end
     
+    def assign_exception_variable(exception, &continuation)
+      if exception_variable
+        exception_variable.assign(exception, &continuation)
+      else
+        yield
+      end
+    end
+    
     def failure_continuation(&continuation)
       lambda do |exception|
         # Remove the frame for this failure continuation from the stack
@@ -76,8 +84,9 @@ module Carat::AST
         # the stack to the frame of the next failure continuation, and call that.
         check_error_type(exception) do |error_type_matches|
           if error_type_matches
-            exception_variable.assign(exception) unless exception_variable.nil?
-            eval_child(contents, &continuation)
+            assign_exception_variable(exception) do
+              eval_child(contents, &continuation)
+            end
           else
             stack.unwind_to(:failure_continuation)
             current_failure_continuation.call(exception)

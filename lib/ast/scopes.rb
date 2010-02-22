@@ -187,8 +187,9 @@ module Carat::AST
       if arity.include?(values.length)
         assign_item_operation = lambda do |item, &each_continuation|
           value_for(item, values) do |value|
-            item.assignee.assign(value, &continuation)
-            each_continuation.call
+            item.assignee.assign(value) do
+              each_continuation.call
+            end
           end
         end
         

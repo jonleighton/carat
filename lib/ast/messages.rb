@@ -27,7 +27,14 @@ module Carat::AST
     end
     
     def assign(value, &continuation)
-      call("#{name}=".to_sym, [value], &continuation)
+      assign_arguments = Carat::AST::ArgumentList.new(
+        location, arguments.items + [
+          Carat::AST::ArgumentList::Item.new(location, value)
+        ]
+      )
+      assign_arguments.runtime = runtime
+      
+      call("#{name}=".to_sym, assign_arguments, &continuation)
     end
   end
   
@@ -37,7 +44,11 @@ module Carat::AST
       property :type, :default => :normal
       
       def eval(&continuation)
-        eval_child(expression, &continuation)
+        if expression.is_a?(Node)
+          eval_child(expression, &continuation)
+        else
+          yield expression
+        end
       end
     end
     
