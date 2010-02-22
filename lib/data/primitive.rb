@@ -1,13 +1,20 @@
 module Carat::Data
   class PrimitiveClass < ClassInstance
-    def has_instance_method?(name)
-      current_object.respond_to?("primitive_#{name}")
+    def lookup_instance_method(name)
+      primitive_name = "primitive_#{name}"
+      current_object.method(primitive_name) if current_object.respond_to?(primitive_name)
     end
     
     # This is a special version of call which only dispatches primitives
-    def call(method_name, argument_list = [], location = nil, &continuation)
+    def call(method_or_name, argument_list = [], location = nil, &continuation)
+      if method_or_name.is_a?(Method)
+        method = method_or_name
+      else
+        method = lookup_instance_method!(method_or_name)
+      end
+      
       eval_arguments(argument_list) do |arguments|
-        send_primitive("primitive_#{method_name}", arguments, &continuation)
+        send_primitive(method, arguments, &continuation)
       end
     end
     
@@ -19,8 +26,8 @@ module Carat::Data
       end
     end
     
-    def send_primitive(name, arguments, &continuation)
-      current_object.send(name, *arguments) do |result|
+    def send_primitive(method, arguments, &continuation)
+      method.call(*arguments) do |result|
         unless result.is_a?(Carat::Data::ObjectInstance)
           raise Carat::CaratError, "primitive '#{name}' did not return an ObjectInstance: #{result.inspect}"
         end
