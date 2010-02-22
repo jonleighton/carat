@@ -23,9 +23,6 @@ module Carat::Data
     def_delegators :runtime, :constants, :stack, :current_location, :current_failure_continuation,
                    :current_call, :current_scope, :current_object, :call_stack
     
-    # TODO: Can this be done automatically in primitive_include?
-    include KernelModule
-    
     def initialize(runtime, klass)
       @runtime, @klass    = runtime, klass
       @carat_object_id    = ObjectInstance.next_object_id

@@ -85,6 +85,7 @@ module Carat::Data
     
     def primitive_include(mod)
       @super = IncludeClassInstance.new(runtime, mod, @super)
+      instance_class.send(:include, mod.primitives_module) if mod.primitives_module
       yield mod
     end
   end

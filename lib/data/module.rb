@@ -26,26 +26,26 @@ module Carat::Data
       instance_of?(IncludeClassInstance)
     end
     
+    # If this is actually a module (as opposed to a class or whatever) then we can have a module
+    # in the implementation language containing primitives for this specific module in the target
+    # language.
+    # 
+    # For instance, if we create a +ModuleInstance+ with name "Kernel", then the module named
+    # "KernelModule", defined primitives for it.
+    # 
+    # This is useful, because then when "Kernel" is included in another module/class, we can also
+    # make the primitives available to the module/class it is included in. 
+    def primitives_module
+      if name && Carat::Data.const_defined?("#{name}Module")
+        Carat::Data.const_get("#{name}Module")
+      end
+    end
+    
     def to_s
       "<module:#{name}>"
     end
     
     private
-    
-      # If this is actually a module (as opposed to a class or whatever) then we can have a module
-      # in the implementation language containing primitives for this specific module in the target
-      # language.
-      # 
-      # For instance, if we create a +ModuleInstance+ with name "Kernel", then the module named
-      # "KernelModule", defined primitives for it.
-      # 
-      # This is useful, because then when "Kernel" is included in another module/class, we can also
-      # make the primitives available to the module/class it is included in. 
-      def primitives_module
-        if name && Carat::Data.const_defined?("#{name}Module")
-          Carat::Data.const_get("#{name}Module")
-        end
-      end
       
       def include_module_primitives
         extend(primitives_module) if primitives_module
