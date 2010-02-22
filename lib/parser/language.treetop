@@ -314,7 +314,6 @@ module Carat
     # anyway. If the block should bind to the method call, parentheses must be used.
     # 
     # The argument list may not start with + or -, so as not to confuse "x +1" with "x(+1)"
-    # TODO: Is the this solved by precedence?
     rule unbracketed_argument_list
       space !('+' / '-')
       head:argument_list_item
