@@ -62,14 +62,24 @@ module ClassSpecC
   def foo
     24
   end
+  
+  def self.bar
+    14
+  end
 end
 
 class ClassSpecD
   include ClassSpecC
 end
 
+describe "A class which includes a module" do
+  it "should respond to the module's singleton methods" do
+    ClassSpecD.bar.should == 14
+  end
+end
+
 describe "An instance of a class which includes a module" do
-  it "should respond to the module's methods" do
+  it "should respond to the module's instance methods" do
     ClassSpecD.new.foo.should == 24
   end
 end

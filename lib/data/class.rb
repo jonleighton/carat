@@ -34,6 +34,10 @@ module Carat::Data
       end
     end
     
+    def insert_include_class(mod)
+      @super = IncludeClassInstance.new(runtime, mod, @super)
+    end
+    
     def to_s
       "<class:#{name}>"
     end
@@ -84,8 +88,11 @@ module Carat::Data
     end
     
     def primitive_include(mod)
-      @super = IncludeClassInstance.new(runtime, mod, @super)
       instance_class.send(:include, mod.primitives_module) if mod.primitives_module
+      
+      insert_include_class(mod)
+      singleton_class.insert_include_class(mod.singleton_class)
+      
       yield mod
     end
   end
