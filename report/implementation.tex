@@ -26,9 +26,9 @@ The interpreter code is organised into the following directory structure:
 
 \subsection{Parsing}
 
-The first step is to parse the source code and convert it into an AST. This is done by the \code{Carat::LanguageParser} class, which is largely produced by the parser generator, Treetop\footnote{\url{http://treetop.rubyforge.org/}}.
+The first step is to parse the source code and convert it into an AST. This is done by the \code{Carat::}\-\code{Language}\-\code{Parser} class, which is largely produced by the parser generator, Treetop\footnote{\url{http://treetop.rubyforge.org/}}.
 
-I chose Treetop because its grammar format is intuitive. It uses Parsing Expression Grammars which avoid the need to write a separate tokeniser. Here is an excerpt from the grammar (in \file{parser/language.treetop}), defining the syntax for a while loop:
+I chose Treetop because its grammar format is intuitive. It uses Parsing Expression Grammars\footnote{\url{http://pdos.csail.mit.edu/~baford/packrat/}} which avoid the need to write a separate tokeniser. Here is an excerpt from the grammar (in \path{parser/language.treetop}), defining the syntax for a while loop:
 
 \begin{lstlisting}[language=treetop]
 rule while_expression
@@ -40,7 +40,7 @@ end
 
 Characters in single quotes are matched literally. The other items are references to rules. Names before a colon apply a label. The question mark in ``\code{space?}" makes that rule optional.
 
-The parser produces a parse tree. Each node has a \code{to\_ast} method, which recursively converts it to an AST. In the above example, \code{<WhileExpression>} specifies the name of a class for the node, which is defined in \file{parser/nodes.rb}:
+The parser produces a parse tree. Each node has a \code{to_ast} method, which recursively converts it to an AST. In the above example, \code{<WhileExpression>} specifies the name of a class for the node, which is defined in \path{parser/nodes.rb}:
 
 \begin{lstlisting}
 class WhileExpression < Treetop::Runtime::SyntaxNode
@@ -50,7 +50,7 @@ class WhileExpression < Treetop::Runtime::SyntaxNode
 end
 \end{lstlisting}
 
-This is a simple example: more complex nodes may not map directly to an AST, and may need to do additional syntax checking.
+This is a simple example; more complex nodes may not map directly to an AST, and may need to do additional syntax checking.
 
 \subsection{Abstract Syntax Tree}
 
@@ -101,9 +101,9 @@ Whenever the \defn{stack} is referred to, this is the stack at the top of the st
   \item A \defn{failure continuation}, which describes what to do when an exception is raised
 \end{enumerate}
 
-All of these values are optional because they can all change independently of each other during program execution. But in practise a frame has at least one or it will be quite useless.
+All of these values are optional because they can all change independently of each other during program execution. But in practice a frame should have at least one or it will be quite useless.
 
-Within the runtime, the ``current scope", ``current call" or ``current failure continuation" refers to whichever value is in a frame closest to the top of the stack.
+The ``current scope", ``current call" or ``current failure continuation" refers to whichever value is in a frame closest to the top of the stack.
 
 \subsection{The Object Model}
 \label{sec:object_model}
@@ -136,12 +136,12 @@ Carat follows Ruby's object model closely. Everything is an object, and all obje
   }
   child { node [multiline node] {ArrayInstance, \\ StringInstance, \\ FixnumInstance, \\ ...} };
 \end{tikzpicture}
-\caption{Inheritance hierarchy of \code{Carat::Data} classes}
+\caption{Inheritance hierarchy of \movingcode{Carat::Data} classes}
 \label{fig:data_object_hierarchy}
 \end{center}
 \end{figure}
 
-\subsubsection{\code{ObjectInstance}}
+\subsubsection{\movingcode{ObjectInstance}}
 
 An \code{ObjectInstance} is initialized with the following signature:
 
@@ -193,9 +193,9 @@ Objects don't store their own singleton methods. Instead, a \defn{singleton clas
 \end{center}
 \end{figure}
 
-It is useful to be able to identify the class from which an object was created, but calling \code{klass} might return a singleton class instead. So objects have a \code{real\_klass} method which returns the first \code{klass} or superclass of \code{klass} which is not a singleton class.
+It is useful to be able to identify the class from which an object was created, but calling \code{klass} might return a singleton class instead. So objects have a \code{real_klass} method which returns the first \code{klass} or superclass of \code{klass} which is not a singleton class.
 
-\subsubsection{\code{ModuleInstance}}
+\subsubsection{\movingcode{ModuleInstance}}
 
 A module is a container of methods. It cannot be instantiated, but it can be included within classes. A \code{ModuleInstance} is initialized with the following signature:
 
@@ -207,7 +207,7 @@ A \code{ModuleInstance} has a \defn{method table}, which maps method names to \c
 
 Being a type of object, a module can have singleton methods which are analogous to ``class methods" in other languages. Unlike normal objects, modules create their singleton class immediately rather than waiting for it to be needed.
 
-\subsubsection{\code{ClassInstance}}
+\subsubsection{\movingcode{ClassInstance}}
 
 A class is like a module, but can be instantiated. A \code{ClassInstance} is initialized with the following signature:
 
@@ -378,30 +378,40 @@ end
 
 \subsection{Execution}
 
-An AST is executed by passing its root node to \code{Runtime\#execute}:
+An AST is executed by passing its root node to \code{Runtime#execute}:
+
+\begin{lstlisting}
+def execute(root, scope = nil)
+  with_stack { call_main_method(root, scope) }
+end
+\end{lstlisting}
+
+Roughly speaking, the following happens:
+
+\begin{enumerate}
+  \item A new stack is pushed onto the stack of stacks
+  \item The root node is wrapped in a special ``\code{main}" method, which is called
+  \item The stack is removed from the stack of stacks
+\end{enumerate}
+
+\subsubsection{Trampoline}
+
+\code{Runtime#with_stack} is defined as follows:
 
 \begin{minipage}{\textwidth}
 \begin{lstlisting}
-def execute(root)
+def with_stack(&result)
   @stack_of_stacks << Stack.new
-  
-  current_result = call_main_method(root)
-  while current_result.is_a?(Proc)
-    current_result = current_result.call
-  end
-  
+  result = result.call while result.is_a?(Proc)
   @stack_of_stacks.pop
+  result
 end
 \end{lstlisting}
 \end{minipage}
 
-A new stack is pushed onto the stack of stacks. The root node is wrapped in a method named ``\code{main}" and then that method is called.
-
-\subsubsection{Trampoline}
-
 One outcome of CPS is that all evaluation methods have calls to other evaluation methods in \defn{tail position}: the last line of the method. When a method call in tail position returns, no further computation is done before the method which made the call also returns. Languages with \defn{tail call optimisation} keep the stack size down by replacing the calling method on the stack with the method which is being called in tail position. Ruby does not implement tail call optimisation, so it is quite easy to write a Carat program which will exhaust the stack space. This is because in CPS, no evaluation method returns a result until the very last node is evaluated.
 
-To solve this, \code{execute} uses a \defn{trampoline}. In certain places where an evaluation method would usually call another evaluation method, it instead wraps that call in a lambda which is returned. This causes the stack in the implementation language to ``collapse" right back down to \code{execute}, which simply calls the lambda to resume execution. The \code{while} loop does this repeatedly until an answer which is not a lambda is returned.
+To solve this, \code{with_stack} uses a \defn{trampoline}. In certain places where an evaluation method would usually call another evaluation method, it instead wraps that call in a lambda which is returned. This causes the stack in the implementation language to ``collapse" right back down to \code{with_stack}, which simply calls the lambda to resume execution. The \code{while} loop does this repeatedly until an answer which is not a lambda is returned.
 
 \subsubsection{The main method}
 
@@ -409,28 +419,27 @@ The main method call is constructed like so:
 
 \begin{minipage}{\textwidth}
 \begin{lstlisting}
-def call_main_method(contents)
-  scope = Scope.new(constants[:Object].new)
+def call_main_method(contents, scope = nil)
   call  = MainMethodCall.new(contents.location)
-  frame = Frame.new(scope, call, default_failure_continuation)
+  frame = Frame.new(scope || main_scope, call, default_failure_continuation)
   
   contents.runtime = self
-  contents.eval_in_frame(frame) { |final_result| nil }
+  contents.eval_in_frame(frame, &identity_continuation)
 end
 \end{lstlisting}
 \end{minipage}
 
-An initial scope is created. Every \code{Scope} must have a value for \code{self}, which is used when looking up instance variables and evaluating method calls with no explicit receiver. In the main method, an instance of \code{Object} is used.
+If no scope is given, an initial one is created. Every \code{Scope} must have a value for \code{self}, which is used when looking up instance variables and evaluating method calls with no explicit receiver. In the main method, \code{self} is an instance of \code{Object} by default.
 
 A special \code{MainMethodCall} object is also created. This is just so the main method call is present on the stack and can be used when exceptions generate a backtrace.
 
-An initial frame is created using the scope, call and default failure continuation. The AST node's \code{eval\_in\_frame} method is called, which adds the frame to the stack, evaluates the node, and then ensures the frame is subsequently removed from the stack. The continuation given does nothing with the final answer, because the end of the program has been reached.
+An initial frame is created using the scope, call and default failure continuation. The AST node's \code{eval_in_frame} method is called, which adds the frame to the stack, evaluates the node, and then ensures the frame is subsequently removed from the stack. The continuation given does nothing with the final answer, because the end of the program has been reached.
 
 \subsection{Sequential evaluation}
 
 Returning to the example, the top node is an expression list. Expression list nodes contain an array of child nodes, which are evaluated in turn. The result of the last node is the result of the expression list.
 
-This presents a challenge, because whilst the natural inclination would be to loop over the child nodes, CPS requires that evaluation calls only appear in tail position. To solve this, \code{Runtime} provides two high-level operations, \code{each} (for iteration) and \code{fold} (for accumulation). These translate a sequential operation on an array into a recursive one using continuations. For AST nodes, there is also \code{eval\_fold} which accumulates the result of evaluating each node in an array.
+This presents a challenge, because whilst the natural inclination would be to loop over the child nodes, CPS requires that evaluation calls only appear in tail position. To solve this, \code{Runtime} provides two high-level operations, \code{each} (for iteration) and \code{fold} (for accumulation). These translate a sequential operation on an array into a recursive one using continuations. For AST nodes, there is also \code{eval_fold} which accumulates the result of evaluating each node in an array.
 
 \subsection{Method calls}
 
@@ -438,28 +447,28 @@ The only item in the expression list is a \code{MethodCall[:puts]} with no recei
 
 \begin{enumerate}
   \item Evaluate the receiver. If there is no explicit receiver, the \code{self} object in the current scope (the one at the top of the scope stack) is used.
-  \item Check whether the receiver object has an instance method with the given name. The advantage of the object model discussed in section \ref{sec:object_model} is that method look-up is very simple. When an object looks for an instance method, it asks its \code{klass} to look up that method. If the class contains the method in its method table, it returns it. Otherwise, it asks its \code{super}. Eventually, when there is no \code{super} (i.e. for \code{Object}), no method has been found so \code{nil} is returned.
-  \item If the method is found, use the receiver object's \code{call} method. This in turn uses \code{Runtime\#call}, which creates a \code{Call} object and ``sends" it.
-  \item If the method is not found, an exception is raised (see section ?)
+  \item Ask the receiver object for the instance method with the given name. The advantage of the object model discussed in section \ref{sec:object_model} is that method look-up is very simple. When an object looks for an instance method, it asks its \code{klass} to look up that method. If the class contains the method in its method table, it returns it. Otherwise, it asks its \code{super}. Eventually, when there is no \code{super} (i.e. for \code{Object}), no method has been found so \code{nil} is returned.
+  \item If the method is found, use the receiver object's \code{call} method. This in turn uses \code{Runtime#call}, which creates a \code{Call} object and ``sends" it.
+  \item If the method is not found, raise an exception (see section ?)
 \end{enumerate}
 
-A \code{Call} object has the following important attributes:
+The following attributes of a \code{Call} object are worth explaining:
 
 \begin{enumerate}
-  \item The \defn{callable}, which is the method or lambda being called.
-  \item The \defn{execution scope}, which is the scope which the callable should be evaluated within. For method calls, this starts as an empty scope where \code{self} is the receiver object.
-  \item The \defn{caller scope}, which is the scope from which the call was made. (The current scope of the runtime when the \code{Call} was created.)
-  \item The \defn{argument list}, which is the \code{ArgumentList} AST node represting the arguments passed to the call. (It can also be an array of objects, for convenience when making calls within the implementation language.)
-  \item The \defn{continuation}, describing the computation to be done once the call has been sent.
+  \item The \defn{callable} is the method or lambda being called.
+  \item The \defn{execution scope} is the scope which the callable should be evaluated within. For method calls, this starts as an empty scope where \code{self} is the receiver object.
+  \item The \defn{caller scope} is the scope from which the call was made. (The current scope of the runtime when the \code{Call} was created.)
+  \item The \defn{argument list} is the \code{ArgumentList} AST node represting the arguments passed to the call. (It can also be an array of objects, for convenience when making calls within the implementation language.)
+  \item The \defn{continuation} describes the computation to be done once the call has been sent.
 \end{enumerate}
 
 The following happens when a call is sent:
 
 \begin{enumerate}
+  \item A frame containing the execution scope and the call is pushed onto the stack
   \item The argument list is evaluated to produce the argument values
-  \item The argument values are assigned within the execution scope, according to the argument pattern of the callable (see section ? for a fuller explanation)
-  \item A frame containing the execution scope and the call is created
-  \item The \code{eval\_in\_frame} method of the AST node of the callable's contents is called with the frame
+  \item The argument values are matched to the argument pattern of the callable and assigned (see section ? for a detailed explanation)
+  \item The callable's contents are evaluated
 \end{enumerate}
 
 This is one of the key places where a lambda is used to return to the trampoline method.
@@ -524,7 +533,7 @@ Instead, an \defn{include class} is created and the actual module's \code{super}
 
 \subsection{Primitives}
 
-The method definition for \code{Kernel\#puts} (in \file{kernel/kernel.carat}) is:
+The method definition for \code{Kernel#puts} (in \path{kernel/kernel.carat}) is:
 
 \begin{lstlisting}
 def puts(obj = "\n")
@@ -534,14 +543,14 @@ end
 
 This is a \defn{primitive method call}. Primitives are the eventual way that a program can actually ``do" something; everything else is just memory access and method calls. In this case, the \code{puts} method needs to output some text, so it uses the \code{puts} primitive.
 
-The \code{Primitive} class is represented by \code{Carat::Data::PrimitiveClass} in the implementation language. The primitive syntax is parsed in exactly the same way as any other method call, but \code{PrimitiveClass} overrides the default \code{ObjectInstance\#call} method to do the following:
+The \code{Primitive} class is represented by \code{Carat::Data::PrimitiveClass} in the implementation language. The primitive syntax is parsed in exactly the same way as any other method call, but \code{Primitive}\-\code{Class} overrides the default \code{ObjectInstance#call} method to do the following:
 
 \begin{enumerate}
   \item Evaluate the argument list
   \item Get the object representing the current \code{self}
-  \item Prepend ``\code{primitive\_}" to the method name and call that method on the object, passing the evaluated arguments
+  \item Prepend ``\code{primitive_}" to the method name and call that method on the object, passing the evaluated arguments
 \end{enumerate}
 
-For the example, \code{self} is an \code{Object}, but the method is in \code{Kernel}. The \code{primitive\_puts} method is actually defined the \code{Carat::Data::KernelModule} module. When a module inclusion happens in the target language, the implementation checks whether there is a corresponding module in the implementation language. If there is, that module is included in the implementation language. For example, when \code{Object} includes \code{Kernel} in the target language, \code{ObjectInstance} includes \code{KernelModule} in the implementation language.
+For the example, \code{self} is an \code{Object}, but the method is in \code{Kernel}. The \code{primitive_puts} method is actually defined the \code{Carat::Data::KernelModule} module. When a module inclusion happens in the target language, the implementation checks whether there is a corresponding module in the implementation language. If there is, that module is included in the implementation language. For example, when \code{Object} includes \code{Kernel} in the target language, \code{ObjectInstance} includes \code{KernelModule} in the implementation language.
 
-When \code{KernelModule\#primitive\_puts} is finally called, it converts the object given as an argument to a Ruby string and uses Ruby's \code{Kernel.puts} method to output it.
+When \code{KernelModule#primitive_puts} is finally called, it converts the object given as an argument to a Ruby string and uses Ruby's \code{Kernel.puts} method to output it.

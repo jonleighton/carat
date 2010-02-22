@@ -140,14 +140,9 @@ module Carat
     # continue the execution of the program. This collapses the call stack right back down, so
     # solves the problem of tail call recursion. This is what the while loop is doing. This
     # technique is called "trampolining".
-    def with_stack(&block)
+    def with_stack(&result)
       @stack_of_stacks << Stack.new
-      
-      result = block.call
-      while result.is_a?(Proc)
-        result = result.call
-      end
-      
+      result = result.call while result.is_a?(Proc)
       @stack_of_stacks.pop
       result
     end

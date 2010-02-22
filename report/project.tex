@@ -80,21 +80,21 @@
 \definecolor{lightgrey}{gray}{0.85}
 
 \lstset{
-language=Ruby,                % choose the language of the code
-showstringspaces=false,       % underline spaces within strings
-tabsize=2,	                  % sets default tabsize to 2 spaces
-rulesepcolor=\color{Gray},
-basicstyle=\ttfamily,
-upquote=true,
-keywordstyle=\color{Mahogany}\bfseries,
-commentstyle=\color{MidnightBlue}\em,
-stringstyle=\color{RedOrange},
-aboveskip=\bigskipamount,
-belowskip=0pt,
-backgroundcolor=\color{verylightgrey},
-frame=single,
-frameround=tttt,
-rulecolor=\color{lightgrey}
+  language=Ruby,                % choose the language of the code
+  showstringspaces=false,       % underline spaces within strings
+  tabsize=2,	                  % sets default tabsize to 2 spaces
+  rulesepcolor=\color{Gray},
+  basicstyle={\ttfamily \small},
+  upquote=true,
+  keywordstyle=\color{Mahogany}\bfseries,
+  commentstyle=\color{MidnightBlue}\em,
+  stringstyle=\color{RedOrange},
+  aboveskip=\bigskipamount,
+  belowskip=0pt,
+  backgroundcolor=\color{verylightgrey},
+  frame=single,
+  frameround=tttt,
+  rulecolor=\color{lightgrey}
 }
 \lstdefinelanguage{treetop}
 {keywords={rule,end},string=[b]{'}}
@@ -115,18 +115,20 @@ rulecolor=\color{lightgrey}
 \author{\getauthor}
 \date{\getdate}
 
-\ifpdf
-\pdfinfo {
-	/Author (\getauthor)
-	/Title (\gettitle)
-	/Subject (\gettitle)
-	/Keywords ()
-	/CreationDate (\getdate)
+\hypersetup{
+  pdftitle=\gettitle,
+  pdfsubject=\gettitle,
+  pdfauthor=\getauthor,
+  pdfcreationdate=\getdate
 }
-\fi
 
-\newcommand{\code}[1]{\texttt{\textcolor{Mahogany}{{#1}}}}
-\newcommand{\file}[1]{\texttt{{#1}}}
+% Use the url package to define a command for typesetting inline code
+\DeclareUrlCommand\code{\def\UrlFont{\ttfamily \color{Mahogany}}}
+
+% \url commands don't work in "moving arguments" (captions, sections, etc), so this is a fallback
+% command which doesn't allow handle line breaks (but that shouldn't be a problem in these cases)
+\newcommand{\movingcode}[1]{\texttt{\textcolor{Mahogany}{#1}}}
+
 \newcommand{\defn}[1]{\emph{{#1}}}
 
 \newenvironment{dirlist}{
