@@ -30,7 +30,7 @@ module Carat
     end
     
     def current_location
-      current_call.location
+      current_call && current_call.location
     end
     
     def current_object
@@ -114,20 +114,25 @@ module Carat
       end
     end
     
-    def call_main_method(contents)
-      scope = Scope.new(constants[:Object].new)
-      call  = MainMethodCall.new(contents.location)
-      frame = Frame.new(scope, call, default_failure_continuation)
-      
-      contents.runtime = self
-      contents.eval_in_frame(frame) { |final_result| nil }
+    def identity_continuation
+      lambda { |x| x }
     end
     
-    # This is the starting point for executing an AST.
-    # 
+    def main_scope
+      Scope.new(constants[:Object].new)
+    end
+    
+    def call_main_method(contents, scope = nil)
+      call  = MainMethodCall.new(contents.location)
+      frame = Frame.new(scope || main_scope, call, default_failure_continuation)
+      
+      contents.runtime = self
+      contents.eval_in_frame(frame, &identity_continuation)
+    end
+    
     # Normally, in Continuation Passing Style, a stack of continuations is built up right until the
     # end of the program when they all collapse in to provide the result. In languages without tail
-    # call optimisation (such as Ruby 1.8), this quickly leads to an enourmous stack, and it's not
+    # call optimisation (such as Ruby 1.8), this quickly leads to an enormous stack, and it's not
     # hard to create programs which cause the interpreter to run out of stack space.
     # 
     # Therefore, instead of waiting until right at the end of the program to return the answer,
@@ -135,15 +140,22 @@ module Carat
     # continue the execution of the program. This collapses the call stack right back down, so
     # solves the problem of tail call recursion. This is what the while loop is doing. This
     # technique is called "trampolining".
-    def execute(root)
+    def with_stack(&block)
       @stack_of_stacks << Stack.new
       
-      current_result = call_main_method(root)
-      while current_result.is_a?(Proc)
-        current_result = current_result.call
+      result = block.call
+      while result.is_a?(Proc)
+        result = result.call
       end
       
       @stack_of_stacks.pop
+      result
+    end
+    
+    # This is the starting point for executing an AST node. It places the node as the contents of
+    # a special "main" method and then evaluated that method.
+    def execute(root, scope = nil)
+      with_stack { call_main_method(root, scope) }
     end
     
     # Parse some code and then execute its AST

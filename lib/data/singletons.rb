@@ -1,7 +1,5 @@
 module Carat::Data
   class SingletonObjectClass < ClassInstance
-    # TODO: Get rid of this, have Runtime keep hold of the instance, and redefine new to throw
-    # an exception in kernel/
     def instance
       @instance ||= instance_class.new(runtime, self)
     end

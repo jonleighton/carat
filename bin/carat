@@ -1,3 +1,54 @@
-#!/usr/bin/ruby
+#!/usr/bin/env ruby
+
+begin
+  require 'rubygems'
+rescue
+end
+
+require 'commander/import'
 require File.dirname(__FILE__) + '/../lib/carat'
-Carat.run_file(ARGV.first)
+
+program :name, "Carat"
+program :version, "0.1"
+program :description, "An interepreter for a language which is somewhat similar to Ruby. Written in Ruby."
+
+default_command :run
+
+command :run do |c|
+  c.syntax = "run [file]"
+  c.description = "Runs a Carat program or enters interactive mode"
+  c.when_called do |args, options|
+    if args.first
+      Carat.run_file(args.first)
+    else
+      require File.dirname(__FILE__) + '/../lib/repl'
+      Carat::REPL.new.run
+    end
+  end
+end
+
+command :parse do |c|
+  c.syntax = "parse [file]"
+  c.description = "Parses a Carat program, outputs the AST and optionally the parse tree"
+  c.option "--parse-tree", "-p", "Output the parse tree"
+  c.when_called do |args, options|
+    parser = Carat::LanguageParser.new(File.read(args.first), args.first)
+    
+    begin
+      if options.p
+        p parser.parse_tree
+        puts
+      end
+      
+      p parser.ast
+    rescue Carat::SyntaxError => e
+      unless e.is_a?(Carat::ParseError)
+        p parser.parse_tree
+        puts
+      end
+      
+      puts e.full_message
+      exit 1
+    end
+  end
+end
