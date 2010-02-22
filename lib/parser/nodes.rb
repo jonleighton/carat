@@ -433,22 +433,8 @@ module Carat
         value.to_ast
       end
       
-      # The conditional deals with the difference between "foo.bar = x" (a method call to 'bar=')
-      # and "bar = x" (a local assignment to 'bar')
       def to_ast
-        if receiver_ast.is_a?(Carat::AST::MethodCall)
-          Carat::AST::MethodCall.new(
-            location, receiver_ast.receiver,
-            "#{receiver_ast.name}=".to_sym,
-            Carat::AST::ArgumentList.new(
-              location, receiver_ast.arguments.items + [
-                Carat::AST::ArgumentList::Item.new(location, value_ast)
-              ]
-            )
-          )
-        else
-          Carat::AST::Assignment.new(location, receiver_ast, value_ast)
-        end
+        Carat::AST::Assignment.new(location, receiver_ast, value_ast)
       end
     end
     
@@ -477,7 +463,7 @@ module Carat
       include BinaryMethodHelper
       
       def value_ast
-        method_call(receiver, name, value)
+        method_call(receiver_ast, name, value)
       end
     end
     

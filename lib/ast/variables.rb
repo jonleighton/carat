@@ -1,18 +1,18 @@
 module Carat::AST
   class Assignment < Node
-    child :variable
+    child :receiver
     child :value
     
-    def eval
+    def eval(&continuation)
       eval_child(value) do |value_object|
-        yield variable.assign(value_object)
+        receiver.assign(value_object, &continuation)
       end
     end
   end
   
   class LocalVariable < NamedNode
     def assign(value)
-      current_scope[name] = value
+      yield current_scope[name] = value
     end
     
     # The only time when a local variable is explicitly distinguished from a method call is when we
@@ -42,7 +42,7 @@ module Carat::AST
   
   class InstanceVariable < NamedNode
     def assign(value)
-      current_object.instance_variables[name] = value
+      yield current_object.instance_variables[name] = value
     end
     
     def eval

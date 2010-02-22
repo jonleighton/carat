@@ -12,14 +12,22 @@ module Carat::AST
       end
     end
     
-    def eval(&continuation)
+    def call(method_name, arguments, &continuation)
       eval_receiver do |receiver_object|
-        if receiver_object.has_instance_method?(name)
-          receiver_object.call(name, arguments, location, &continuation)
+        if receiver_object.has_instance_method?(method_name)
+          receiver_object.call(method_name, arguments, location, &continuation)
         else
-          runtime.raise :NoMethodError, "undefined method '#{name}' for object #{receiver_object}", location
+          runtime.raise :NoMethodError, "undefined method '#{method_name}' for object #{receiver_object}", location
         end
       end
+    end
+    
+    def eval(&continuation)
+      call(name, arguments, &continuation)
+    end
+    
+    def assign(value, &continuation)
+      call("#{name}=".to_sym, [value], &continuation)
     end
   end
   
