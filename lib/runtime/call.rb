@@ -11,10 +11,15 @@ class Carat::Runtime
   # Therefore when a Call instance is created, we take as an argument the scope which the callable
   # should be executed within, but take care of evaluating arguments and assigning them to this
   # scope, evaluating the contents of the lambda/method.
-  # 
-  # TODO: It is my intention to add the functionality for methods to be converted to lambdas (with
-  # an empty scope) and for lambdas to be able to dynamically change their scope.
   class Call
+    class Arguments
+      attr_accessor :values, :block
+      
+      def initialize(values = [], block = nil)
+        @values, @block = values, block
+      end
+    end
+    
     # The runtime in which the call is happening
     attr_reader :runtime
     
@@ -84,34 +89,17 @@ class Carat::Runtime
       end
       
       def apply_arguments(&continuation)
-        eval_block_from_arguments do |block_from_arguments|
-          execution_scope.block = block_from_arguments unless block_from_arguments.nil?
-          
-          eval_argument_objects do |argument_objects|
-            argument_pattern.assign(argument_objects, &continuation)
-          end
+        eval_arguments do |arguments|
+          execution_scope.block = arguments.block unless arguments.block.nil?
+          argument_pattern.assign(arguments.values.clone, &continuation)
         end
       end
       
-      def eval_argument_objects(&continuation)
+      def eval_arguments(&continuation)
         if argument_list.is_a?(Carat::AST::ArgumentList)
           argument_list.eval_in_scope(caller_scope, &continuation)
         else
-          yield argument_list
-        end
-      end
-      
-      # Gets the block from the arguments. This can be one of two things:
-      # 
-      #   1. Carat::AST::Block - when the block has been specified literally:
-      #      items.map { ... }
-      #   2. Any other AST node - when the block is passed in as an expression:
-      #      items.map(&block)
-      def eval_block_from_arguments(&continuation)
-        if argument_list.is_a?(Carat::AST::ArgumentList) && argument_list.block
-          argument_list.block.eval_in_scope(caller_scope, &continuation)
-        else
-          yield nil
+          yield Arguments.new(argument_list)
         end
       end
   end

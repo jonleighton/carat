@@ -19,10 +19,12 @@ module Carat::Data
     end
     
     def eval_arguments(argument_list, &continuation)
-      if argument_list.is_a?(Array)
-        yield argument_list
+      if argument_list.is_a?(Carat::AST::ArgumentList)
+        argument_list.eval do |arguments|
+          yield arguments.values
+        end
       else
-        argument_list.eval(&continuation)
+        yield argument_list
       end
     end
     

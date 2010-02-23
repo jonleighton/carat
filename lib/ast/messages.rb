@@ -54,33 +54,24 @@ module Carat::AST
       end
     end
     
-    def block
-      if items.last && (items.last.type == :block || items.last.type == :block_pass)
-        items.last.expression
-      end
-    end
-    
-    def non_block_items
-      if block.nil?
-        items
-      else
-        items[0..-2]
-      end
-    end
-    
     def eval(&continuation)
       append = lambda do |object, arguments, node, &append_continuation|
-        if node.type == :splat
-          object.call(:to_a) do |object_as_array|
-            arguments += object_as_array.contents
+        case node.type
+          when :splat
+            object.call(:to_a) do |object_as_array|
+              arguments.values += object_as_array.contents
+              append_continuation.call(arguments)
+            end
+          when :block, :block_pass
+            arguments.block = object
             append_continuation.call(arguments)
-          end
-        else
-          append_continuation.call(arguments << object)
+          else
+            arguments.values << object
+            append_continuation.call(arguments)
         end
       end
       
-      eval_fold([], append, non_block_items, &continuation)
+      eval_fold(Carat::Runtime::Call::Arguments.new, append, &continuation)
     end
   end
   
