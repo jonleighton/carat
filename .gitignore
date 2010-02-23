@@ -11,3 +11,4 @@ report/*.toc
 report/*.glg
 report/*.gls
 report/wordcount.txt
+*.rbc
