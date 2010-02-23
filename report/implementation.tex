@@ -480,52 +480,87 @@ In the example, \code{self} is an \code{Object} instance. \code{Object} does not
 
 As explained above, the only way methods are found is by walking up the \code{super} chain. So when a module is included within a class, it must be inserted somewhere in the \code{super} chain. If inserted directly, the module's \code{super} would need to take the original value of the \code{super} of the object including the module. This would be problematic if the module was included more than once.
 
-Instead, an \defn{include class} is created and the actual module's \code{super} is unchanged. The method table of an include class is a direct reference to the method table of the module it represents. Note that this implementation means including a module \textit{does not} make its singleton methods available. Module inclusion is shown in figure \ref{fig:module_inclusion}.
+Instead, an \defn{include class} is created and the actual module's \code{super} is unchanged. The method table of an include class is a direct reference to the method table of the module it represents. Similarly, another include class becomes the \code{super} of the singleton class, linking to the module's singleton class. Module inclusion is shown in figure \ref{fig:module_inclusion}.
 
 \begin{figure}
 \begin{center}
-\begin{tikzpicture}[
-  node distance=10mm,
-  every edge/.append style={->},
-  every node/.style={minimum width=10mm},
-  split node/.style={
-    rectangle split,
-    rectangle split parts=2,
-    rectangle split part align={left, left}
-  },
-  class/.append style={split node},
-  module/.append style={split node}
-]
 
-\begin{scope}[yshift=-1cm]
-  \node[class] (Object) {\textbf{Object} \nodepart{two} method\_table};
-  \node[class,below=of Object] (Duck) {\textbf{Duck} \nodepart{two} method\_table}
-    edge [->] node[auto,swap] {super} (Object);
+\tikzset{
+  module inclusion diagram/.style={
+    node distance=15mm,
+    every edge/.append style={->},
+    every node/.style={minimum width=10mm},
+    split node/.style={
+      rectangle split,
+      rectangle split parts=2,
+      rectangle split part align={left, left}
+    },
+    class/.append style={split node},
+    sclass/.append style={split node},
+    module/.append style={split node},
+    remember picture
+  }
+}
 
-  \draw ($(Object) + 0.5*(Duck) - 0.5*(Object) + (3,0)$)
-    node[module] (Quackable) {\textbf{Quackable} \nodepart{two} method\_table};
-\end{scope}
+\begin{tikzpicture}[module inclusion diagram]
 
-\begin{scope}[xshift=8cm]
-  \node[class] (Object') {\textbf{Object} \nodepart{two} method\_table};
-  \node[class,below=of Object'] (Include') {\textbf{\textit{IncludeClass}} \nodepart{two} method\_table}
-    edge [->] node[auto,swap] {super} (Object');
-  \node[class,below=of Include'] (Duck') {\textbf{Duck} \nodepart{two} method\_table}
-    edge [->] node[auto,swap] {super} (Include');
-  
-  \node[module,right=of Include'] (Quackable') {\textbf{Quackable} \nodepart{two} method\_table};
-  
-  \draw[->,dashed] (Include'.two east) -- (Quackable'.two west);
-\end{scope}
+\node[module] (Quackable) {\textbf{Quackable} \nodepart{two} method\_table};
+\node[sclass,right=of Quackable] (Quackable') {\textbf{Quackable'} \nodepart{two} method\_table};
+\node[class,above=of Quackable] (Duck) {\textbf{Duck} \nodepart{two} method\_table};
+\node[sclass,right=of Duck] (Duck') {\textbf{Duck'} \nodepart{two} method\_table};
+\node[class,above=of Duck] (Object) {\textbf{Object} \nodepart{two} method\_table};
+\node[sclass,right=of Object] (Object') {\textbf{Object'} \nodepart{two} method\_table};
+
+\draw[->] (Duck) -- node[auto,swap] {super} (Object);
+\draw[->] (Duck') -- node[auto,swap] {super} (Object');
+\draw[->] (Duck) -- node[auto] {klass} (Duck');
+\draw[->] (Object) -- node[auto] {klass} (Object');
+
+\draw[->] (Quackable) -- node[auto] {klass} (Quackable');
 
 \begin{pgfonlayer}{background}
-  \node (r1) [background,fit=(Object)(Duck)(Quackable)] {};
-  \node (r2) [background,fit=(Object')(Duck')(Quackable')] {};
+  \node (r1) [background,fit=(Object)(Quackable')] {};
 \end{pgfonlayer}
 
-\draw [diagram transition] (r1) -- (r2) node {\code{Quackable} included in \code{Duck}};
-
 \end{tikzpicture}
+
+\vspace{3cm}
+
+\begin{tikzpicture}[module inclusion diagram]
+
+\node[class] (Object2) {\textbf{Object} \nodepart{two} method\_table};
+\node[sclass,right=30mm of Object2] (Object2') {\textbf{Object'} \nodepart{two} method\_table};
+\node[class,below=30mm of Object2] (Include2) {\textbf{\textit{IncludeClass}} \nodepart{two} method\_table};
+\node[class,below=30mm of Object2'] (Include2') {\textbf{\textit{IncludeClass}} \nodepart{two} method\_table};
+\node[class,below=of Include2] (Duck2) {\textbf{Duck} \nodepart{two} method\_table};
+\node[sclass,below=of Include2'] (Duck2') {\textbf{Duck'} \nodepart{two} method\_table};
+
+\node[module,above right=5mm and 6mm of Include2] (Quackable2) {\textbf{Quackable} \nodepart{two} method\_table};
+\node[sclass,right=30mm of Quackable2] (Quackable2') {\textbf{Quackable'} \nodepart{two} method\_table};
+
+\draw[->] (Duck2) -- node[auto,swap] {super} (Include2);
+\draw[->] (Duck2') -- node[auto,swap] {super} (Include2');
+\draw[->] (Include2) -- node[auto,near end,swap] {super} (Object2);
+\draw[->] (Include2') -- node[auto,near end,swap] {super} (Object2');
+
+\draw[->] (Duck2) -- node[auto] {klass} (Duck2');
+\draw[->] (Object2) -- node[auto] {klass} (Object2');
+
+\draw[->] (Quackable2) -- node[near end,auto] {klass} (Quackable2');
+
+\draw[->,dashed] (Include2.two east) -- ++(3mm,0) -- ($(Quackable2.two west) - (3mm,0)$) -- (Quackable2.two west);
+\draw[->,dashed] (Include2'.two east) -- ++(3mm,0) -- ($(Quackable2'.two west) - (3mm,0)$) -- (Quackable2'.two west);
+
+\begin{pgfonlayer}{background}
+  \node (r2) [background,fit=(Object2)(Duck2)(Quackable2')] {};
+\end{pgfonlayer}
+\end{tikzpicture}
+
+\begin{tikzpicture}[overlay,remember picture]
+  \draw [diagram transition] (r1) -- (r2)
+    node[near end,draw=black!15,solid,text width=2cm,fill=black!3,inner sep=2mm] {\code{Quackable} included in \code{Duck}};
+\end{tikzpicture}
+
 \caption{Module inclusion}
 \label{fig:module_inclusion}
 \end{center}
