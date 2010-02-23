@@ -1,8 +1,72 @@
 \section{Implementation Specifics}
 
+In this section I give further explanation of various specific details in the interpreter.
+
 \subsection{Object creation}
 
-\subsection{Methods: argument patterns and lists}
+Objects are created from classes. When a class is defined, it is added to the \code{constants} hash. Suppose we have a class \code{Candle}. An instance is created by looking up the \code{Candle} constant and calling its \code{new} method:
+
+\begin{lstlisting}
+candle = Candle.new
+\end{lstlisting}
+
+The \code{new} method (in \path{kernel/class.carat}) allocates space for the object, runs its \code{initialize} method and then returns it:
+
+\begin{lstlisting}
+def new(*args, &block)
+  object = self.allocate
+  object.initialize(*args, &block)
+  object
+end
+\end{lstlisting}
+
+The \code{allocate} method calls use a primitive to create an \code{ObjectInstance} in the implementation language. By default, \code{Object#initialize} does nothing, but this can obviously be changed in other classes.
+
+\subsection{Methods: argument patterns and argument lists}
+
+An \defn{argument pattern} is used when defining a method; it specifies what assignments should be made from the arguments when the method is called. A \defn{argument list} is used when calling a method; it specifies the arguments which should be passed to the call.
+
+\subsubsection{Argument pattern syntax}
+
+An argument pattern is made up of a number of items separated by a comma. Each item contains an \defn{assignee} which receives the argument value. An assignee can be a local variable, instance variable, or an \defn{assignment method name}. If the class has a method \code{colour=}, then another of its methods could have \code{self.colour} as an assignee in the argument pattern; this would cause the \code{colour=} method to be used when assigning the arguments.
+
+There are three types of argument pattern item:
+
+\begin{enumerate}
+  \item The \defn{normal} type is just an assignee, optionally followed by an `=' and an expression giving a default value for the item. If a default is given, the item is optional. All mandatory items must come first, followed by optional ones.
+  
+  \item The \defn{splat} type is signified by an `*' before the assignee. This is used to condense multiple arguments into a single array which is assigned to the assignee. There can only be one splat, otherwise it would be ambigious how the arguments should be split. The splat can appear before the end of the argument pattern; it will only receive the arguments which are ``left over" after assigning the items before and after the it.
+  
+  \item The \defn{block pass} type is signified by an `\&' before the assignee. If a block is given in the method call, it is assigned to the assignee. There can only be one block pass and it must appear as the very last item.
+\end{enumerate}
+
+These are some example argument patterns:
+
+\begin{lstlisting}
+def foo(a, b = 5) ...
+def foo(@a, *self.b) ...
+def foo(*a, b = 2, &c) ...
+\end{lstlisting}
+
+\subsubsection{Argument list syntax}
+
+An argument list is also made up of a number of items separated by a comma. There are four types:
+
+\begin{enumerate}
+  \item The \defn{normal} type is just an expression which gives a single value
+  \item The \defn{splat} type is signified by an `*' before an expression. The expression is evaluated and converted to an array. Each value of the array becomes a separate argument value. There can be any number of splats in an argument list.
+  \item The \defn{block pass} type is signified by an `\&' before an expression. The expression is evaluated and converted to a lambda, which is then used as the block in the method call. There can only be one block pass item and it must be at the end.
+  \item The \defn{block} type is signified by a literal block using either braces or \code{do} \code{...} \code{end}. The block is used to create a lambda, which is then used as the block in the method call. There can only be one block item and it must be at the end.
+\end{enumerate}
+
+There can only be one block in a method call, so the block pass and block item types cannot both be used in the same argument list.
+
+These are some example argument lists:
+
+\begin{lstlisting}
+foo(4 + 2, *x.y.z, &addfour)
+foo("Goodbye", "Cruel") { |world| world + world }
+\end{lstlisting}
 
 \subsection{Blocks, lambdas and yield}
 

@@ -27,7 +27,7 @@ This report starts by presenting a very basic example program and giving a detai
 	\item[AST] is an acronym for ``Abstract Syntax Tree"
 \end{description}
 
-\subsection{Notation}
+\subsection{Notation and Ruby syntax}
 
 \begin{itemize}
   \item Classes have capitalised names and are shown by grey boxes in diagrams: \\
@@ -49,4 +49,25 @@ This report starts by presenting a very basic example program and giving a detai
     \begin{tikzpicture}
     \node[object] {apple};
     \end{tikzpicture}
+  
+  \item \code{Foo#bar} refers to the instance method \code{bar} of the class \code{Foo}
+  
+  \item \code{Foo.baz} refers to the class method \code{baz} of the class \code{Foo}
+  
+  \item \code{foo} refers to a local variable named \code{foo} (or a method)
+  
+  \item \code{@foo} refers to an instance variable named \code{foo}
+  
+  \item Blocks are specified in method calls either using two syntaxes:
+  \begin{lstlisting}
+  foo do |arglist|
+    ...
+  end
+  
+  # or
+  
+  foo { |arglist| ... }
+  \end{lstlisting}
+  
+  \item \code{&foo} is used to pass a block to a method call, or receive one in a method definition
 \end{itemize}
