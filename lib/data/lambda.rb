@@ -5,7 +5,7 @@ module Carat::Data
     end
     
     def primitive_new
-      yield current_call.block
+      yield current_scope.block
     end
   end
   
@@ -31,7 +31,7 @@ module Carat::Data
     
     def primitive_call(*args, &continuation)
       scope = evaluation_scope
-      scope.block = current_call.block
+      scope.block = current_scope.block
       runtime.call(argument_pattern.location, self, scope, args, &continuation)
     end
   end

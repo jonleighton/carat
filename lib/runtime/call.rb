@@ -44,7 +44,6 @@ class Carat::Runtime
     
     extend Forwardable
     def_delegators :callable, :argument_pattern, :contents
-    def_delegators :execution_scope, :block
     
     def initialize(runtime, location, callable, execution_scope, argument_list, &continuation)
       @runtime, @location, @callable   = runtime, location, callable
