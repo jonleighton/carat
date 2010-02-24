@@ -456,7 +456,7 @@ The following attributes of a \code{Call} object are worth explaining:
 
 \begin{enumerate}
   \item The \defn{callable} is the method or lambda being called.
-  \item The \defn{execution scope} is the scope which the callable should be evaluated within. For method calls, this starts as an empty scope where \code{self} is the receiver object.
+  \item The \defn{scope} is the scope which the callable should be evaluated within. For method calls, this starts as an empty scope where \code{self} is the receiver object.
   \item The \defn{caller scope} is the scope from which the call was made. (The current scope of the runtime when the \code{Call} was created.)
   \item The \defn{argument list} is the \code{ArgumentList} AST node represting the arguments passed to the call. (It can also be an array of objects, for convenience when making calls within the implementation language.)
   \item The \defn{continuation} describes the computation to be done once the call has been sent.
@@ -465,7 +465,7 @@ The following attributes of a \code{Call} object are worth explaining:
 The following happens when a call is sent:
 
 \begin{enumerate}
-  \item A frame containing the execution scope and the call is pushed onto the stack
+  \item A frame containing the call and its scope is pushed onto the stack
   \item The argument list is evaluated to produce the argument values
   \item The argument values are matched to the argument pattern of the callable and assigned (see section ? for a detailed explanation)
   \item The callable's contents are evaluated

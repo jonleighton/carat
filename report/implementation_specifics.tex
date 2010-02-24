@@ -22,7 +22,7 @@ end
 
 The \code{allocate} method calls use a primitive to create an \code{ObjectInstance} in the implementation language. By default, \code{Object#initialize} does nothing, but this can obviously be changed in other classes.
 
-\subsection{Methods: argument patterns and argument lists}
+\subsection{Method argument patterns and argument lists}
 
 An \defn{argument pattern} is used when defining a method; it specifies what assignments should be made from the arguments when the method is called. A \defn{argument list} is used when calling a method; it specifies the arguments which should be passed to the call.
 
@@ -68,6 +68,39 @@ foo(4 + 2, *x.y.z, &addfour)
 foo("Goodbye", "Cruel") { |world| world + world }
 \end{lstlisting}
 
+\subsubsection{Argument evaluation and assignment}
+
+Argument lists are represented by the \code{ArgumentList} AST node which contains a number of \code{Argument}\-\code{List}\-\code{::}\-\code{Item} nodes. When evaluated, the argument list builds up a \code{Call::Arguments} object which contains a number of values and optionally a block.
+
+Argument patterns are represented by the \code{ArgumentPattern} AST node which contains a number of \code{ArgumentPattern::Item} nodes. \code{ArgumentPattern} has an \code{assign} method which is used to assign a list of arguments according to the pattern.
+
+The argument pattern first checks whether it has been provided with a suitable number of arguments. To do this, it calculates an \defn{arity}, which is a range from the minimum arity to the maximum arity. It then checks whether the argument length is within this range.
+
+Each argument pattern item also has a minimum arity and maximum arity. For splat and block pass items, the minimum is 0. For normal items, the minimum is 0 if there is a default value and 1 otherwise. The maximum arity is ∞ for a splat, 0 for a block pass and 1 otherwise. (Block passes are not considered part of the arity because they are not assigned `normal' argument values.)
+
+The minimum and maximum arities for the whole argument pattern are just the sums of the minimum and maximum arities of each of the items.
+
+Once the arity has been checked, the \code{assign} operation just works along the list of argument pattern items from left to right, taking the relevant number of values from the front of the list of argument values and making the assignment.
+
 \subsection{Blocks, lambdas and yield}
+
+\subsubsection{Lambda creation}
+
+Lambdas are created by the \code{Kernel#lambda} method (or \code{Lambda.new}):
+
+\begin{lstlisting}
+lambda { |x| x + x }.call(2) # => 4
+\end{lstlisting}
+
+The literal block is parsed as an item in the argument list. When evaluated, the expression inside the block item is a \code{Block} AST node. When a \code{Block} node is a evalauted, it creates a new \code{Lambda} object.
+
+So it is not quite create to say that the \code{lambda} method \textit{creates} a lambda; that is done implicitly when a block is given in an argument list.
+
+Scopes can have an optional block value. When a method call is dispatched, if its argument list has a block then the block's lambda is assigned as the block within the call's scope.
+
+The \code{lambda} method, then, just returns the block from the current scope, which will be the one created when making the call.
+
+\subsubsection{Calling lambdas}
+
 
 \subsection{Exceptions}
