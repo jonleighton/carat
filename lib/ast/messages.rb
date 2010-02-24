@@ -71,7 +71,7 @@ module Carat::AST
         end
       end
       
-      eval_fold(Carat::Runtime::Call::Arguments.new, append, &continuation)
+      eval_fold(Carat::Runtime::Arguments.new, append, &continuation)
     end
   end
   

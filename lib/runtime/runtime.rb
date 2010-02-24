@@ -89,12 +89,6 @@ module Carat
       end
     end
     
-    # Create a +Call+ and send it
-    def call(location, callable, scope, argument_list = [], &continuation)
-      call = Call.new(self, location, callable, scope, argument_list, &continuation)
-      call.send
-    end
-    
     # Raises an exception in the object language
     def raise(exception_name, message, location = current_location)
       constants[exception_name].call(:new, [constants[:String].new(message)]) do |exception|

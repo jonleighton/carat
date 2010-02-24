@@ -47,13 +47,13 @@ module Carat::Data
     # This should only be called when we know the method exists. If the method does not exist an
     # exception will be raised.
     def call(method_or_name, argument_list = [], location = current_location, &continuation)
-      if method_or_name.is_a?(MethodInstance)
-        method = method_or_name
-      else
+      if method_or_name.is_a?(Symbol)
         method = lookup_instance_method!(method_or_name)
+      else
+        method = method_or_name
       end
       
-      runtime.call(location, method, method_scope, argument_list, &continuation)
+      create_call(method, argument_list, location, continuation).send
     end
     
     def singleton_class
@@ -87,13 +87,20 @@ module Carat::Data
     
     private
     
-      def create_singleton_class
-        self.klass = constants[:SingletonClass].new(self, klass)
+      def create_call(method, argument_list, location, continuation)
+        Carat::Runtime::Call.new(
+          runtime, method, argument_list,
+          continuation, method_scope, location
+        )
       end
       
       # A scope for evaluating the method call, with this object as 'self'
       def method_scope
         Carat::Runtime::Scope.new(self)
+      end
+      
+      def create_singleton_class
+        self.klass = constants[:SingletonClass].new(self, klass)
       end
     
     public

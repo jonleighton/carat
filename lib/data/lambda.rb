@@ -4,8 +4,8 @@ module Carat::Data
       LambdaInstance.new(runtime, self, argument_pattern, contents, scope)
     end
     
-    def primitive_new
-      yield current_scope.block
+    def primitive_new(block)
+      yield block
     end
   end
   
@@ -29,10 +29,13 @@ module Carat::Data
     
     ##### PRIMITIVES #####
     
-    def primitive_call(*args, &continuation)
-      scope = evaluation_scope
-      scope.block = current_scope.block
-      runtime.call(argument_pattern.location, self, scope, args, &continuation)
+    def primitive_call(*arguments, &continuation)
+      arguments = Carat::Runtime::Arguments.from_a(arguments)
+      
+      Carat::Runtime::Call.new(
+        runtime, self, arguments,
+        continuation, evaluation_scope, current_location
+      ).send
     end
   end
 end

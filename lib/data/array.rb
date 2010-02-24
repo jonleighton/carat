@@ -22,9 +22,9 @@ module Carat::Data
       yield constants[:Fixnum].get(@contents.length)
     end
     
-    def primitive_each(&continuation)
+    def primitive_each(block, &continuation)
       yield_operation = lambda do |item, &each_continuation|
-        call(:yield, [item], &each_continuation)
+        block.call(:call, [item], &each_continuation)
       end
       
       runtime.each(yield_operation, @contents, self, &continuation)
