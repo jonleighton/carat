@@ -130,4 +130,21 @@ The \code{yield} primitive does this by getting the block in the caller scope of
 
 \subsection{Return}
 
+\code{Call} objects have a \defn{return continuation} which:
+
+\begin{enumerate}
+  \item Pops the call's frame from the stack
+  \item Runs the call's continuation, passing the result of the call
+\end{enumerate}
+
+Usually the return continuation runs after the body of the call has been evaluated completely. However, if \code{Kernel#return} is called within the method body, the return continuation is run immediately (passing the argument of \code{return} as the result, or \code{nil}). The \code{return} primitive:
+
+\begin{enumerate}
+  \item Pops the top frame from the stack, which contains the call to \code{Kernel#return}
+  \item `Unwinds' the stack, popping frames until a frame which contains a call is at the top
+  \item Runs the current call's continuation; the current call is now the call being returned from, and its return continuation will remove it from the stack
+\end{enumerate}
+
 \subsection{Exceptions}
+
+
