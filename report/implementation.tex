@@ -66,7 +66,7 @@ end
 
 These attributes can be used to print an AST as text. The example program's AST is printed as:
 
-\begin{verbatim}
+\begin{lstlisting}[language=]
 ExpressionList:
   MethodCall[:puts]:
     receiver:
@@ -76,7 +76,7 @@ ExpressionList:
         ArgumentList::Item[:normal]:
           expression:
             String["Goodbye Cruel World"]
-\end{verbatim}
+\end{lstlisting}
 
 This can be read as an expression list with one item: a call to the method `puts'. The object receiving the call is not explicitly given. The argument list contains one item, which is the literal string ``Goodbye Cruel World".
 

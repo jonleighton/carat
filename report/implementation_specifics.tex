@@ -141,10 +141,98 @@ Usually the return continuation runs after the body of the call has been evaluat
 
 \begin{enumerate}
   \item Pops the top frame from the stack, which contains the call to \code{Kernel#return}
-  \item `Unwinds' the stack, popping frames until a frame which contains a call is at the top
+  \item Unwinds the stack, popping frames until a frame which contains a call is at the top
   \item Runs the current call's continuation; the current call is now the call being returned from, and its return continuation will remove it from the stack
 \end{enumerate}
 
 \subsection{Exceptions}
 
+\subsubsection{Raising exceptions}
 
+All exception are instances of the \code{Exception} class or a subclass. Exceptions have a \defn{message} which describes the problem. They are raised by a call to \code{Kernel#raise}, which can take various forms:
+
+\begin{lstlisting}[numbers=left]
+raise SomeException.new("there's a problem")
+raise SomeException, "there's a problem"
+raise SomeException
+raise "there's a problem"
+raise
+\end{lstlisting}
+
+They do the following:
+
+\begin{enumerate}
+  \item Raises a \code{SomeException} exception with the message ``there's a problem"
+  \item Ditto
+  \item Raises a \code{SomeException} exception with the message ``(no message)"
+  \item Raises a \code{RuntimeError} exception with the message ``there's a problem"
+  \item Raises a \code{RuntimeError} exception with the message ``(no message)"
+\end{enumerate}
+
+The \code{Kernel#raise} method standardises the various different argument forms and then passes the exception object to the \code{raise} primitive, which:
+
+\begin{enumerate}
+  \item Stores the \defn{current location}. Every AST node stores its \defn{location}, which is the file, line and column where it is defined. When a \code{Call} object is created, it stores the location at which the call happened (from the AST node which makes the call). The current location is then the stored location of the current call.
+  
+  \item Pops the top frame from the stack, which contains the call to \code{Kernel#raise} (this changes the current location, which is why we stored it previously)
+  
+  \item Tells the exception to generate and store a backtrace by inspecting the stack. It uses the location stored in step 1 as this is the location at which the exception was raised.
+  
+  \item Unwinds the stack, popping frames until a frame which contains a failure continuation is at the top. This means that the current scope changes to the scope where the failure continuation was defined.
+  
+  \item Runs the failure continuation, passing it the exception object.
+\end{enumerate}
+
+The \defn{default failure continuation} is at the very bottom of the stack. It prints out the exception class name, message, and the backtrace. For example, the program:
+
+\begin{lstlisting}
+def a
+  b
+end
+
+def b
+  raise "oh no!"
+end
+
+a
+\end{lstlisting}
+
+Results in the following output:
+
+\begin{lstlisting}[language=]
+RuntimeError: oh no!
+  test.carat at line 6, col 3 in <method:b>
+  test.carat at line 2, col 3 in <method:a>
+  test.carat at line 9, col 1 in main
+\end{lstlisting}
+
+\subsubsection{Rescuing exceptions}
+
+Exceptions can be prevented from causing the program to exit by \defn{rescuing} them. For example, the program:
+
+\begin{lstlisting}
+begin
+  puts "raise..."
+  raise
+rescue RuntimeError => e
+  puts "saved!"
+end
+\end{lstlisting}
+
+will output:
+
+\begin{lstlisting}[language=]
+raise...
+saved!
+\end{lstlisting}
+
+The part before the `\code{=>}' specifies the type of exception to rescue, and the part after it specifies a variable to assign the exception object to. Both are optional (the default exception type is \code{RuntimeError}).
+
+When a \code{Begin} node is evaluated, it puts a new failure continuation in a frame on the stack. Then, when the failure continuation is called, it:
+
+\begin{enumerate}
+  \item Pops its frame from the top of the stack
+  \item Checks whether the exception raised matches the exception type it is allowed to rescue from
+  \item If so, it assigns the exception to the exception variable and evaluates the contents of the rescue block
+  \item Otherwise, it unwinds the stack to the next failure continuation and calls that
+\end{enumerate}

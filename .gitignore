@@ -1,4 +1,4 @@
-test.rb
+test.carat
 lib/kernel/*.marshal
 report/*.aux
 report/*.log
