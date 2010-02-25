@@ -63,7 +63,7 @@ module Carat
         if tree.nil?
           raise Carat::ParseError.new(
             input, expected_message,
-            Carat::ExecutionLocation.new(file_name, failure_line, failure_column)
+            Carat::Location.new(file_name, failure_line, failure_column)
           )
         end
         tree

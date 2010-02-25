@@ -16,11 +16,11 @@ module Carat
       end
       
       def location
-        Carat::ExecutionLocation.new(file_name, line, column)
+        Carat::Location.new(file_name, line, column)
       end
       
       def error_location
-        Carat::ExecutionLocation.new(file_name, line, column + 1)
+        Carat::Location.new(file_name, line, column + 1)
       end
       
       def error(message)

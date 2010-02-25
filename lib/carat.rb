@@ -17,7 +17,7 @@ module Carat
   require AST_PATH     + "/ast"
   require PARSER_PATH  + "/parser"
   
-  class ExecutionLocation
+  class Location
     attr_reader :file_name, :line, :column
     
     def initialize(file_name, line, column)
