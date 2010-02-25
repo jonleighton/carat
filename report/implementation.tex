@@ -443,12 +443,12 @@ This presents a challenge, because whilst the natural inclination would be to lo
 
 \subsection{Method calls}
 
-The only item in the expression list is a \code{MethodCall[:puts]} with no receiver and and argument list containing ``Goodbye Cruel World". Method calls are evaluated as follows:
+The only item in the expression list is a \code{MethodCall[:puts]} with no receiver and an argument list containing ``Goodbye Cruel World". Method calls are evaluated as follows:
 
 \begin{enumerate}
   \item Evaluate the receiver. If there is no explicit receiver, the \code{self} object in the current scope (the one at the top of the scope stack) is used.
   \item Ask the receiver object for the instance method with the given name. The advantage of the object model discussed in section \ref{sec:object_model} is that method look-up is very simple. When an object looks for an instance method, it asks its \code{klass} to look up that method. If the class contains the method in its method table, it returns it. Otherwise, it asks its \code{super}. Eventually, when there is no \code{super} (i.e. for \code{Object}), no method has been found so \code{nil} is returned.
-  \item If the method is found, use the receiver object's \code{call} method. This in turn uses \code{Runtime#call}, which creates a \code{Call} object and ``sends" it.
+  \item If the method is found, call the receiver object's \code{call} method which creates a \code{Call} object and ``sends" it.
   \item If the method is not found, raise an exception (see section ?)
 \end{enumerate}
 
@@ -578,14 +578,16 @@ end
 
 This is a \defn{primitive method call}. Primitives are the eventual way that a program can actually ``do" something; everything else is just memory access and method calls. In this case, the \code{puts} method needs to output some text, so it uses the \code{puts} primitive.
 
-The \code{Primitive} class is represented by \code{Carat::Data::PrimitiveClass} in the implementation language. The primitive syntax is parsed in exactly the same way as any other method call, but \code{Primitive}\-\code{Class} overrides the default \code{ObjectInstance#call} method to do the following:
+The \code{Primitive} class is represented by \code{Carat::Data::PrimitiveClass} in the implementation language. The primitive syntax is parsed in exactly the same way as any other method call, but \code{Primitive}\-\code{Class} overrides two methods from \code{ObjectInstance}:
 
 \begin{enumerate}
-  \item Evaluate the argument list
-  \item Get the object representing the current \code{self}
-  \item Prepend ``\code{primitive_}" to the method name and call that method on the object, passing the evaluated arguments
+  \item \textbf{\code{lookup_instance_method}}: Instead of returning a \code{MethodInstance} found in the klass' method table, it prepends ``\code{primitive_}" to the method name and finds an implementation language method for the current object with that name
+  
+  \item \textbf{\code{create_call}}: Instead of returning a \code{Call}, it returns a \code{PrimitiveCall}
 \end{enumerate}
 
-For the example, \code{self} is an \code{Object}, but the method is in \code{Kernel}. The \code{primitive_puts} method is actually defined the \code{Carat::Data::KernelModule} module. When a module inclusion happens in the target language, the implementation checks whether there is a corresponding module in the implementation language. If there is, that module is included in the implementation language. For example, when \code{Object} includes \code{Kernel} in the target language, \code{ObjectInstance} includes \code{KernelModule} in the implementation language.
+\code{PrimitiveCall#send} then evaluates the arguments in the standard way, and calls the implementation language method which provides the primitive behaviour.
+
+For the example, \code{self} is an \code{Object}, but the method is in \code{Kernel}. The \code{primitive_puts} method is actually defined the \code{Carat::Data::KernelModule} module. When a module inclusion happens in the target language, the primitive checks whether there is a corresponding module in the implementation language. If so, that module is included in the implementation language. For example, when \code{Object} includes \code{Kernel} in the target language, \code{ObjectInstance} includes \code{KernelModule} in the implementation language.
 
 When \code{KernelModule#primitive_puts} is finally called, it converts the object given as an argument to a Ruby string and uses Ruby's \code{Kernel.puts} method to output it.
