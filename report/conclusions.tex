@@ -3,10 +3,61 @@
 \subsection{Comparison to Ruby}
 \label{sec:ruby_comparison}
 
+Ruby has been around since 1995, and has been in widespread use for many years. It is clearly far more mature and feature-complete than Carat, and much more suited to ``real world" programming tasks. The current most popular release, 1.8, is considered slow compared to other similar languages. Given that Carat is written in Ruby, it is obviously several times slower still.
+
+However, the aim of Carat was not to produce a replacement to Ruby, but to produce a minimal language similar to it. There are a number of areas in particular where Carat differs to Ruby, in my view in a positive way.
+
+\subsubsection{Lambdas}
+
+Ruby has two different kinds of `lambda'. They are both instances of the \code{Proc} class, but depending on how the object is created, passing the wrong number of arguments when calling may or may not cause an error.
+
+Additionally, without going into too much detail, argument assignment for blocks works slightly differently to how it works for methods. (Although this behaviour is changed in Ruby 1.9.)
+
+In Carat, the \textit{only} difference between lambdas and methods is scoping, and there is only one type of lambda. I think this consistency is valuable, and it certainly makes the implementation simpler as code can be shared.
+
+\subsubsection{Argument patterns}
+
+In Ruby, argument patterns can only contain local variables. This often leads to object initialisers which look like this:
+
+\begin{lstlisting}
+def initialize(a, b, c = nil)
+  @a, @b, @c = a, b, c
+end
+\end{lstlisting}
+
+Allowing instance variables and methods in the argument pattern eliminates the repetition, and leads to more succinct code, which I find quite pleasing:
+
+\begin{lstlisting}
+def initialize(@a, @b, @c = nil)
+end
+\end{lstlisting}
+
+\subsubsection{Module inclusion}
+
+In Ruby, including a module only makes its instance methods available, which often leads to confusion. I like Carat's approach of making both instance and singleton (class) methods available.
+
+On the other hand, Ruby supports inclusion of modules inside other modules, which Carat does not. It may be that there are additional complexities in this which I have not considered.
+
 \subsection{Possible project extensions}
 
 \subsubsection{A virtual machine}
 
+At the moment Carat is purely an interpreter. It would be interesting to turn it into a bytecode compiler and interpreter, exploring how that changes the architecture and what the implementation challenges are. There would certainly be efficiency gains, particularly as continuation passing style is quite a slow strategy.
+
 \subsubsection{Unicode syntax}
 
-\subsubsection{Traits}
+Pretty much every programming language in use today restricts its syntax to the ASCII character set. It would be interesting to see what gains could be made by allowing a wider set of characters. This would make programs more concise and readable, but would require special keyboards in order to write code quickly.
+
+But I think the gains could be worth it. For example, \code{lambda} could be replaced with $\color{Mahogany} \lambda$, \code{!} (negation) could be replaced with $\color{Mahogany} \neg$ and \code{=} (assignment) could be replaced with $\color{Mahogany} \leftarrow$ (leaving \code{=} free for equality testing).
+
+\subsubsection{Lazy evaluation}
+
+Most operators in Carat (and Ruby) are implemented as method calls. However, \code{&&} and \code{||} in particular cannot be implemented as method calls because they need to `short circuit' depending on the value of the expression on the left of the operator. This could not be achieved through a method call as arguments are always evaluated before the call is made.
+
+I don't think it would be a good idea to make the entire language use lazy evaluation, but it might be possible to implement a feature where argument patterns can use some sort of syntactic notation to specify that an argument should not be evaluated immediately. This would allow \code{&&} and \code{||} to be defined as methods. However, it may be that such a feature would easily lead to confusion, so it might not be a good idea.
+
+\subsection{Overall Conclusions}
+
+On the whole, I think this project has been successful in reaching its objectives. It has taught me a lot about programming languages. The implementation is concise and easy to follow; it weighs in at only just over 2000 lines of code. Writing this report has been useful because it forced me to think explicitly about design decisions, which has lead to several good refactorings.
+
+It's a shame that it's unrealistic to produce serious language implementations in a language as expressive and powerful as Ruby, although Rubinius\footnote{\url{http://rubini.us/}} (a C++/Ruby implementation of Ruby) comes close.
