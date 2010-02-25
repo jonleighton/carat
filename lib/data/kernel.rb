@@ -57,7 +57,7 @@ module Carat::Data
     end
     
     def primitive_require(file, &continuation)
-      file_location = File.dirname(File.expand_path(current_location.file_name)) + "/" + file.to_s
+      file_location = File.dirname(current_location.file_name) + "/" + file.to_s
       
       if runtime.loaded_files.include?(file_location)
         yield runtime.false

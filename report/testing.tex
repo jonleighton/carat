@@ -1,1 +1,84 @@
 \section{Testing}
+
+Initially, I wrote simple test programs, and used a testing framework in Ruby to assert that the output was as expected. This strategy was initially, but it did mean that the tests were quite verbose, and took a long time to run due to the overhead of loading the interpreter for every test.
+
+Once the implementation had become mature enough, I was able to write a very simple testing framework actually in the Carat language. I named it ``CSpec", as it was inspired by a Ruby testing framework called RSpec\footnote{\url{http://rspec.info/}}.
+
+I then systematically worked through all the different objects and methods in the implementation, writing tests for them. I also tested various syntax features. Below is part of the specification for \code{Fixnum}:
+
+\begin{lstlisting}
+require 'cspec'
+
+describe "Fixnum" do
+  it "should use the same object for two instances of the same number" do
+    24.object_id.should == 24.object_id
+  end
+  
+  it "should support the negative unary prefix" do
+    -6.should == (0 - 6)
+  end
+  
+  it "should support the positive unary prefix" do
+    +3.should == 3
+  end
+  
+  it "should add two numbers" do
+    (4 + 2).should == 6
+  end
+  
+  it "should subtract two numbers" do
+    (7 - 2).should == 5
+  end
+  
+  ...
+end
+\end{lstlisting}
+
+When the \code{Fixnum} specification is run with CSpec, it outputs:
+
+\begin{minipage}{\textwidth}
+\begin{lstlisting}[language=]
+Fixnum
+ - should use the same object for two instances of the same number
+ - should support the negative unary prefix
+ - should support the positive unary prefix
+ - should add two numbers
+ - should subtract two numbers
+ - should return its value as a string with to_s
+ - should return its value as a string with inspect
+
+Fixnum#<=>
+ - should return -1 for 1 <=> 2
+ - should return 1 for 2 <=> 1
+ - should return 0 for 1 <=> 1
+
+10 examples, 12 assertions
+\end{lstlisting}
+\end{minipage}
+
+If I intentionally break one of the examples, an exception is raised:
+
+\begin{lstlisting}[language=]
+Fixnum
+ - should use the same object for two instances of the same number
+ - should support the negative unary prefix
+
+FAILED: -6 (actual) did not match 6 (expected)
+spec/cspec.carat at line 118, col 7 in <method:==>
+spec/fixnum_spec.carat at line 9, col 5 in <lambda>
+spec/cspec.carat at line 83, col 7 in <method:call>
+spec/cspec.carat at line 83, col 7 in <method:run>
+spec/cspec.carat at line 67, col 7 in <lambda>
+spec/cspec.carat at line 62, col 5 in <method:call>
+spec/cspec.carat at line 62, col 5 in <method:each>
+spec/cspec.carat at line 62, col 5 in <method:run>
+spec/cspec.carat at line 38, col 7 in <lambda>
+spec/cspec.carat at line 37, col 5 in <method:call>
+spec/cspec.carat at line 37, col 5 in <method:each>
+spec/cspec.carat at line 37, col 5 in <method:run>
+ at line 1, col 1 in main
+
+...
+\end{lstlisting}
+
+In total there are 132 examples, comprising 172 separate assertions. It would be bold to claim that this means absolutely all functionality is tested and working, but given the experimental nature of this project I think it demonstrates an acceptable level of stability.
