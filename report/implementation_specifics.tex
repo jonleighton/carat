@@ -86,21 +86,48 @@ Once the arity has been checked, the \code{assign} operation just works along th
 
 \subsubsection{Lambda creation}
 
-Lambdas are created by the \code{Kernel#lambda} method (or \code{Lambda.new}):
+Lambdas are returned by the \code{Kernel#lambda} method (which is an alias for \code{Lambda.new}):
 
 \begin{lstlisting}
 lambda { |x| x + x }.call(2) # => 4
 \end{lstlisting}
 
-The literal block is parsed as an item in the argument list. When evaluated, the expression inside the block item is a \code{Block} AST node. When a \code{Block} node is a evalauted, it creates a new \code{Lambda} object.
-
-So it is not quite create to say that the \code{lambda} method \textit{creates} a lambda; that is done implicitly when a block is given in an argument list.
-
-Scopes can have an optional block value. When a method call is dispatched, if its argument list has a block then the block's lambda is assigned as the block within the call's scope.
-
-The \code{lambda} method, then, just returns the block from the current scope, which will be the one created when making the call.
+The literal block is parsed as an item in the argument list and the item's expression is a \code{Block} AST node. When a \code{Block} node is a evalauted, it returns a \code{Lambda} object. So \code{lambda} does not actually \textit{create} the lambda; it is created when the arguments are evaluated, and then just returned.
 
 \subsubsection{Calling lambdas}
 
+Lambdas are called using their \code{call} method (which uses a primitive), as seen above. A \code{Call} object is created and then sent, in a similar way to method calls. The main difference is the scope used. Lambdas act as \defn{closures}, which means that the variables defined in the scope where the lambda was created are available and can be changed when it is called.
+
+To support this, scopes can have a \defn{parent}, and can be \defn{extended} to create a new scope with the previous scope as the parent. When a symbol is looked up, the symbol tables of the scope and all ancestor scopes are searched in bottom up order.
+
+When a lambda is created, the current scope is stored. When called, the lambda will extend the stored scope and use that as the scope of the call. This means that any \textit{new} variables inside the lambda remain local, but any variables referenced which were defined outside the lambda are changed in the relevant parent scope, and so their values remain different after the call has finished. For example:
+
+\begin{lstlisting}
+a = 4
+lambda do
+  a += 1
+  b = 3
+end.call
+a # => 5
+b # => undefined variable or method
+\end{lstlisting}
+
+\subsubsection{Yield}
+
+Scopes can optionally have a \defn{current block}. If a block is given in the argument list of a method call, it is assigned as the block of the scope within which the call is evaluated.
+
+Within methods, \code{Kernel#yield} can be used to call the current block. For example:
+
+\begin{lstlisting}
+def foo
+  yield 8
+end
+
+foo { |i| i + 1 } # => 9
+\end{lstlisting}
+
+The \code{yield} primitive does this by getting the block in the caller scope of the call to yield and then calling it, passing on any arguments.
+
+\subsection{Return}
 
 \subsection{Exceptions}
