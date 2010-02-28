@@ -1,3 +1,121 @@
 \section{Carat Language Overview}
 
+\subsection{Data types}
+
+\begin{description}
+  \item[String:] \code{"double quoted"} or \code{'single quoted'}
+  \item[Fixnum:] \code{6}, \code{-6} or \code{+6}
+  \item[Array:] \code{[1, 2, 3]}
+  \item[Boolean:] \code{true} and \code{false}
+  \item[Nil:] \code{nil}
+\end{description}
+
+\subsection{Method names}
+
+\begin{itemize}
+  \item In general, method names have the pattern \code{[a-zA-Z_] [a-zA-Z0-9_]*}
+  \item They may have \code{?}, \code{!} or \code{=} at the end
+  \item There are some special `operator' method names: \code{===}, \code{<=>}, \code{[]=}, \code{==}, \code{!=}, \code{<=}, \code{>=}, \code{<<}, \code{>>}, \code{--} (unary minus), \code{++} (unary plus), \code{!!} (unary negation), \code{[]}, \code{<}, \code{>}, \code{+}, \code{-}, \code{*}, \code{/}
+\end{itemize}
+
+\subsection{Other names}
+
+\begin{itemize}
+  \item Class names (constants) begin with a capital letter
+  \item Instance variables begin with a \code{@}
+  \item Local variables begin with a lowercase letter
+\end{itemize}
+
+\subsection{Module definition}
+
+\begin{lstlisting}
+module ModuleName
+  ...
+end
+\end{lstlisting}
+
+\subsection{Class definition}
+
+\begin{lstlisting}
+class ClassName [< SuperClassName]
+  ...
+end
+\end{lstlisting}
+
+\subsection{Method definition}
+
+\begin{lstlisting}
+def method_name(argument_pattern)
+  ...
+end
+\end{lstlisting}
+
+\subsection{Blocks}
+
+\begin{lstlisting}
+foo { |argument_pattern| ... }
+
+# or
+
+foo do |argument_pattern|
+  ...
+end
+\end{lstlisting}
+
+\subsection{Control structures}
+
+\begin{lstlisting}
+if condition
+  ...
+elsif condition
+  ...
+else
+  ...
+end
+
+while condition
+  ...
+end
+
+begin
+  ...
+rescue [[ExceptionType] => [variable_name]]
+  ...
+end
+
+first && second
+
+first || second
+\end{lstlisting}
+
+\subsection{Comments}
+
+\begin{lstlisting}
+# Single line comment
+
+##
+Multi
+line
+comment
+##
+\end{lstlisting}
+
+\subsection{Core Classes}
+
+\subsubsection{\movingcode{Array}}
+
+\begin{description}
+  \item[\code{length}] Length of the array
+  \item[\code{each(&block)}] Yields each item in the array to the block
+  \item[\code{<<(value)}] Pushes a value onto the end of the array
+  \item[\code{[i]}] Looks up the item \code{i}
+  \item[\code{[i] = value}] Assigns a value at index \code{i}
+  \item[\code{to_a}] Returns itself
+  \item[\code{to_s}] Returns a string with each item on a separate line
+  \item[\code{inspect}] Returns a string representation of the array contents
+  \item[\code{map(&block)}] Returns a new array with each item being the result of yielding that item to the block
+  \item[\code{join(joiner)}] Produces a string of each item joined with the \code{joiner} string
+\end{description}
+
+\subsubsection{\movingcode{Class}}
 

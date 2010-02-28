@@ -2,10 +2,166 @@
 
 \subsection{Abstract syntax tree}
 
+These classes are all defined in the \code{Carat::AST} namespace. In addition to those below, there is a \code{Printer} class which prints out an AST.
+
+\subsubsection{Abstract Superclasses}
+
+\begin{description}
+	\item[\code{Node}] The superclass of all nodes
+	
+	\item[\code{ValueNode}] Nodes which evaluate to a single value (e.g. \code{Nil}, \code{False})
+	
+	\item[\code{MultipleValueNode}] Nodes which have some immediate (but not constant) value (e.g. \code{String}, \code{Fixnum})
+	
+	\item[\code{NamedNode}] Nodes which are defined by their name (e.g. \code{LocalVariable}, \code{InstanceVariable})
+	
+	\item[\code{NodeList}] Nodes containing a list of child nodes
+	
+	\item[\code{BinaryNode}] Nodes with two child nodes (e.g. \code{And}, \code{Or})
+\end{description}
+
+\subsubsection{Concrete nodes}
+
+Node properties are shown in brackets.
+
+\begin{description}
+  \item[\code{If[condition, true_node, false_node]}] A conditional expression
+  
+  \item[\code{While[condition, contents]}] A while loop
+  
+  \item[\code{Begin[contents, rescue]}] A \code{begin} \code{...} \code{end} expression (with an optional \code{rescue} block)
+  
+  \item[\code{Rescue[error_type, exception_variable, contents]}] A \code{rescue} \code{...} \code{end} block
+  
+  \item[\code{And < BinaryNode}] An \code{&&} expression
+  
+  \item[\code{Or < BinaryNode}] An \code{||} expression
+  
+  \item[\code{True < ValueNode}] The \code{true} value
+  
+  \item[\code{False < ValueNode}] The \code{false} value
+  
+  \item[\code{Nil < ValueNode}] The \code{nil} value
+  
+  \item[\code{String < MultipleValueNode}] A literal string value
+  
+  \item[\code{Integer < MultipleValueNode}] A literal integer value
+  
+  \item[\code{Array < NodeList}] A literal array
+  
+  \item[\code{MethodCall[receiver, name, arguments]}] A method call
+  
+  \item[\code{ArgumentList < NodeList}] The argument list to a method call
+  
+  \item[\code{ArgumentList::Item[expression, type]}] An item in an \code{ArgumentList}
+  
+  \item[\code{Block[argument_pattern, contents]}] A literal block passed in the arguments of a method call
+  
+  \item[\code{ExpressionList < NodeList}] A list of nodes to be evaluated in order
+  
+  \item[\code{ModuleDefinition[name, contents]}] A module definition
+  
+  \item[\code{ClassDefinition[name, superclass, contents]}] A class definition
+  
+  \item[\code{MethodDefinition[receiver, name, argument_pattern, contents]}] A method definition
+  
+  \item[\code{ArgumentPattern < NodeList}] The argument pattern of a method definition
+  
+  \item[\code{ArgumentPattern::Item[assignee, type, default]}] An item in an \code{ArgumentPattern}
+  
+  \item[\code{Assignment}] An assignment of a value to a variable or assignment method
+  
+  \item[\code{LocalVariable < NamedNode}] A local variable
+  
+  \item[\code{LocalVariableOrMethodCall < NamedNode}] A local variable or method call, when it is ambiguous. A variable lookup is attempted first, falling back on a method call before failing
+  
+  \item[\code{InstanceVariable < NamedNode}] An instance variable
+  
+  \item[\code{Constant < NamedNode}] A constant
+\end{description}
+
 \subsection{Data objects}
+
+These classes are all defined in the \code{Carat::Data} namespace. Indentation denotes the subclass hierarchy.
+
+\begin{minipage}{\textwidth}
+\begin{verbatim}
+KernelModule
+ObjectInstance
+    ModuleInstance
+        ClassInstance
+            SingletonClassInstance
+            IncludeClassInstance
+            MethodClass
+            LambdaClass
+            PrimitiveClass
+            FalseClassClass
+            TrueClassClass
+            NilClassClass
+            ArrayClass
+            StringClass
+            ExceptionClass
+        ObjectClass
+            ModuleClass
+                  ClassClass
+                      SingletonClassClass
+    MethodInstance
+    LambdaInstance
+    FalseClassInstance
+    TrueClassInstance
+    NilClassInstance
+    ArrayInstance
+    StringInstance
+    ExceptionInstance
+\end{verbatim}
+\end{minipage}
 
 \subsection{Parser}
 
+\begin{description}
+  \item[\code{Carat::SyntaxError}] Represents a general syntax error
+  
+  \item[\code{Carat::ParseError < SyntaxError}] A syntax error which occurs while trying to actual parse the source code (as opposed to when converting the parse tree to an AST)
+  
+  \item[\code{Carat::CommentParser}] A small parser which parses and removes any comments before the main parse is done
+  
+  \item[\code{Carat::LanguageParser}] The main parser
+\end{description}
+
+There are also lots of small classes representing parse tree nodes, but it is not really worth listing them all.
+
 \subsection{Runtime}
 
+These classes are all defined in the \code{Carat::Runtime} namespace.
+
+\begin{description}
+  \item[\code{Runtime}] Main runtime object
+  
+  \item[\code{KernelLoader}] Loads all the built-in objects for the runtime
+  
+  \item[\code{Scope}] Represents variable scopes
+  
+  \item[\code{Stack}] Represents the stack
+  
+  \item[\code{Frame}] Represents a stack frame
+  
+  \item[\code{Arguments}] Represents arguments to a call once they have been evaluated
+  
+  \item[\code{AbstractCall}] Common code for call objects
+  
+  \item[\code{PrimitiveCall < AbstractCall}] Represents a primitive call
+  
+  \item[\code{Call < AbstractCall}] Represents a method or lambda call
+  
+  \item[\code{MainMethodCall}] Represents the root `main' method call
+\end{description}
+
 \subsection{Other}
+
+\begin{description}
+  \item[\code{Carat::Location}] A source code location (file name, line number and column number)
+  
+  \item[\code{Carat::CaratError}] A general error within the interpreter
+  
+  \item[\code{Carat::REPL}] A simple read-eval-print-loop implementation, allowing direct interaction with the interpreter
+\end{description}
