@@ -16,9 +16,36 @@ end
 
 task :default => :spec
 
+code_files = Rake::FileList['lib/**/*.rb', 'lib/**/*.treetop', 'lib/**/*.carat'].
+               exclude('lib/parser/language.rb',
+                       'lib/parser/comment.rb').to_a.sort!
+
 task :sloccount do
-  files = Rake::FileList['lib/**/*.rb', 'lib/**/*.treetop'].
-            exclude('lib/parser/language.rb',
-                    'lib/parser/comment.rb')
-  system "sloccount", *files
+  count = 0
+  code_files.each do |file_name|
+    File.open(file_name) do |file|
+      file.each_line do |line|
+        count += 1 unless line =~ /^\s*$/
+      end
+    end
+  end
+  puts count
+end
+
+task :generate_code_listing do
+  listing = ""
+  listing << File.read("report/code_listing_header.tex")
+  code_files.each do |file|
+    title = file.gsub("_", '\_').sub("lib/", "")
+    language = (file =~ /\.treetop/) ? "treetop" : "Ruby"
+    listing << <<-TEX
+\\begin{lstlisting}[title={\\small\\Helvetica #{title}},language=#{language}]
+#{File.read(file)}
+\\end{lstlisting}
+TEX
+  end
+  
+  File.open("report/code_listing.tex", "w+") do |file|
+    file.write(listing)
+  end
 end

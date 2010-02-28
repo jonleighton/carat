@@ -98,11 +98,15 @@
   frameround=tttt,
   rulecolor=\color{lightgrey}
 }
-\lstdefinelanguage{treetop}
-{keywords={rule,end},string=[b]{'}}
+\lstdefinelanguage{treetop}{
+  keywords={rule,end,module,grammar},
+  string=[b]{'},
+  comment=[l]{\#}
+}
 
 \setmainfont[Mapping=tex-text-with-ligs]{GaramondClassico}
 \newfontface\GaramondClassicoSC{GaramondClassicoSC}
+\newfontface\Helvetica{Helvetica Neue}
 
 \onehalfspace
 \pagestyle{headings}
@@ -162,7 +166,7 @@
 	\include{references}
 	
 	\appendix
-	\include{classes_index}
 	\include{language_overview}
+	\include{code_listing}
 \end{document}
 

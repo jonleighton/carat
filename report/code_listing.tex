@@ -1,0 +1,3779 @@
+\lstset{
+  language=Ruby,
+  tabsize=2,
+  rulesepcolor=\color{Gray},
+  basicstyle={\ttfamily \tiny},
+  upquote=true,
+  keywordstyle=\color{Mahogany}\bfseries,
+  commentstyle=\color{MidnightBlue}\em,
+  stringstyle=\color{RedOrange},
+  aboveskip=\bigskipamount,
+  belowskip=0pt,
+  backgroundcolor=,
+  frame=,
+  frameround=,
+  rulecolor=,
+  breaklines=true
+}
+
+\newgeometry{
+  hmargin=10mm,
+  vmargin=20mm,
+  twocolumn=true
+}
+
+\section{Code Listing}
+\begin{lstlisting}[title={\small\Helvetica ast/ast.rb},language=Ruby]
+module Carat
+  module AST
+    require AST_PATH + "/printer"
+    
+    # ***** ABSTRACT SUPERCLASSES ****** #
+    
+    # The superclass of all AST nodes
+    class Node
+      class << self
+        def attributes
+          @attributes ||= begin
+            if superclass.respond_to?(:attributes)
+              superclass.attributes.clone
+            else
+              []
+            end
+          end
+        end
+        
+        def required_attributes
+          attributes.find_all { |attribute| !attribute.has_key?(:default) }
+        end
+        
+        def properties
+          attributes.find_all { |attribute| attribute[:type] == :property }
+        end
+        
+        [:child, :children, :property].each do |attribute_type|
+          class_eval <<-CODE
+            def #{attribute_type}(name, options = {})
+              class_eval { attr_reader name }
+              attributes << options.merge(:type => :#{attribute_type}, :name => name)
+            end
+          CODE
+        end
+      end
+      
+      attr_reader :runtime, :location
+      
+      extend Forwardable
+      def_delegators :runtime, :constants, :stack, :current_object, :current_location,
+                               :current_scope, :current_failure_continuation
+      
+      def initialize(location = nil, *attributes)
+        @location = location
+        
+        if self.class.required_attributes.length > attributes.length
+          raise ArgumentError, "wrong number of attributes"
+        end
+        
+        self.class.attributes.each do |attribute|
+          instance_variable_set("@#{attribute[:name]}", attributes.shift || attribute[:default])
+        end
+      end
+      
+      def runtime=(runtime_object)
+        @runtime = runtime_object
+        children.compact.each { |child| child.runtime = runtime_object if child.is_a?(Node) }
+      end
+      
+      def children
+        @children ||= self.class.attributes.inject([]) do |children, attribute|
+          value = instance_variable_get("@#{attribute[:name]}")
+          
+          if attribute[:type] == :children
+            children + value
+          elsif attribute[:type] == :child
+            children << value
+          else
+            children
+          end
+        end
+      end
+      
+      def eval_in_scope(scope, &continuation)
+        eval_in_frame(Carat::Runtime::Frame.new(scope), &continuation)
+      end
+      
+      def eval_with_failure_continuation(failure_continuation, &continuation)
+        eval_in_frame(Carat::Runtime::Frame.new(nil, nil, failure_continuation), &continuation)
+      end
+      
+      def eval_in_frame(frame, &continuation)
+        stack << frame
+        
+        eval do |result|
+          stack.pop
+          yield result
+        end
+      end
+      
+      def eval_child(node, scope_or_failure_continuation = nil, &continuation)
+        if node.nil?
+          yield runtime.nil
+        else
+          if scope_or_failure_continuation
+            case scope_or_failure_continuation
+              when Carat::Runtime::Scope
+                node.eval_in_scope(scope_or_failure_continuation, &continuation)
+              when Proc
+                node.eval_with_failure_continuation(scope_or_failure_continuation, &continuation)
+            end
+          else
+            node.eval(&continuation)
+          end
+        end
+      end
+      
+      def eval
+        raise CaratError, "evaluation logic for #{self} not implemented"
+      end
+      
+      def inspect
+        Printer.new.print(self)
+      end
+      
+      def to_ast
+        self
+      end
+    end
+    
+    # A node which has a given single value when evaluated
+    class ValueNode < Node
+      def value_object
+        raise NotImplementedError
+      end
+      
+      def eval
+        yield value_object
+      end
+    end
+    
+    # A node representing a value drawn from a set of possibilities - for example a string or
+    # integer value
+    class MultipleValueNode < ValueNode
+      property :value
+    end
+    
+    class NamedNode < Node
+      property :name
+    end
+    
+    class NodeList < Node
+      children :items, :default => []
+      
+      def empty?
+        items.empty?
+      end
+      
+      # Fold the items by evaluating each one in turn and then passing the evaluated object to an
+      # operation function
+      def eval_fold(base_answer, operation, items = self.items, &continuation)
+        # This lambda evaluates the AST node it is passed, and then computes the next answer for the
+        # fold by combining the result with the current answer, using the operation provided, which
+        # then yields to the fold_continuation
+        fold_operation = lambda do |node, current_answer, &fold_continuation|
+          eval_child(node) do |result|
+            operation.call(result, current_answer, node, &fold_continuation)
+          end
+        end
+        
+        runtime.fold(base_answer, fold_operation, items, &continuation)
+      end
+    end
+    
+    class BinaryNode < Node
+      child :left
+      child :right
+    end
+    
+    # ***** CONCRETE CLASSES ***** #
+    
+    require AST_PATH + "/scopes"
+    require AST_PATH + "/messages"
+    require AST_PATH + "/literals"
+    require AST_PATH + "/variables"
+    require AST_PATH + "/control"
+  end
+end
+
+\end{lstlisting}
+\begin{lstlisting}[title={\small\Helvetica ast/control.rb},language=Ruby]
+module Carat::AST
+  class If < Node
+    child :condition
+    child :true_node
+    child :false_node
+    
+    def eval(&continuation)
+      eval_child(condition) do |condition_value|
+        if condition_value.false_or_nil?
+          eval_child(false_node, &continuation)
+        else
+          eval_child(true_node, &continuation)
+        end
+      end
+    end
+  end
+  
+  class While < Node
+    child :condition
+    child :contents
+    
+    def eval(&continuation)
+      loop = lambda do
+        eval_child(condition) do |condition_value|
+          if condition_value.false_or_nil?
+            yield runtime.nil
+          else
+            eval_child(contents) do |contents_value|
+              loop.call
+            end
+          end
+        end
+      end
+      
+      loop.call
+    end
+  end
+  
+  class Begin < Node
+    child :contents
+    child :rescue
+    
+    def eval(&continuation)
+      failure_continuation = self.rescue.failure_continuation(&continuation) if self.rescue
+      eval_child(contents, failure_continuation, &continuation)
+    end
+  end
+  
+  class Rescue < Node
+    child :error_type
+    child :exception_variable
+    child :contents
+    
+    def eval_error_type(&continuation)
+      if error_type
+        eval_child(error_type, &continuation)
+      else
+        yield constants[:RuntimeError]
+      end
+    end
+    
+    def check_error_type(exception, &continuation)
+      eval_error_type do |error_type_object|
+        exception.call(:is_a?, [error_type_object]) do |exception_match|
+          yield exception_match == runtime.true
+        end
+      end
+    end
+    
+    def assign_exception_variable(exception, &continuation)
+      if exception_variable
+        exception_variable.assign(exception, &continuation)
+      else
+        yield
+      end
+    end
+    
+    def failure_continuation(&continuation)
+      lambda do |exception|
+        # Remove the frame for this failure continuation from the stack
+        stack.pop
+        
+        # If this failure continuation matches the error, evaluate its contents. Otherwise, unwind
+        # the stack to the frame of the next failure continuation, and call that.
+        check_error_type(exception) do |error_type_matches|
+          if error_type_matches
+            assign_exception_variable(exception) do
+              eval_child(contents, &continuation)
+            end
+          else
+            stack.unwind_to(:failure_continuation)
+            current_failure_continuation.call(exception)
+          end
+        end
+      end
+    end
+  end
+  
+  class And < BinaryNode
+    def eval(&continuation)
+      eval_child(left) do |left_value|
+        if left_value.false_or_nil?
+          yield left_value
+        else
+          eval_child(right, &continuation)
+        end
+      end
+    end
+  end
+  
+  class Or < BinaryNode
+    def eval(&continuation)
+      eval_child(left) do |left_value|
+        if left_value.false_or_nil?
+          eval_child(right, &continuation)
+        else
+          yield left_value
+        end
+      end
+    end
+  end
+end
+
+\end{lstlisting}
+\begin{lstlisting}[title={\small\Helvetica ast/literals.rb},language=Ruby]
+module Carat::AST
+  class True < ValueNode
+    def value_object
+      runtime.true
+    end
+  end
+  
+  class False < ValueNode
+    def value_object
+      runtime.false
+    end
+  end
+  
+  class Nil < ValueNode
+    def value_object
+      runtime.nil
+    end
+  end
+  
+  class String < MultipleValueNode
+    def value_object
+      constants[:String].new(value)
+    end
+  end
+  
+  class Integer < MultipleValueNode
+    def value_object
+      constants[:Fixnum].get(value)
+    end
+  end
+  
+  class Array < NodeList
+    def eval(&continuation)
+      append = lambda do |object, array_object, node, &append_continuation|
+        append_continuation.call(array_object << object)
+      end
+      
+      eval_fold([], append) do |item_objects|
+        yield constants[:Array].new(item_objects)
+      end
+    end
+  end
+end
+
+\end{lstlisting}
+\begin{lstlisting}[title={\small\Helvetica ast/messages.rb},language=Ruby]
+module Carat::AST
+  class MethodCall < Node
+    child :receiver
+    property :name
+    child :arguments
+    
+    def eval_receiver(&continuation)
+      if receiver
+        eval_child(receiver, &continuation)
+      else
+        yield current_object
+      end
+    end
+    
+    def call(method_name, arguments, &continuation)
+      eval_receiver do |receiver_object|
+        method = receiver_object.lookup_instance_method(method_name)
+        
+        if method
+          receiver_object.call(method, arguments, location, &continuation)
+        else
+          runtime.raise :NoMethodError, "undefined method '#{method_name}' for object #{receiver_object}", location
+        end
+      end
+    end
+    
+    def eval(&continuation)
+      call(name, arguments, &continuation)
+    end
+    
+    def assign(value, &continuation)
+      assign_arguments = Carat::AST::ArgumentList.new(
+        location, arguments.items + [
+          Carat::AST::ArgumentList::Item.new(location, value)
+        ]
+      )
+      assign_arguments.runtime = runtime
+      
+      call("#{name}=".to_sym, assign_arguments, &continuation)
+    end
+  end
+  
+  class ArgumentList < NodeList
+    class Item < Node
+      child    :expression
+      property :type, :default => :normal
+      
+      def eval(&continuation)
+        if expression.is_a?(Node)
+          eval_child(expression, &continuation)
+        else
+          yield expression
+        end
+      end
+    end
+    
+    def eval(&continuation)
+      append = lambda do |object, arguments, node, &append_continuation|
+        case node.type
+          when :splat
+            object.call(:to_a) do |object_as_array|
+              arguments.values += object_as_array.contents
+              append_continuation.call(arguments)
+            end
+          when :block, :block_pass
+            arguments.block = object
+            append_continuation.call(arguments)
+          else
+            arguments.values << object
+            append_continuation.call(arguments)
+        end
+      end
+      
+      eval_fold(Carat::Runtime::Arguments.new, append, &continuation)
+    end
+  end
+  
+  # This is a literal block, i.e. "foo do .. end" or "foo { ... }"
+  # When evaluated it is converted to a lambda
+  class Block < Node
+    child :argument_pattern
+    child :contents
+    
+    def eval
+      yield constants[:Lambda].new(argument_pattern, contents, current_scope)
+    end
+  end
+end
+
+\end{lstlisting}
+\begin{lstlisting}[title={\small\Helvetica ast/printer.rb},language=Ruby]
+module Carat::AST
+  class Printer
+    def initialize
+      @indent = 0
+    end
+    
+    def print(root_node)
+      print_node(root_node)
+    end
+    
+    private
+    
+      def print_node(node)
+        return indent + "nil" if node.nil?
+        
+        result = indent + header(node)
+        
+        unless node.children.empty?
+          result << ":\n"
+          
+          @indent += 1
+          result << node.class.attributes.inject([]) do |items, attribute|
+            if attribute[:type] == :child
+              item = indent + attribute[:name].to_s + ":\n"
+              @indent += 1
+              item << print_node(node.send(attribute[:name]))
+              @indent -= 1
+              items << item
+            elsif attribute[:type] == :children
+              node.send(attribute[:name]).each do |child|
+                items << print_node(child)
+              end
+            end
+            
+            items
+          end.join("\n")
+          @indent -= 1
+        end
+        
+        result
+      end
+      
+      def indent
+        "  " * @indent
+      end
+      
+      def header(node)
+        header = node.class.to_s.sub("Carat::AST::", "")
+        unless node.class.properties.empty?
+          header << "["
+          header << node.class.properties.map do |property|
+            node.send(property[:name]).inspect
+          end.join(", ")
+          header << "]"
+        end
+        header
+      end
+  end
+end
+
+\end{lstlisting}
+\begin{lstlisting}[title={\small\Helvetica ast/scopes.rb},language=Ruby]
+module Carat::AST
+  class ExpressionList < NodeList
+    def eval(&continuation)
+      operation = lambda do |object, accumulation, node, &operation_continuation|
+        operation_continuation.call(object)
+      end
+      
+      eval_fold(runtime.nil, operation, &continuation)
+    end
+  end
+  
+  class ModuleDefinition < Node
+    property :name
+    child    :contents
+    
+    def module_object
+      constants[name] ||= constants[:Module].new(name)
+    end
+    
+    def contents_scope
+      Carat::Runtime::Scope.new(module_object)
+    end
+    
+    def eval(&continuation)
+      eval_child(contents, contents_scope, &continuation)
+    end
+  end
+  
+  class ClassDefinition < Node
+    property :name
+    child    :superclass
+    child    :contents
+    
+    def eval_superclass_object(&continuation)
+      if superclass
+        eval_child(superclass, &continuation)
+      else
+        yield constants[:Object]
+      end
+    end
+    
+    def eval_class_object
+      eval_superclass_object do |superclass_object|
+        yield constants[name] ||= constants[:Class].new(superclass_object, name)
+      end
+    end
+    
+    def eval_contents_scope
+      eval_class_object do |class_object|
+        yield Carat::Runtime::Scope.new(class_object)
+      end
+    end
+    
+    def eval(&continuation)
+      eval_contents_scope do |contents_scope|
+        eval_child(contents, contents_scope, &continuation)
+      end
+    end
+  end
+  
+  class MethodDefinition < Node
+    child    :receiver
+    property :name
+    child    :argument_pattern
+    child    :contents
+    
+    def method_object
+      constants[:Method].new(name, argument_pattern, contents)
+    end
+    
+    def current_klass
+      # If the current object is not a module or class (i.e. it is a normal object), get its class
+      # (this could happen, for example, if a method is defined within another method)
+      if current_object.is_a?(Carat::Data::ModuleInstance)
+        current_object
+      else
+        current_object.real_klass
+      end
+    end
+    
+    def eval_klass(&continuation)
+      if receiver
+        # If there is a receiver this is a singleton method definition, so the method should
+        # be placed in the method table of the singleton class of the receiver
+        eval_child(receiver) do |receiver_object|
+          yield receiver_object.singleton_class
+        end
+      else
+        # Otherwise get the class in the current scope
+        yield current_klass
+      end
+    end
+    
+    # Define a method in the current scope
+    def eval
+      eval_klass do |klass|
+        klass.method_table[name] = method_object
+        yield runtime.nil
+      end
+    end
+  end
+  
+  class ArgumentPattern < NodeList
+    class Item < Node
+      child    :assignee
+      property :type,    :default => :normal
+      child    :default, :default => nil
+      
+      # A splat it considered mandatory, but it can match 0 arguments
+      # A block pass is always optional and will default to nil
+      def mandatory?
+        type == :splat || (type == :normal && default.nil?)
+      end
+      
+      def optional?
+        !mandatory?
+      end
+      
+      def minimum_arity
+        case type
+          when :splat, :block_pass
+            0
+          else
+            default ? 0 : 1
+        end
+      end
+      
+      def maximum_arity
+        case type
+          when :splat
+            (1.0/0) # Infinity
+          when :block_pass
+            0 # Block pass is not considered party of the arity
+          else
+            1
+        end
+      end
+    end
+    
+    def minimum_arity
+      items.inject(0) { |sum, item| sum + item.minimum_arity }
+    end
+    
+    def maximum_arity
+      items.inject(0) { |sum, item| sum + item.maximum_arity }
+    end
+    
+    def arity
+      @arity ||= minimum_arity..maximum_arity
+    end
+    
+    def arity_as_string
+      if minimum_arity == maximum_arity
+        minimum_arity.to_s
+      else
+        "#{minimum_arity} to #{maximum_arity}"
+      end
+    end
+    
+    def normal_items_after_splat
+      items.drop_while { |item| item.type != :splat }.
+        drop(1).reject { |item| item.type == :block_pass}
+    end
+    
+    def values_for_splat(values)
+      values.shift(values.length - normal_items_after_splat.length)
+    end
+    
+    def value_for(item, values, &continuation)
+      case item.type
+        when :splat
+          yield runtime.constants[:Array].new(values_for_splat(values))
+        when :block_pass
+          yield current_scope.block || runtime.nil
+        else
+          value = values.shift
+          
+          if value
+            yield value
+          else
+            eval_child(item.default, &continuation)
+          end
+      end
+    end
+    
+    def assign(values, &continuation)
+      if arity.include?(values.length)
+        assign_item_operation = lambda do |item, &each_continuation|
+          value_for(item, values) do |value|
+            item.assignee.assign(value) do
+              each_continuation.call
+            end
+          end
+        end
+        
+        runtime.each(assign_item_operation, items, &continuation)
+      else
+        runtime.raise :ArgumentError, "wrong number of arguments (#{values.length} supplied, " +
+                                      "#{arity_as_string} required)"
+      end
+    end
+  end
+end
+
+\end{lstlisting}
+\begin{lstlisting}[title={\small\Helvetica ast/variables.rb},language=Ruby]
+module Carat::AST
+  class Assignment < Node
+    child :receiver
+    child :value
+    
+    # The receiver might be a local variable, instance variable, or method call. If it is a method
+    # call then the value is technically an argument to the call, so we don't want to evaluate
+    # it at this stage.
+    def eval(&continuation)
+      if receiver.is_a?(MethodCall)
+        receiver.assign(value, &continuation)
+      else
+        eval_child(value) do |value_object|
+          receiver.assign(value_object, &continuation)
+        end
+      end
+    end
+  end
+  
+  class LocalVariable < NamedNode
+    def assign(value)
+      yield current_scope[name] = value
+    end
+    
+    # The only time when a local variable is explicitly distinguished from a method call is when we
+    # have a line such as "foo ||= 42". In this case, the LHS is taken to be a local variable (not
+    # a method call), and the expression is expanded into an AST node representing "foo = foo || 42",
+    # but the occurance of "foo" on the RHS is also assumed to be a local variable.
+    def eval(&continuation)
+      if current_scope[name]
+        yield current_scope[name]
+      else
+        runtime.raise :NameError, "undefined local variable '#{name}'"
+      end
+    end
+  end
+  
+  class LocalVariableOrMethodCall < NamedNode
+    def eval(&continuation)
+      if current_scope[name]
+        yield current_scope[name]
+      elsif current_object.has_instance_method?(name)
+        current_object.call(name, [], location, &continuation)
+      else
+        runtime.raise :NameError, "undefined local variable or method '#{name}'"
+      end
+    end
+  end
+  
+  class InstanceVariable < NamedNode
+    def assign(value)
+      yield current_object.instance_variables[name] = value
+    end
+    
+    def eval
+      yield(current_object.instance_variables[name] || runtime.nil)
+    end
+  end
+  
+  class Constant < NamedNode
+    def eval
+      if constants[name]
+        yield constants[name]
+      else
+        runtime.raise :NameError, "undefined constant '#{name}'"
+      end
+    end
+  end
+end
+
+\end{lstlisting}
+\begin{lstlisting}[title={\small\Helvetica carat.rb},language=Ruby]
+require "forwardable"
+
+module Carat
+  ROOT_PATH    = File.expand_path(File.dirname(__FILE__))
+  RUNTIME_PATH = ROOT_PATH + "/runtime"
+  DATA_PATH    = ROOT_PATH + "/data"
+  KERNEL_PATH  = ROOT_PATH + "/kernel"
+  AST_PATH     = ROOT_PATH + "/ast"
+  PARSER_PATH  = ROOT_PATH + "/parser"
+  
+  class CaratError < StandardError; end
+  
+  require DATA_PATH    + "/data"
+  require RUNTIME_PATH + "/runtime"
+  require AST_PATH     + "/ast"
+  require PARSER_PATH  + "/parser"
+  
+  class Location
+    attr_reader :file_name, :line, :column
+    
+    def initialize(file_name, line, column)
+      @file_name, @line, @column = file_name, line, column
+    end
+    
+    def to_s
+      "#{file_name} at line #{line}, col #{column}"
+    end
+  end
+  
+  def self.parse(input, file_name = nil)
+    LanguageParser.new(input, file_name).ast
+  end
+  
+  def self.run(input)
+    Runtime.new.run(input)
+  end
+  
+  def self.run_file(name)
+    Runtime.new.run_file(name)
+  end
+end
+
+\end{lstlisting}
+\begin{lstlisting}[title={\small\Helvetica data/array.rb},language=Ruby]
+module Carat::Data
+  class ArrayClass < ClassInstance
+    def new(items)
+      ArrayInstance.new(runtime, self, items)
+    end
+  end
+  
+  class ArrayInstance < ObjectInstance
+    attr_reader :contents
+    
+    def initialize(runtime, klass, contents = [])
+      super(runtime, klass)
+      @contents = contents
+    end
+    
+    def primitive_initialize(*contents)
+      @contents = contents
+      yield runtime.nil
+    end
+    
+    def primitive_length
+      yield constants[:Fixnum].get(@contents.length)
+    end
+    
+    def primitive_each(block, &continuation)
+      yield_operation = lambda do |item, &each_continuation|
+        block.call(:call, [item], &each_continuation)
+      end
+      
+      runtime.each(yield_operation, @contents, self, &continuation)
+    end
+    
+    def primitive_push(item)
+      @contents << item
+      yield self
+    end
+    
+    def primitive_get(i)
+      yield @contents[i.value] || runtime.nil
+    end
+    
+    def primitive_set(i, value)
+      yield @contents[i.value] = value
+    end
+  end
+end
+
+\end{lstlisting}
+\begin{lstlisting}[title={\small\Helvetica data/class.rb},language=Ruby]
+module Carat::Data
+  class ClassClass < ModuleClass
+    def new(superclass, name = nil)
+      ClassInstance.new(runtime, self, superclass, name)
+    end
+  end
+  
+  class ClassInstance < ModuleInstance
+    attr_accessor :super
+    
+    def initialize(runtime, klass, superclass, name = nil)
+      @super = superclass
+      super(runtime, klass, name || inferred_name)
+    end
+    
+    def lookup_method(name)
+      method_table[name] || (@super && @super.lookup_method(name))
+    end
+    
+    def ancestors
+      if @super
+        [self] + @super.ancestors
+      else
+        [self]
+      end
+    end
+    
+    # The super may be an include class, so we want the first ancestor which is a "proper" class
+    def superclass
+      if @super.is_a?(IncludeClassInstance)
+        @super && @super.superclass
+      else
+        @super
+      end
+    end
+    
+    def insert_include_class(mod)
+      @super = IncludeClassInstance.new(runtime, mod, @super)
+    end
+    
+    def to_s
+      "<class:#{name}>"
+    end
+    
+    private
+    
+      def create_singleton_class
+        if constants[:SingletonClass]
+          self.klass = constants[:SingletonClass].new(self, superclass && superclass.singleton_class)
+        end
+      end
+      
+      # The inferred name is the name of the class in the object language, taken from the name of the
+      # class representing it in the implementation language. For instance, if this is an instance of
+      # +FixnumClass+, then the inferred name is +:Fixnum+
+      def inferred_name
+        @inferred_name ||= begin
+          # We must be in a subclass of ClassInstance in order to infer a name
+          unless instance_of?(ClassInstance)
+            self.class.to_s.sub(/^.*\:\:/, '').sub(/Class$/, '').to_sym
+          end
+        end
+      end
+      
+      # Returns the class which is used to represent an instance of this class.
+      # 
+      # For example, if this class is +FixnumClass+, the +instance_class+ will be +FixnumInstance+
+      def instance_class
+        @instance_class ||= begin
+          ancestors.each do |ancestor|
+            if Carat::Data.const_defined?("#{ancestor.name}Instance")
+              return Carat::Data.const_get("#{ancestor.name}Instance")
+            end
+          end
+        end
+      end
+    
+    public
+    
+    # ***** Primitives ***** #
+    
+    def primitive_allocate
+      yield instance_class.new(runtime, self)
+    end
+    
+    def primitive_superclass
+      yield superclass || runtime.nil
+    end
+    
+    def primitive_include(mod)
+      instance_class.send(:include, mod.primitives_module) if mod.primitives_module
+      
+      insert_include_class(mod)
+      singleton_class.insert_include_class(mod.singleton_class)
+      
+      yield mod
+    end
+  end
+end
+
+\end{lstlisting}
+\begin{lstlisting}[title={\small\Helvetica data/data.rb},language=Ruby]
+module Carat
+  module Data
+    # First, very clearly specify the basic hierarchy of data classes. This mirrors the inheritance
+    # hierarchy in the target language:
+    # 
+    #   class Object         < nil;    end
+    #   class Module         < Object; end
+    #   class Class          < Module; end
+    #   class SingletonClass < Class;  end
+    # 
+    class ObjectInstance; end
+    
+    class ModuleInstance         < ObjectInstance; end
+    class ClassInstance          < ModuleInstance; end
+    class SingletonClassInstance < ClassInstance;  end
+    
+    class ObjectClass            < ClassInstance;  end
+    class ModuleClass            < ObjectClass;    end
+    class ClassClass             < ModuleClass;    end
+    class SingletonClassClass    < ClassClass;     end
+    
+    # Now, require the actual code
+    require DATA_PATH + '/kernel'
+    require DATA_PATH + '/object'
+    require DATA_PATH + '/module'
+    require DATA_PATH + '/class'
+    
+    require DATA_PATH + '/singleton_class'
+    require DATA_PATH + '/include_class'
+    
+    require DATA_PATH + '/lambda'
+    require DATA_PATH + '/method'
+    require DATA_PATH + '/primitive'
+    require DATA_PATH + '/exception'
+    
+    require DATA_PATH + '/fixnum'
+    require DATA_PATH + '/array'
+    require DATA_PATH + '/string'
+    require DATA_PATH + '/singletons'
+  end
+end
+
+\end{lstlisting}
+\begin{lstlisting}[title={\small\Helvetica data/exception.rb},language=Ruby]
+module Carat::Data
+  class ExceptionClass < ClassInstance
+  end
+  
+  class ExceptionInstance < ObjectInstance
+    attr_reader :backtrace
+    
+    def generate_backtrace(location)
+      locations       = [location] + call_stack.reverse.map(&:location)
+      enclosing_calls = call_stack.reverse + [nil]
+      backtrace       = locations.zip(enclosing_calls)[0..-2]
+      
+      @backtrace = backtrace.map do |location, enclosing_call|
+        "#{location} in #{enclosing_call}"
+      end
+    end
+    
+    def primitive_backtrace
+      backtrace = @backtrace.map { |line| constants[:String].new(line) }
+      yield constants[:Array].new(backtrace)
+    end
+  end
+end
+
+\end{lstlisting}
+\begin{lstlisting}[title={\small\Helvetica data/fixnum.rb},language=Ruby]
+module Carat::Data
+  class FixnumClass < ClassInstance
+    def instances
+      @instances ||= {}
+    end
+    
+    def get(number)
+      instances[number] ||= FixnumInstance.new(runtime, self, number)
+    end
+  end
+  
+  class FixnumInstance < ObjectInstance
+    attr_reader :value
+    
+    def initialize(runtime, klass, value)
+      @value = value
+      super(runtime, klass)
+    end
+    
+    def to_s
+      value && value.to_s || super
+    end
+    
+    # ***** Primitives ***** #
+    
+    def primitive_spaceship(other)
+      yield klass.get(value <=> other.value)
+    end
+    
+    def primitive_plus(other)
+      yield klass.get(value + other.value)
+    end
+    
+    def primitive_minus(other)
+      yield klass.get(value - other.value)
+    end
+    
+    def primitive_to_s
+      yield constants[:String].new(value.to_s)
+    end
+  end
+end
+
+\end{lstlisting}
+\begin{lstlisting}[title={\small\Helvetica data/include\_class.rb},language=Ruby]
+module Carat::Data
+  class IncludeClassInstance < ClassInstance
+    attr_reader :module
+    
+    extend Forwardable
+    def_delegators :"self.module", :primitives_module, :extensions_module,
+                                   :lookup_instance_method, :name
+    
+    def initialize(runtime, mod, supr)
+      @module = mod
+      super(runtime, mod, supr)
+      
+      # An include class does not have its own method table, it uses the method table of the module
+      # being included
+      @method_table = mod.method_table
+    end
+    
+    def to_s
+      "<include_class:#{klass}>"
+    end
+  end
+end
+
+\end{lstlisting}
+\begin{lstlisting}[title={\small\Helvetica data/kernel.rb},language=Ruby]
+module Carat::Data
+  module KernelModule
+    def primitive_puts(object)
+      if object == runtime.nil
+        Kernel.puts("nil")
+        yield runtime.nil
+      else
+        # object.call(:to_s) gets the StringInstance representing the object, and then calling
+        # to_s actually gets the string.
+        object.call(:to_s) do |object_as_string|
+          Kernel.puts(object_as_string.to_s)
+          yield runtime.nil
+        end
+      end
+    end
+    
+    # Yield the caller's current block
+    def primitive_yield(*args, &continuation)
+      block = current_call.caller_scope.block
+      
+      if block
+        block.primitive_call(*args, &continuation)
+      else
+        runtime.raise :ArgumentError, "no block given"
+      end
+    end
+    
+    # Throw away the current continuation and call the failure continuation
+    def primitive_raise(exception, &continuation)
+      # Store the location of the call to Kernel#raise
+      location = current_location
+      
+      # Remove the frame for the Kernel#raise call
+      stack.pop
+      
+      # Generate the exception's backtrace before we modify the stack
+      exception.generate_backtrace(location)
+      
+      # Unwind the stack until we get to a failure continuation
+      stack.unwind_to(:failure_continuation)
+      
+      # Call the failure continuation which is now at the top of the stack
+      current_failure_continuation.call(exception)
+    end
+    
+    # Return from a method on the call stack without doing any further computation
+    def primitive_return(value, &continuation)
+      # Remove the frame for the Kernel#return call
+      stack.pop
+      
+      # Unwind the stack until we get to a call
+      stack.unwind_to(:call)
+      
+      # Call the return continuation of the current call (which will take care of popping the call
+      # off the stack)
+      current_call.return_continuation.call(value)
+    end
+    
+    def primitive_require(file, &continuation)
+      file_location = File.dirname(current_location.file_name) + "/" + file.to_s
+      
+      if runtime.loaded_files.include?(file_location)
+        yield runtime.false
+      else
+        runtime.run_file(file_location + ".carat")
+        yield runtime.true
+      end
+    end
+  end
+end
+
+\end{lstlisting}
+\begin{lstlisting}[title={\small\Helvetica data/lambda.rb},language=Ruby]
+module Carat::Data
+  class LambdaClass < ClassInstance
+    def new(argument_pattern, contents, scope)
+      LambdaInstance.new(runtime, self, argument_pattern, contents, scope)
+    end
+    
+    def primitive_new(block)
+      yield block
+    end
+  end
+  
+  class LambdaInstance < ObjectInstance
+    attr_reader :argument_pattern, :contents, :scope
+    
+    def initialize(runtime, klass, argument_pattern, contents, scope)
+      @argument_pattern, @contents, @scope = argument_pattern, contents, scope
+      super(runtime, klass)
+    end
+    
+    # Extend the scope in which the block was created. The reason for extending the scope is that 
+    # it means any fresh variables within the lambda will stay local to the lambda.
+    def evaluation_scope
+      scope.extend
+    end
+    
+    def to_s
+      "<lambda>"
+    end
+    
+    ##### PRIMITIVES #####
+    
+    def primitive_call(*arguments, &continuation)
+      arguments = Carat::Runtime::Arguments.from_a(arguments)
+      
+      Carat::Runtime::Call.new(
+        runtime, self, arguments,
+        continuation, evaluation_scope, current_location
+      ).send
+    end
+  end
+end
+
+\end{lstlisting}
+\begin{lstlisting}[title={\small\Helvetica data/method.rb},language=Ruby]
+module Carat::Data
+  class MethodClass < ClassInstance
+    def new(name, argument_pattern, contents)
+      MethodInstance.new(runtime, self, name, argument_pattern, contents)
+    end
+  end
+  
+  class MethodInstance < ObjectInstance
+    attr_reader :name, :argument_pattern, :contents
+    
+    def initialize(runtime, klass, name, argument_pattern, contents)
+      @name, @argument_pattern, @contents = name, argument_pattern, contents
+      super(runtime, klass)
+    end
+    
+    def to_s
+      "<method:#{name}>"
+    end
+  end
+end
+
+\end{lstlisting}
+\begin{lstlisting}[title={\small\Helvetica data/module.rb},language=Ruby]
+module Carat::Data
+  class ModuleClass < ObjectClass
+    def new(name)
+      ModuleInstance.new(runtime, self, name)
+    end
+  end
+  
+  class ModuleInstance < ObjectInstance
+    attr_reader   :name, :method_table
+    
+    def initialize(runtime, klass, name = nil)
+      @name         = name
+      @method_table = {}
+      
+      super(runtime, klass)
+      
+      include_module_primitives if include_class?
+      create_singleton_class unless include_class? || singleton?
+    end
+    
+    def singleton?
+      instance_of?(SingletonClassInstance)
+    end
+    
+    def include_class?
+      instance_of?(IncludeClassInstance)
+    end
+    
+    # If this is actually a module (as opposed to a class or whatever) then we can have a module
+    # in the implementation language containing primitives for this specific module in the target
+    # language.
+    # 
+    # For instance, if we create a +ModuleInstance+ with name "Kernel", then the module named
+    # "KernelModule", defined primitives for it.
+    # 
+    # This is useful, because then when "Kernel" is included in another module/class, we can also
+    # make the primitives available to the module/class it is included in. 
+    def primitives_module
+      if name && Carat::Data.const_defined?("#{name}Module")
+        Carat::Data.const_get("#{name}Module")
+      end
+    end
+    
+    def to_s
+      "<module:#{name}>"
+    end
+    
+    private
+      
+      def include_module_primitives
+        extend(primitives_module) if primitives_module
+      end
+    
+    public
+    
+    # ***** Primitives ***** #
+    
+    def primitive_name
+      yield constants[:String].new(name)
+    end
+  end
+end
+
+\end{lstlisting}
+\begin{lstlisting}[title={\small\Helvetica data/object.rb},language=Ruby]
+module Carat::Data
+  class ObjectClass < ClassInstance
+    def new
+      ObjectInstance.new(runtime, self)
+    end
+  end
+  
+  class ObjectInstance
+    class << self
+      def next_object_id
+        if @current_object_id
+          @current_object_id += 1
+        else
+          @current_object_id = 1
+        end
+      end
+    end
+    
+    attr_reader :runtime, :carat_object_id, :instance_variables
+    attr_accessor :klass
+    
+    extend Forwardable
+    def_delegators :runtime, :constants, :stack, :current_location, :current_failure_continuation,
+                   :current_call, :current_scope, :current_object, :call_stack
+    
+    def initialize(runtime, klass)
+      @runtime, @klass    = runtime, klass
+      @carat_object_id    = ObjectInstance.next_object_id
+      @instance_variables = {}
+    end
+    
+    # Lookup a instance method - i.e. one defined by this object's class
+    def lookup_instance_method(name)
+      klass.lookup_method(name)
+    end
+    
+    # Lookup an intance method or raise an exception
+    def lookup_instance_method!(name)
+      lookup_instance_method(name) || raise(Carat::CaratError, "undefined method '#{name}'")
+    end
+    
+    def has_instance_method?(name)
+      lookup_instance_method(name) != nil
+    end
+    
+    # Call the method with a given name, with the given argument list (AST::ArgumentList or Array).
+    # This should only be called when we know the method exists. If the method does not exist an
+    # exception will be raised.
+    def call(method_or_name, argument_list = [], location = current_location, &continuation)
+      if method_or_name.is_a?(Symbol)
+        method = lookup_instance_method!(method_or_name)
+      else
+        method = method_or_name
+      end
+      
+      create_call(method, argument_list, location, continuation).send
+    end
+    
+    def singleton_class
+      klass && klass.singleton? ? klass : create_singleton_class
+    end
+    
+    # A 'real class' is the first one in the ancestry of the actual class, which is not a singleton
+    def real_klass
+      if klass
+        real_klass = klass
+        
+        while real_klass && real_klass.singleton?
+          real_klass = real_klass.superclass
+        end
+        
+        real_klass
+      end
+    end
+    
+    def false_or_nil?
+      instance_of?(FalseClassInstance) || instance_of?(NilClassInstance)
+    end
+    
+    def to_s
+      inspect
+    end
+    
+    def inspect
+      "<object:#{klass}>"
+    end
+    
+    private
+    
+      def create_call(method, argument_list, location, continuation)
+        Carat::Runtime::Call.new(
+          runtime, method, argument_list,
+          continuation, method_scope, location
+        )
+      end
+      
+      # A scope for evaluating the method call, with this object as 'self'
+      def method_scope
+        Carat::Runtime::Scope.new(self)
+      end
+      
+      def create_singleton_class
+        self.klass = constants[:SingletonClass].new(self, klass)
+      end
+    
+    public
+    
+    # ***** Primitives ***** #
+    
+    def primitive_equal_to(other)
+      if carat_object_id == other.carat_object_id
+        yield runtime.true
+      else
+        yield runtime.false
+      end
+    end
+    
+    def primitive_object_id
+      yield constants[:Fixnum].get(carat_object_id)
+    end
+    
+    def primitive_class
+      yield real_klass
+    end
+  end
+end
+
+\end{lstlisting}
+\begin{lstlisting}[title={\small\Helvetica data/primitive.rb},language=Ruby]
+module Carat::Data
+  class PrimitiveClass < ClassInstance
+    def lookup_instance_method(name)
+      primitive_name = "primitive_#{name}"
+      current_object.method(primitive_name) if current_object.respond_to?(primitive_name)
+    end
+    
+    private
+    
+      def create_call(method, argument_list, location, continuation)
+        Carat::Runtime::PrimitiveCall.new(runtime, method, argument_list, continuation)
+      end
+  end
+end
+
+\end{lstlisting}
+\begin{lstlisting}[title={\small\Helvetica data/singleton\_class.rb},language=Ruby]
+module Carat::Data
+  class SingletonClassClass < ClassClass
+    def new(owner, superclass)
+      SingletonClassInstance.new(runtime, owner, superclass)
+    end
+  end
+  
+  class SingletonClassInstance < ClassInstance
+    attr_reader :owner
+    
+    def initialize(runtime, owner, superclass)
+      @owner = owner
+      super(runtime, superclass && superclass.klass, superclass)
+    end
+    
+    def to_s
+      "<singleton_class:#{owner}>"
+    end
+  end
+end
+
+\end{lstlisting}
+\begin{lstlisting}[title={\small\Helvetica data/singletons.rb},language=Ruby]
+module Carat::Data
+  class SingletonObjectClass < ClassInstance
+    def instance
+      @instance ||= instance_class.new(runtime, self)
+    end
+  end
+  
+  class FalseClassClass < SingletonObjectClass; end
+  class FalseClassInstance < ObjectInstance;    end
+  class TrueClassClass < SingletonObjectClass;  end
+  class TrueClassInstance < ObjectInstance;     end
+  class NilClassClass < SingletonObjectClass;   end
+  class NilClassInstance < ObjectInstance;      end
+end
+
+\end{lstlisting}
+\begin{lstlisting}[title={\small\Helvetica data/string.rb},language=Ruby]
+module Carat::Data
+  class StringClass < ClassInstance
+    def new(contents = "")
+      StringInstance.new(runtime, self, contents)
+    end
+  
+    def primitive_allocate
+      yield new
+    end
+  end
+  
+  class StringInstance < ObjectInstance
+    attr_reader :contents
+  
+    def initialize(runtime, klass, contents = "")
+      # clone the contents string because it is important to make sure that two separate 
+      # StringInstances aren't stored by the same underlying String object
+      @contents = contents.to_s.clone
+      super(runtime, klass)
+    end
+    
+    def to_s
+      contents
+    end
+    
+    # ***** Primitives ***** #
+    
+    def primitive_inspect
+      yield real_klass.new(contents.inspect)
+    end
+    
+    def primitive_plus(other)
+      other.call(:to_s) do |other_as_string|
+        yield real_klass.new(contents + other_as_string.contents)
+      end
+    end
+    
+    def primitive_push(other)
+      contents << other.contents
+      yield self
+    end
+    
+    def primitive_equal_to(other)
+      if contents == other.contents
+        yield runtime.true
+      else
+        yield runtime.false
+      end
+    end
+  end
+end
+
+\end{lstlisting}
+\begin{lstlisting}[title={\small\Helvetica kernel/array.carat},language=Ruby]
+class Array
+  def initialize(*contents)
+    Primitive.initialize(*contents)
+  end
+  
+  def length
+    Primitive.length
+  end
+  
+  def each(&block)
+    Primitive.each(&block)
+  end
+  
+  def <<(item)
+    Primitive.push(item)
+  end
+  
+  def [](index)
+    Primitive.get(index)
+  end
+  
+  def []=(index, value)
+    Primitive.set(index, value)
+  end
+  
+  def ==(other)
+    if length != other.length
+      return false
+    end
+    
+    i = 0
+    while i != length
+      if self[i] != other[i]
+        return false
+      end
+      i += 1
+    end
+    
+    return true
+  end
+  
+  def to_a
+    self
+  end
+  
+  def to_s
+    map { |item| item.to_s }.join("\n")
+  end
+  
+  def map
+    ary = []
+    each { |item| ary << yield(item) }
+    ary
+  end
+  
+  def inspect
+    "[" + map { |item| item.inspect }.join(", ") + "]"
+  end
+  
+  def join(joiner = "")
+    result = ""
+    i = 1
+    each do |item|
+      result << item.to_s
+      
+      if i != length
+        result << joiner.to_s
+      end
+      
+      i = i + 1
+    end
+    result
+  end
+end
+
+\end{lstlisting}
+\begin{lstlisting}[title={\small\Helvetica kernel/class.carat},language=Ruby]
+class Class < Module
+  def allocate
+    Primitive.allocate
+  end
+  
+  def superclass
+    Primitive.superclass
+  end
+  
+  def include(mod)
+    Primitive.include(mod)
+  end
+  
+  def new(*args, &block)
+    object = self.allocate
+    object.initialize(*args, &block)
+    object
+  end
+end
+
+\end{lstlisting}
+\begin{lstlisting}[title={\small\Helvetica kernel/comparable.carat},language=Ruby]
+module Comparable
+  def <=>(other)
+    raise NotImplementedError
+  end
+  
+  def <(other)
+    (self <=> other) == -1
+  end
+  
+  def >(other)
+    (self <=> other) == 1
+  end
+  
+  def <=(other)
+    self < other || self == other
+  end
+  
+  def >=(other)
+    self > other || self == other
+  end
+end
+
+\end{lstlisting}
+\begin{lstlisting}[title={\small\Helvetica kernel/exception.carat},language=Ruby]
+class Exception
+  def initialize(message = "(no message)")
+    @message = message
+  end
+  
+  def to_s
+    @message
+  end
+  
+  def backtrace
+    Primitive.backtrace
+  end
+end
+
+class StandardError < Exception; end
+class NameError < StandardError; end
+class NoMethodError < NameError; end
+class ArgumentError < StandardError; end
+class RuntimeError < StandardError; end
+
+\end{lstlisting}
+\begin{lstlisting}[title={\small\Helvetica kernel/false\_class.carat},language=Ruby]
+class FalseClass
+  def to_s
+    "false"
+  end
+  
+  def inspect
+    to_s
+  end
+end
+
+\end{lstlisting}
+\begin{lstlisting}[title={\small\Helvetica kernel/fixnum.carat},language=Ruby]
+class Fixnum
+  include Comparable
+  
+  def <=>(other)
+    Primitive.spaceship(other)
+  end
+  
+  def +(other)
+    Primitive.plus(other)
+  end
+  
+  def -(other)
+    Primitive.minus(other)
+  end
+  
+  def to_s
+    Primitive.to_s
+  end
+  
+  # Unary -
+  def --
+    0 - self
+  end
+  
+  # Unary +
+  def ++
+    self
+  end
+  
+  def inspect
+    to_s
+  end
+end
+
+\end{lstlisting}
+\begin{lstlisting}[title={\small\Helvetica kernel/kernel.carat},language=Ruby]
+module Kernel
+  def raise(exception_or_string = nil, message = "(no message)")
+    if exception_or_string.is_a?(Exception)
+      Primitive.raise exception_or_string
+    elsif exception_or_string.is_a?(String)
+      Primitive.raise RuntimeError.new(exception_or_string)
+    elsif exception_or_string == nil
+      Primitive.raise RuntimeError.new(message)
+    else
+      Primitive.raise exception_or_string.new(message)
+    end
+  end
+  
+  def puts(obj = "\n")
+    Primitive.puts(obj)
+  end
+
+  def p(obj)
+    puts obj.inspect
+  end
+  
+  def lambda(&block)
+    Lambda.new(&block)
+  end
+  
+  def yield(*args, &block)
+    Primitive.yield(*args, &block)
+  end
+  
+  def return(value = nil)
+    Primitive.return(value)
+  end
+  
+  def require(file)
+    Primitive.require(file)
+  end
+end
+
+\end{lstlisting}
+\begin{lstlisting}[title={\small\Helvetica kernel/lambda.carat},language=Ruby]
+class Lambda
+  # This is necessary because Object#new is implemented purely in the object language
+  def self.new(&block)
+    Primitive.new(&block)
+  end
+  
+  def call(*args, &block)
+    Primitive.call(*args, &block)
+  end
+end
+
+\end{lstlisting}
+\begin{lstlisting}[title={\small\Helvetica kernel/module.carat},language=Ruby]
+class Module
+  def name
+    Primitive.name
+  end
+  
+  def inspect
+    name
+  end
+  
+  def to_s
+    name
+  end
+end
+
+\end{lstlisting}
+\begin{lstlisting}[title={\small\Helvetica kernel/nil\_class.carat},language=Ruby]
+class NilClass
+  def to_s
+    ""
+  end
+  
+  def inspect
+    "nil"
+  end
+end
+
+\end{lstlisting}
+\begin{lstlisting}[title={\small\Helvetica kernel/object.carat},language=Ruby]
+class Object
+  include Kernel
+  
+  def initialize
+    # Do nothing by default
+  end
+  
+  def !=(other)
+    if self == other
+      false
+    else
+      true
+    end
+  end
+  
+  def !!
+    if self == nil || self == false
+      true
+    else
+      false
+    end
+  end
+  
+  def is_a?(test_class)
+    klass = self.class
+    
+    while klass != nil
+      if klass == test_class
+        return true
+      else
+        klass = klass.superclass
+      end
+    end
+    
+    return false
+  end
+  
+  def ==(other)
+    Primitive.equal_to(other)
+  end
+  
+  def object_id
+    Primitive.object_id
+  end
+  
+  def class
+    Primitive.class
+  end
+  
+  def inspect
+    "<" + self.class.to_s + ":" + object_id.to_s + ">"
+  end
+  
+  def to_s
+    inspect
+  end
+end
+
+\end{lstlisting}
+\begin{lstlisting}[title={\small\Helvetica kernel/string.carat},language=Ruby]
+class String
+  def inspect
+    Primitive.inspect
+  end
+  
+  def +(other)
+    Primitive.plus(other)
+  end
+  
+  def <<(other)
+    Primitive.push(other)
+  end
+  
+  def to_s
+    self
+  end
+end
+
+\end{lstlisting}
+\begin{lstlisting}[title={\small\Helvetica kernel/true\_class.carat},language=Ruby]
+class TrueClass
+  def to_s
+    "true"
+  end
+  
+  def inspect
+    to_s
+  end
+end
+
+\end{lstlisting}
+\begin{lstlisting}[title={\small\Helvetica parser/comment.treetop},language=treetop]
+module Carat
+  # This is a simple parser which strips comments from the source code before that code is actually
+  # parsed. It is simpler to keep this step separate.
+  # 
+  # There are two kinds of comment:
+  # 
+  #   1. Starts with '#' and finished with \n
+  #   2. Starts with '##' and finishes with next occurrence of '##'
+  # 
+  # With the second kind, newlines are preserved when stripping, so that error message which
+  # involve line numbers still make sense.
+  grammar Comment
+    rule program
+      head:line tail:("\n" line)* "\n"? {
+        def lines
+          [head] + tail.elements.map(&:line)
+        end
+        
+        def strip
+          lines.map(&:strip).join("\n")
+        end
+      }
+      /
+      '' {
+        def strip
+          ''
+        end
+      }
+    end
+    
+    rule line
+      parts:(string / non_string)* comment:comment? {
+        def stripped_comment
+          comment.empty? ? '' : comment.strip
+        end
+      
+        def strip
+          parts.text_value + stripped_comment
+        end
+      }
+    end
+    
+    rule non_string
+      [^\#\n\"\']+
+    end
+    
+    rule string
+      '"' [^\"]* '"' /
+      "'" [^\']* "'"
+    end
+    
+    rule comment
+      multi_line_comment /
+      single_line_comment
+    end
+    
+    rule multi_line_comment
+      '##' (!'##' .)* '##' {
+        def strip
+          # Keep the new lines so that error messages which refer to a line number still make sense
+          text_value.gsub(/[^\n]/, "")
+        end
+      }
+    end
+    
+    rule single_line_comment
+      '#' [^\n]* {
+        def strip
+          ''
+        end
+      }
+    end
+  end
+end
+
+\end{lstlisting}
+\begin{lstlisting}[title={\small\Helvetica parser/language.treetop},language=treetop]
+module Carat
+  grammar Language
+    # A program is the top-level node, containing just a list of expressions
+    rule program
+      multiline_space? expression_list <Program>
+    end
+    
+    # 1 or more expressions separated by terminators
+    rule expression_list
+      first:expression rest:(space? terminator expression)* space? terminator? <ExpressionList> /
+      '' <EmptyExpressionList>
+    end
+    
+    # An expression is the basic 'thing'
+    rule expression
+      assignment_expression
+    end
+    
+    rule assignment_expression
+      simple_assignment /
+      binary_method_assignment /
+      binary_operation_assignment /
+      or_expression
+    end
+    
+    rule assignee
+      assignee_method_call_chain / variable
+    end
+    
+    rule simple_assignment
+      receiver:assignee space?
+      '=' multiline_space?
+      value:expression <Assignment>
+    end
+    
+    rule binary_method_assignment
+      receiver:assignee space?
+      name:('<<' / '>>' / '+' / '-' / '*' / '/') '=' multiline_space?
+      value:expression <BinaryMethodAssignment>
+    end
+    
+    rule binary_operation_assignment
+      receiver:assignee space?
+      name:('||' / '&&') '=' multiline_space?
+      value:expression <BinaryOperationAssignment>
+    end
+    
+    rule or_expression
+      left:and_expression space?
+      name:'||' multiline_space?
+      right:expression <BinaryOperation>
+      /
+      and_expression
+    end
+    
+    rule and_expression
+      left:comparison_expression space?
+      name:'&&' multiline_space?
+      right:expression <BinaryOperation>
+      /
+      comparison_expression
+    end
+    
+    rule comparison_expression
+      left:inequality_expression space?
+      name:('==' / '!=' / '===' / '<=>') multiline_space?
+      right:comparison_expression <BinaryMethodCall>
+      /
+      inequality_expression
+    end
+    
+    rule inequality_expression
+      left:shift_expression space?
+      name:('<=' / '>=' / '<' / '>') multiline_space?
+      right:inequality_expression <BinaryMethodCall>
+      /
+      shift_expression
+    end
+    
+    rule shift_expression
+      left:add_subtract_expression space?
+      name:('<<' / '>>') multiline_space?
+      right:shift_expression <BinaryMethodCall>
+      /
+      add_subtract_expression
+    end
+    
+    rule add_subtract_expression
+      left:times_divide_expression space?
+      name:('+' / '-') multiline_space?
+      right:add_subtract_expression <BinaryMethodCall>
+      /
+      times_divide_expression
+    end
+    
+    rule times_divide_expression
+      left:unary_not_expression space?
+      name:('*' / '/') multiline_space?
+      right:times_divide_expression <BinaryMethodCall>
+      /
+      unary_not_expression
+    end
+    
+    rule unary_not_expression
+      name:'!' multiline_space? receiver:unary_not_expression <UnaryMethodCall> /
+      method_call_expression
+    end
+    
+    rule method_call_expression
+      method_call_chain / unary_plus_minus_expression
+    end
+    
+    rule unary_plus_minus_expression
+      name:('+' / '-') multiline_space? receiver:unary_plus_minus_expression <UnaryMethodCall> /
+      primary
+    end
+    
+    rule primary
+      module_definition /
+      class_definition /
+      method_definition /
+      control_structure /
+      literal /
+      instance_variable /
+      constant /
+      local_variable_or_method_call /
+      bracketed_expression
+    end
+    
+    rule bracketed_expression
+      '(' expression ')' <BracketedExpression>
+    end
+    
+    rule definition_body
+      terminator expression_list 'end'
+    end
+    
+    rule module_definition
+      'module' multiline_space
+      constant
+      definition_body <ModuleDefinition>
+    end
+    
+    rule class_definition
+      'class' multiline_space
+      constant space?
+      superclass:('<' multiline_space? primary)?
+      definition_body <ClassDefinition>
+    end
+    
+    rule method_definition
+      'def' multiline_space
+      receiver:(primary space? '.' multiline_space?)?
+      method_name method_argument_pattern
+      definition_body <MethodDefinition>
+    end
+    
+    # The arguments defined as part of a method definition
+    rule method_argument_pattern
+      space? '(' multiline_space?
+      contents:argument_pattern_contents
+      multiline_space? ')' <ArgumentPattern> /
+      '' <ArgumentPattern>
+    end
+    
+    # The arguments defined as part of a block definition
+    rule block_argument_pattern
+      space? '|' multiline_space?
+      contents:argument_pattern_contents
+      multiline_space? '|' <ArgumentPattern> /
+      '' <ArgumentPattern>
+    end
+    
+    rule argument_pattern_contents
+      head:argument_pattern_item
+      tail:(multiline_space? ',' multiline_space? item:argument_pattern_item)* /
+      ''
+    end
+    
+    rule argument_pattern_item
+      assignee default:(
+        multiline_space? '='
+        multiline_space? expression
+      )? <ArgumentPatternItem> /
+      ('*' / '&') multiline_space? assignee <ArgumentPatternItem>
+    end
+    
+    rule control_structure
+      if_expression /
+      while_expression /
+      begin_expression
+    end
+    
+    rule if_expression
+      'if' multiline_space condition:expression space? terminator
+      true_block:expression_list
+      false_block:(nested_if_expression / else_expression)?
+      'end' <IfExpression>
+    end
+    
+    rule nested_if_expression
+      'elsif' multiline_space condition:expression space? terminator
+      true_block:expression_list
+      false_block:(nested_if_expression / else_expression)? <IfExpression>
+    end
+    
+    rule else_expression
+      'else' multiline_space expression_list <ElseExpression>
+    end
+    
+    rule while_expression
+      'while' space condition:expression space? terminator
+      contents:expression_list
+      'end' <WhileExpression>
+    end
+    
+    rule begin_expression
+      'begin' multiline_space
+      contents:expression_list
+      rescue:rescue_expression?
+      'end' <BeginExpression>
+    end
+    
+    rule rescue_expression
+      'rescue'
+      type:(space expression)?
+      assignment:(space? '=>' multiline_space variable)?
+      multiline_space contents:expression_list <RescueExpression>
+    end
+    
+    # A literal object, e.g. a number, string, true, false, etc
+    rule literal
+      number / array / string / boolean / nil
+    end
+    
+    # A chain of one or more method calls. This matches only when we know for sure that a method is
+    # being called. So for example just "foo" will not match - as that may be a local variable or
+    # a method call. But "foo()" is definitely a method call, so we can match that. A chain is of 
+    # the form "foo.bar(...).baz(...)" and we have to convert this to several MethodCall instances
+    # when creating the AST.
+    rule method_call_chain
+      receiver:unary_plus_minus_expression tail:method_call_segment+ <MethodCallChain> /
+      head:implicit_method_call            tail:method_call_segment* <ImplicitMethodCallChain>
+    end
+    
+    # A method call chain which can be assigned to. This means that the last call in the chain
+    # must have a 'simple' name with no special characters.
+    rule assignee_method_call_chain
+      receiver:unary_plus_minus_expression
+      middle:(method_call_segment &'.')*
+      last:assignee_method_call_segment <AssigneeMethodCallChain> /
+      
+      head:implicit_method_call
+      middle:(method_call_segment &'.')*
+      last:assignee_method_call_segment <ImplicitAssigneeMethodCallChain>
+    end
+    
+    # If the method name matches an identifier, there has to be some sort of recognisable argument
+    # list for us to be sure it is a method call. Otherwise, the method name is clearly using some
+    # characters which are specific to methods (for example a '?' at the end), so the argument
+    # list is optional.
+    rule implicit_method_call
+      method_name:identifier           argument_list /
+      method_name:implicit_method_name argument_list:argument_list?
+    end
+    
+    rule method_call_segment
+      item:(dot_method_call / element_reference) space?
+    end
+    
+    rule assignee_method_call_segment
+      item:(assignee_dot_method_call / element_reference) space?
+    end
+    
+    rule dot_method_call
+      '.' multiline_space? method_name:method_name argument_list:argument_list?
+    end
+    
+    rule assignee_dot_method_call
+      '.' multiline_space? method_name:assignee_method_name
+    end
+    
+    rule element_reference
+      '[' multiline_space? ']' <ElementReference> /
+      '[' multiline_space?
+      head:argument_list_item
+      tail:(multiline_space? ',' multiline_space? argument_list_item)*
+      multiline_space? ']' <ElementReference>
+    end
+    
+    # Argument list - values which are passed during a method call
+    # This is when there are definitely arguments but they are possibly empty (i.e. an
+    # empty pair of parentheses). If there is simply an empty string (i.e. an empty list of
+    # arguments *not* surrounded by parentheses) these are not matched - this special case is dealt
+    # with by the local_variable_or_method_call rule
+    #
+    # A block is also considered to be a part of the argument list
+    rule argument_list
+      bracketed_argument_list /
+      unbracketed_argument_list
+    end
+    
+    # Any number of items inside parentheses, with an optional block
+    rule bracketed_argument_list
+      space? '(' multiline_space?
+      head:argument_list_item
+      tail:(multiline_space? ',' multiline_space? argument_list_item)*
+      multiline_space? ')' block_node:block? <ArgumentList>
+      /
+      space? '(' multiline_space? ')' block_node:block? <ArgumentList>
+    end
+    
+    # No parentheses, so in order for it to definitely be an argument list we need:
+    #
+    #   1. EITHER 1 or more items
+    #   2. OR no items, but a block
+    #
+    # Note that a block isn't included in option 1, as it would just bind to the last argument
+    # anyway. If the block should bind to the method call, parentheses must be used.
+    # 
+    # The argument list may not start with + or -, so as not to confuse "x +1" with "x(+1)"
+    rule unbracketed_argument_list
+      space !('+' / '-')
+      head:argument_list_item
+      tail:(space? ',' multiline_space? argument_list_item)*
+      block_node:block? <ArgumentList>
+      /
+      '' block_node:block <ArgumentList>
+    end
+    
+    # A splat, a block pass, or a normal expression
+    rule argument_list_item
+      ('*' / '&')? multiline_space? expression <ArgumentListItem>
+    end
+    
+    rule block
+      braces_block / do_block
+    end
+    
+    rule braces_block
+      space? '{' block_argument_pattern multiline_space? expression_list '}' <Block>
+    end
+    
+    rule do_block
+      space 'do' block_argument_pattern multiline_space? expression_list 'end' <Block>
+    end
+    
+    # A local or instance variable
+    rule variable
+      local_variable / instance_variable
+    end
+    
+    # This is the same as local_variable except that it may also be a method call with an implicit
+    # receiver, no parentheses and no arguments. This ambiguity has to be resolved at runtime.
+    rule local_variable_or_method_call
+      local_identifier '' <LocalVariableOrMethodCall>
+    end
+    
+    # A local variable when we know it is definitely a variable (not a method)
+    rule local_variable
+      local_identifier '' <LocalVariable>
+    end
+    
+    rule instance_variable
+      '@' identifier <InstanceVariable>
+    end
+    
+    rule keyword
+      'class' / 'module' / 'def' /
+      'do' / 'end' /
+      'if' / 'else' / 'elsif' / 'while' /
+      'begin' / 'rescue'
+    end
+    
+    # All possible valid method names
+    rule method_name
+      (simple_method_name ('?' / '!' / '=')? / special_method_name) <MethodName>
+    end
+    
+    # Method names which can be used in an implicit call. These are named which are *specifically
+    # recognisable* as method calls (as opposed to local variables), hence a '?' or '!' at the end
+    # is mandatory
+    rule implicit_method_name
+      simple_method_name ('?' / '!') <MethodName>
+    end
+    
+    # Method names which can be used on the left of an assignment
+    rule assignee_method_name
+      '' simple_method_name <MethodName>
+    end
+    
+    # Keywords are allowed
+    rule simple_method_name
+      [a-zA-Z_] [a-zA-Z0-9_]*
+    end
+    
+    # Match in order of number of characters so we don't get conflict, e.g. if '<' is tested before
+    # '<='
+    rule special_method_name
+      # Three characters
+      '===' / '<=>' /
+      '[]=' /
+      
+      # Two characters
+      '==' / '!=' /
+      '<=' / '>=' /
+      '<<' / '>>' /
+      '--' / '++' / '!!' /
+      '[]' /
+      
+      # One character
+      '<' / '>' /
+      '+' / '-' /
+      '*' / '/'
+    end
+    
+    # A general identifier must not start with a number and must not conflict with a keyword
+    rule identifier
+      !keyword [a-zA-Z_] [a-zA-Z0-9_]* <Identifier>
+    end
+    
+    # A local identifier must start with an underscore or lowercase letter, and must not conflict
+    # with a keyword
+    rule local_identifier
+      !keyword [a-z_] [a-zA-Z0-9_]*
+    end
+    
+    # A constant must start with a capital letter
+    rule constant
+      [A-Z] [a-zA-Z0-9_]* <Constant>
+    end
+    
+    rule number
+      [0-9]+ <Integer>
+    end
+    
+    rule array
+      '[' multiline_space?
+      head:expression
+      tail:(multiline_space? ',' multiline_space? expression)*
+      multiline_space? ']' <Array>
+      /
+      '[' multiline_space? ']' <Array>
+    end
+    
+    rule string
+      string_without_interpolation /
+      string_with_interpolation
+    end
+    
+    rule string_without_interpolation
+      "'" value:[^\']* "'" <StringWithoutInterpolation>
+    end
+    
+    rule string_with_interpolation
+      '"' value:[^\"]* '"' <StringWithInterpolation>
+    end
+    
+    rule boolean
+      'true' <True> / 'false' <False>
+    end
+    
+    rule nil
+      'nil' <Nil>
+    end
+    
+    # A terminator signifies the end of a statement. It can be a newline or a semicolon, followed
+    # by any amount of space
+    rule terminator
+      ("\n" / ";") multiline_space?
+    end
+    
+    rule space
+      [ \t]+
+    end
+    
+    rule multiline_space
+      [ \t\n\r]+
+    end
+  end
+end
+
+\end{lstlisting}
+\begin{lstlisting}[title={\small\Helvetica parser/nodes.rb},language=Ruby]
+module Carat
+  module Language
+    module NodeHelper
+      # The file is stored by the root node, so we delegate by to the parent by default and then
+      # override this in Program
+      def file_name
+        parent.file_name
+      end
+      
+      def line
+        input.line_of(interval.first)
+      end
+      
+      def column
+        input.column_of(interval.first)
+      end
+      
+      def location
+        Carat::Location.new(file_name, line, column)
+      end
+      
+      def error_location
+        Carat::Location.new(file_name, line, column + 1)
+      end
+      
+      def error(message)
+        raise Carat::SyntaxError.new(input, message, error_location)
+      end
+    end
+    
+    class Treetop::Runtime::SyntaxNode
+      include NodeHelper
+    end
+    
+    class Program < Treetop::Runtime::SyntaxNode
+      attr_accessor :file_name
+      
+      def to_ast
+        expression_list.to_ast
+      end
+    end
+  
+    class ExpressionList < Treetop::Runtime::SyntaxNode
+      # An array of nodes representing the expressions in the block
+      def expressions
+        [first] + rest.elements.map(&:expression)
+      end
+      
+      def to_ast
+        Carat::AST::ExpressionList.new(location, expressions.map(&:to_ast).compact)
+      end
+    end
+    
+    class EmptyExpressionList < Treetop::Runtime::SyntaxNode
+      def to_ast
+        nil
+      end
+    end
+    
+    class BracketedExpression < Treetop::Runtime::SyntaxNode
+      def to_ast
+        expression.to_ast
+      end
+    end
+    
+    class DefinitionNode < Treetop::Runtime::SyntaxNode
+      def contents
+        definition_body.expression_list.to_ast
+      end
+    end
+    
+    class ModuleDefinition < DefinitionNode
+      def to_ast
+        Carat::AST::ModuleDefinition.new(location, constant.text_value.to_sym, contents)
+      end
+    end
+    
+    class ClassDefinition < DefinitionNode
+      def superclass_ast
+        if superclass.empty?
+          nil
+        else
+          superclass.primary.to_ast
+        end
+      end
+      
+      def to_ast
+        Carat::AST::ClassDefinition.new(
+          location, constant.text_value.to_sym,
+          superclass_ast, contents
+        )
+      end
+    end
+    
+    class MethodDefinition < DefinitionNode
+      def receiver_ast
+        !receiver.empty? && receiver.primary.to_ast || nil
+      end
+      
+      def to_ast
+        Carat::AST::MethodDefinition.new(
+          location,
+          receiver_ast, method_name.text_value.to_sym,
+          method_argument_pattern.to_ast, contents
+        )
+      end
+    end
+    
+    class IfExpression < Treetop::Runtime::SyntaxNode
+      def false_expression_ast
+        false_block.to_ast unless false_block.empty?
+      end
+      
+      def true_expression_ast
+        true_block.expression_list.to_ast
+      end
+    
+      def to_ast
+        Carat::AST::If.new(
+          location, condition.to_ast,
+          true_block.to_ast, false_expression_ast
+        )
+      end
+    end
+    
+    class ElseExpression < Treetop::Runtime::SyntaxNode
+      def to_ast
+        expression_list.to_ast
+      end
+    end
+    
+    class WhileExpression < Treetop::Runtime::SyntaxNode
+      def to_ast
+        Carat::AST::While.new(location, condition.to_ast, contents.to_ast)
+      end
+    end
+    
+    class BeginExpression < Treetop::Runtime::SyntaxNode
+      def rescue_ast
+        self.rescue.to_ast unless self.rescue.empty?
+      end
+    
+      def to_ast
+        Carat::AST::Begin.new(location, contents.to_ast, rescue_ast)
+      end
+    end
+    
+    class RescueExpression < Treetop::Runtime::SyntaxNode
+      def type_ast
+        type.expression.to_ast unless type.empty?
+      end
+      
+      def assignment_ast
+        assignment.variable.to_ast unless assignment.empty?
+      end
+      
+      def to_ast
+        Carat::AST::Rescue.new(location, type_ast, assignment_ast, contents.to_ast)
+      end
+    end
+    
+    class ArgumentPattern < Treetop::Runtime::SyntaxNode
+      def items
+        @items ||= begin
+          if contents.respond_to?(:head)
+            items = [contents.head] + contents.tail.elements.map(&:item)
+            items.compact.map(&:to_ast)
+          else
+            []
+          end
+        end
+      end
+      
+      def splat_count
+        items.find_all { |item| item.type == :splat }.length
+      end
+      
+      def multiple_splats?
+        splat_count > 1
+      end
+      
+      def block_pass
+        @block_pass ||= items.find { |item| item.type == :block_pass }
+      end
+      
+      def block_pass_last?
+        block_pass == items.last
+      end
+      
+      def optional_part
+        items.drop_while { |item| item.mandatory? }
+      end
+      
+      def mandatory_before_optional?
+        optional_part.find { |item| item.mandatory? }.nil?
+      end
+      
+      def validate_items
+        # There can only be one splat, otherwise there could be multiple ways to map arguments onto
+        # the pattern
+        if multiple_splats?
+          error "only one splat allowed per method definition"
+        end
+        
+        # This also implies there is only one block pass
+        if block_pass && !block_pass_last?
+          error "a block pass may only occur at the end of the argument list in a method definition"
+        end
+        
+        unless mandatory_before_optional?
+          error "all mandatory arguments must come before any optional ones"
+        end
+      end
+      
+      def to_ast
+        if respond_to?(:contents)
+          validate_items
+          Carat::AST::ArgumentPattern.new(location, items)
+        else
+          Carat::AST::ArgumentPattern.new(location)
+        end
+      end
+    end
+    
+    class ArgumentPatternItem < Treetop::Runtime::SyntaxNode
+      def default_value_ast
+        default.expression.to_ast if respond_to?(:default) && !default.empty?
+      end
+      
+      def type
+        case text_value.chars.first
+          when '*'
+            :splat
+          when '&'
+            :block_pass
+          else
+            :normal
+        end
+      end
+      
+      def to_ast
+        Carat::AST::ArgumentPattern::Item.new(location, assignee.to_ast, type, default_value_ast)
+      end
+    end
+    
+    class Array < Treetop::Runtime::SyntaxNode
+      def items
+        if respond_to?(:head)
+          [head] + tail.elements.map(&:expression)
+        else
+          []
+        end
+      end
+      
+      def to_ast
+        Carat::AST::Array.new(location, items.map(&:to_ast))
+      end
+    end
+    
+    class String < Treetop::Runtime::SyntaxNode
+      def to_ast
+        Carat::AST::String.new(location, contents)
+      end
+    end
+    
+    class StringWithoutInterpolation < String
+      def contents
+        value.text_value
+      end
+    end
+    
+    class StringWithInterpolation < String
+      def contents
+        value.text_value.
+          gsub('\n', "\n").
+          gsub('\r', "\r").
+          gsub('\t', "\t")
+      end
+    end
+    
+    class True < Treetop::Runtime::SyntaxNode
+      def to_ast
+        Carat::AST::True.new(location)
+      end
+    end
+    
+    class False < Treetop::Runtime::SyntaxNode
+      def to_ast
+        Carat::AST::False.new(location)
+      end
+    end
+    
+    class Nil < Treetop::Runtime::SyntaxNode
+      def to_ast
+        Carat::AST::Nil.new(location)
+      end
+    end
+    
+    class Integer < Treetop::Runtime::SyntaxNode
+      def to_ast
+        Carat::AST::Integer.new(location, text_value.to_i)
+      end
+    end
+    
+    class LocalVariable < Treetop::Runtime::SyntaxNode
+      def to_ast
+        Carat::AST::LocalVariable.new(location, text_value.to_sym)
+      end
+    end
+    
+    class LocalVariableOrMethodCall < Treetop::Runtime::SyntaxNode
+      def to_ast
+        Carat::AST::LocalVariableOrMethodCall.new(location, text_value.to_sym)
+      end
+    end
+    
+    class InstanceVariable < Treetop::Runtime::SyntaxNode
+      def to_ast
+        Carat::AST::InstanceVariable.new(location, identifier.text_value.to_sym)
+      end
+    end
+    
+    class MethodCallChain < Treetop::Runtime::SyntaxNode
+      def chain
+        [receiver] + tail.elements.map { |el| el.item }
+      end
+      
+      # This basically resolves the associativity of a method call chain. During parsing, the chain
+      # is matched based on right-bracketing, i.e. foo.[bar.[baz]]. However, the call to baz should
+      # actually be the outermost node in the AST, and foo.bar is its receiver. So the bracketing
+      # in the AST needs to be [[foo].bar].baz
+      def reduce(chain)
+        if chain.length == 1
+          chain.first && chain.first.to_ast
+        else
+          call = chain.last
+          receiver = reduce(chain[0..-2])
+          
+          if !call.respond_to?(:argument_list) || call.argument_list.empty?
+            argument_list = Carat::AST::ArgumentList.new(location)
+          else
+            argument_list = call.argument_list.to_ast
+          end
+          
+          Carat::AST::MethodCall.new(location, receiver, call.method_name.to_sym, argument_list)
+        end
+      end
+      
+      def to_ast
+        reduce(chain)
+      end
+    end
+    
+    class ImplicitMethodCallChain < MethodCallChain
+      def tail_elements
+        if tail.empty?
+          []
+        else
+          tail.elements.map { |el| el.item }
+        end
+      end
+    
+      def chain
+        [nil, head] + tail_elements
+      end
+    end
+    
+    class AssigneeMethodCallChain < MethodCallChain
+      def middle_elements
+        if middle.empty?
+          []
+        else
+          middle.elements.map { |el| el.method_call_segment.item }
+        end
+      end
+      
+      def chain
+        [receiver] + middle_elements + [last.item]
+      end
+    end
+    
+    class ImplicitAssigneeMethodCallChain < AssigneeMethodCallChain
+      def chain
+        [nil, head] + middle_elements + [last.item]
+      end
+    end
+    
+    class ElementReference < Treetop::Runtime::SyntaxNode
+      def method_name
+        :[]
+      end
+      
+      def items
+        if respond_to?(:head)
+          [head.to_ast] + tail.elements.map(&:argument_list_item).map(&:to_ast)
+        else
+          []
+        end
+      end
+      
+      def argument_list
+        Carat::AST::ArgumentList.new(location, items)
+      end
+    end
+    
+    module MethodName
+      def to_sym
+        text_value.to_sym
+      end
+    end
+    
+    module Identifier
+      def to_sym
+        text_value.to_sym
+      end
+    end
+    
+    class UnaryMethodCall < Treetop::Runtime::SyntaxNode
+      def to_ast
+        Carat::AST::MethodCall.new(
+          location, receiver.to_ast, (name.text_value * 2).to_sym,
+          Carat::AST::ArgumentList.new(location)
+        )
+      end
+    end
+    
+    class Assignment < Treetop::Runtime::SyntaxNode
+      def receiver_ast
+        @receiver_ast ||= receiver.to_ast
+      end
+      
+      def value_ast
+        value.to_ast
+      end
+      
+      def to_ast
+        Carat::AST::Assignment.new(location, receiver_ast, value_ast)
+      end
+    end
+    
+    module BinaryMethodHelper
+      def method_call(left, name, right)
+        Carat::AST::MethodCall.new(
+          location, left.to_ast, name.text_value.to_sym,
+          Carat::AST::ArgumentList.new(
+            location, [
+              Carat::AST::ArgumentList::Item.new(location, right.to_ast)
+            ]
+          )
+        )
+      end
+    end
+    
+    class BinaryMethodCall < Treetop::Runtime::SyntaxNode
+      include BinaryMethodHelper
+      
+      def to_ast
+        method_call(left, name, right)
+      end
+    end
+    
+    class BinaryMethodAssignment < Assignment
+      include BinaryMethodHelper
+      
+      def value_ast
+        method_call(receiver_ast, name, value)
+      end
+    end
+    
+    class BinaryOperation < Treetop::Runtime::SyntaxNode
+      OPERATIONS = {
+        "&&" => Carat::AST::And,
+        "||" => Carat::AST::Or
+      }
+      
+      def to_ast
+        OPERATIONS[name.text_value].new(location, left.to_ast, right.to_ast)
+      end
+    end
+    
+    class BinaryOperationAssignment < Assignment
+      def value_ast
+        BinaryOperation::OPERATIONS[name.text_value].new(location, receiver_ast, value.to_ast)
+      end
+    end
+    
+    class ArgumentList < Treetop::Runtime::SyntaxNode
+      def items
+        @items ||= begin
+          items = []
+          items += [head] + tail.elements.map(&:argument_list_item) if respond_to?(:head)
+          items << block_node if respond_to?(:block_node) && !block_node.empty?
+          items.map(&:to_ast)
+        end
+      end
+      
+      def block_pass
+        items.find { |item| item.type == :block_pass }
+      end
+      
+      def block
+        items.last if items.last.type == :block
+      end
+      
+      # Note that multiple splats are allowed, when *calling* a method, because there is no
+      # ambiguity about how they will be expanded (the n items in the splat's expression will
+      # become the next n items in the argument list). This is different to when defining a method
+      # because a splat there means a certain variable will take an unbounded number of arguments
+      # as a single array.
+      def validate_items
+        # Either a block may be passed, or a literal block may be created, but not both
+        if block_pass && block
+          error "cannot pass a block in the arguments and give a literal block at the same time"
+        end
+        
+        # Block pass only valid at end of args. Note this also implies that multiple block passes
+        # are invalid.
+        if block_pass && block_pass != items.last
+          error "a block pass must only occur at the end of the argument list"
+        end
+      end
+      
+      def to_ast
+        validate_items
+        Carat::AST::ArgumentList.new(location, items)
+      end
+    end
+    
+    class ArgumentListItem < Treetop::Runtime::SyntaxNode
+      def type
+        case text_value.chars.first
+          when '*'
+            :splat
+          when '&'
+            :block_pass
+          else
+            :normal
+        end
+      end
+      
+      def to_ast
+        Carat::AST::ArgumentList::Item.new(location, expression.to_ast, type)
+      end
+    end
+    
+    class Block < Treetop::Runtime::SyntaxNode
+      def to_ast
+        Carat::AST::ArgumentList::Item.new(
+          location,
+          Carat::AST::Block.new(
+            location, block_argument_pattern.to_ast,
+            expression_list.to_ast
+          ),
+          :block
+        )
+      end
+    end
+    
+    class Constant < Treetop::Runtime::SyntaxNode
+      def to_ast
+        Carat::AST::Constant.new(location, text_value.to_sym)
+      end
+    end
+    
+    class Nothing < Treetop::Runtime::SyntaxNode
+      def to_ast
+        nil
+      end
+    end
+  end
+end
+
+\end{lstlisting}
+\begin{lstlisting}[title={\small\Helvetica parser/parser.rb},language=Ruby]
+module Carat
+  require "rubygems" rescue LoadError
+  require "treetop"
+  
+  if ENV["DYNAMIC_PARSER"] == "true"
+    Treetop.load(PARSER_PATH + "/comment")
+    Treetop.load(PARSER_PATH + "/language")
+  else
+    require PARSER_PATH + "/comment"
+    require PARSER_PATH + "/language"
+  end
+  
+  require PARSER_PATH + "/nodes"
+
+  class SyntaxError < CaratError
+    attr_reader :input, :message, :location
+    
+    extend Forwardable
+    def_delegators :location, :file_name, :line, :column
+    
+    def initialize(input, message, location)
+      @input, @message, @location = input, message, location
+    end
+    
+    # The input text on the offending line
+    def line_contents
+      input.split("\n")[line - 1]
+    end
+    
+    # The line contents with an arrow underneath pointing at the column
+    def diagram
+      line_contents.to_s + "\n" + (" " * (column - 1)) + "^"
+    end
+    
+    def full_message
+      "#{location}: #{message}\n\n#{diagram}"
+    end
+  end
+  
+  class ParseError < SyntaxError; end
+  
+  # Adapts the parser to store the code and the file name. This means we can break up the process of
+  # parsing a bit more easily.
+  class LanguageParser < Treetop::Runtime::CompiledParser
+    attr_reader :input, :file_name
+    
+    def initialize(input, file_name)
+      super()
+      @input, @file_name = input, file_name
+    end
+    
+    # Parses the code converts it to an AST, raising syntax errors along the way if necessary
+    def ast
+      @ast ||= begin
+        parse_tree.file_name = file_name
+        parse_tree.to_ast
+      end
+    end
+    
+    def parse_tree
+      @parse_tree ||= begin
+        tree = parse(input_without_comments)
+        if tree.nil?
+          raise Carat::ParseError.new(
+            input, expected_message,
+            Carat::Location.new(file_name, failure_line, failure_column)
+          )
+        end
+        tree
+      end
+    end
+    
+    def input_without_comments
+      parser = CommentParser.new
+      parse_tree = parser.parse(@input)
+      
+      unless parse_tree
+        puts "Comment parser failed"
+        puts parser.failure_reason
+        exit 1
+      end
+      
+      parse_tree.strip
+    end
+    
+    def expected_message
+      tf = terminal_failures
+      message = "Expected "
+      message << "one of " if tf.length > 1
+      message << tf.map(&:expected_string).uniq.join(', ')
+    end
+  end
+end
+
+\end{lstlisting}
+\begin{lstlisting}[title={\small\Helvetica repl.rb},language=Ruby]
+require 'readline'
+
+module Carat
+  class REPL
+    def initialize
+      @runtime    = Carat::Runtime.new
+      @scope      = @runtime.main_scope
+      @expression = ""
+    end
+    
+    def run
+      puts "Welcome to Carat."
+      loop { readline }
+    end
+    
+    def readline
+      line = Readline.readline(prompt)
+      exit(0) if line == "exit"
+      
+      @expression << line + "\n"
+      
+      begin
+        ast = Carat.parse(@expression)
+        result = @runtime.execute(ast, @scope)
+        inspected_result = @runtime.with_stack do
+          result.call(:inspect, &@runtime.identity_continuation)
+        end
+        
+        puts "=> " + inspected_result.to_s
+        @expression = ""
+      rescue SyntaxError
+        # It's assumed that syntax errors mean the expression is incomplete, so we just rescue
+        # them and carry on
+      end
+    rescue Interrupt
+      if @expression.empty?
+        # Exit silently
+        puts
+        exit(0)
+      else
+        # Reset the current expression, but don't exit the REPL
+        @expression = ""
+        puts
+      end
+    end
+    
+    def prompt
+      if @expression.empty?
+        ">> "
+      else
+        "?> "
+      end
+    end
+  end
+end
+
+\end{lstlisting}
+\begin{lstlisting}[title={\small\Helvetica runtime/call.rb},language=Ruby]
+class Carat::Runtime
+  class Arguments
+    attr_accessor :values, :block
+    
+    def initialize(values = [], block = nil)
+      @values, @block = values, block
+    end
+    
+    # Assumes the last item in the array is a block or NilClassInstance representing no block
+    def self.from_a(arguments)
+      block = arguments.pop
+      block = nil if block.is_a?(Carat::Data::NilClassInstance)
+      new(arguments, block)
+    end
+    
+    def to_a
+      (@values + [block]).compact
+    end
+  end
+  
+  class AbstractCall
+    # The runtime in which the call is happening
+    attr_reader :runtime
+    
+    # The object representing whatever we are calling (method, lambda, primitive method, etc)
+    attr_reader :callable
+    
+    # The scope in which the Call was created, used for evaluating arguments
+    attr_reader :caller_scope
+    
+    # The argument list can come in various forms, see eval_arguments
+    attr_reader :argument_list
+    
+    # The continuation of this call - i.e. the computation to be done afterwards
+    attr_reader :continuation
+    
+    def initialize(runtime, callable, argument_list, continuation)
+      @caller_scope = runtime.current_scope
+      
+      @runtime,       @callable     = runtime,       callable
+      @argument_list, @continuation = argument_list, continuation
+    end
+    
+    def send
+      raise NotImplementedError
+    end
+    
+    private
+    
+      # This method returns an Arguments object. Before "evaluation" the arguments may be one of
+      # three things:
+      # 
+      #   1. An Arguments object; just yield immediately
+      #   2. An Array; pass to a new Arguments object and yield
+      #   3. An ArgumentList AST node; evaluate it
+      def eval_arguments(&continuation)
+        case argument_list
+          when Arguments
+            yield argument_list
+          when Array
+            yield Arguments.new(argument_list)
+          else
+            argument_list.eval_in_scope(caller_scope, &continuation)
+        end
+      end
+  end
+  
+  class PrimitiveCall < AbstractCall
+    def send
+      eval_arguments do |arguments|
+        callable.call(*arguments.to_a, &return_continuation)
+      end
+    end
+    
+    def return_continuation
+      @return_continuation ||= lambda do |result|
+        unless result.is_a?(Carat::Data::ObjectInstance)
+          raise Carat::CaratError, "primitive '#{name}' did not return an ObjectInstance: #{result.inspect}"
+        end
+        
+        continuation.call(result)
+      end
+    end
+  end
+  
+  class Call < AbstractCall
+    # Scope used for the evaluation of the call
+    attr_reader :scope
+    
+    # Location that the call was made at
+    attr_reader :location
+    
+    extend Forwardable
+    def_delegators :callable, :argument_pattern, :contents
+    
+    def initialize(runtime, callable, argument_list, continuation, scope, location)
+      super(runtime, callable, argument_list, continuation)
+      @scope, @location = scope, location
+    end
+    
+    def send
+      runtime.stack << frame
+      apply_arguments do
+        if contents.nil?
+          return_continuation.call(runtime.nil)
+        else
+          lambda { contents.eval(&return_continuation) }
+        end
+      end
+    end
+    
+    def return_continuation
+      @return_continuation ||= lambda do |result|
+        runtime.stack.pop
+        continuation.call(result)
+      end
+    end
+    
+    def to_s
+      callable.to_s
+    end
+    
+    def inspect
+      "Call[#{callable}, #{location}]"
+    end
+    
+    private
+    
+      def frame
+        @frame ||= Frame.new(scope, self)
+      end
+      
+      def apply_arguments(&continuation)
+        eval_arguments do |arguments|
+          scope.block = arguments.block unless arguments.block.nil?
+          argument_pattern.assign(arguments.values.clone, &continuation)
+        end
+      end
+  end
+  
+  class MainMethodCall
+    attr_reader :location
+    
+    def initialize(location)
+      @location = location
+    end
+    
+    def to_s
+      "main"
+    end
+    
+    def inspect
+      "Call[main]"
+    end
+  end
+end
+
+\end{lstlisting}
+\begin{lstlisting}[title={\small\Helvetica runtime/kernel\_loader.rb},language=Ruby]
+class Carat::Runtime
+  class KernelLoader
+    attr_reader :runtime
+  
+    extend Forwardable
+    def_delegators :runtime, :constants
+    
+    include Carat::Data
+    
+    LOAD_ORDER = [:kernel, :module, :class, :object, :comparable, :fixnum, :array, :string,
+                  :nil_class, :true_class, :false_class, :lambda, :exception]
+    
+    def initialize(runtime)
+      @runtime = runtime
+    end
+    
+    def run
+      # Create SingletonClass and Object. The super pointers of SingletonClass, SingletonClass',
+      # Object and Object' will be nil. The klass pointers of SingletonClass' and Object' will also
+      # be nil.
+      @singleton_class = constants[:SingletonClass] = SingletonClassClass.new(runtime, nil, nil)
+      @object          = constants[:Object]         = ObjectClass.new(runtime, nil, nil)
+      
+      # Set the klass pointers of SingletonClass' and Object'
+      # The class of any singleton class is SingletonClass
+      @singleton_class.singleton_class.klass = @singleton_class
+      @object.singleton_class.klass          = @singleton_class
+      
+      # Create Module and Class. The super and klass pointers can be inferred correctly at this 
+      # stage based on the superclass given.
+      @module = constants[:Module] = ModuleClass.new(runtime, nil, @object)
+      @class  = constants[:Class]  = ClassClass.new(runtime, nil, @module)
+      
+      # Special case: The super of Object's singleton class is Class
+      @object.singleton_class.super = @class
+      
+      # Now position SingletonClass as a subclass of Class
+      @singleton_class.super = @class
+      @singleton_class.singleton_class.super = @class.singleton_class
+      
+      constants[:Kernel] = ModuleInstance.new(runtime, @module, :Kernel)
+      
+      create_classes(:Primitive, :Fixnum, :Array, :String, :Lambda, :Method,
+                     :NilClass, :TrueClass, :FalseClass, :SingletonClass)
+      
+      LOAD_ORDER.each do |file|
+        runtime.execute(Marshal.load(File.read(Carat::KERNEL_PATH + "/#{file}.marshal")))
+      end
+    end
+    
+    def create_classes(*names)
+      names.each do |name|
+        constants[name] = self.class.const_get("#{name}Class").new(runtime, @class, @object)
+      end
+    end
+  end
+end
+
+\end{lstlisting}
+\begin{lstlisting}[title={\small\Helvetica runtime/runtime.rb},language=Ruby]
+module Carat
+  class Runtime
+    require RUNTIME_PATH + "/kernel_loader"
+    require RUNTIME_PATH + "/scope"
+    require RUNTIME_PATH + "/call"
+    require RUNTIME_PATH + "/stack"
+    
+    attr_reader :stack, :constants, :loaded_files
+    
+    extend Forwardable
+    def_delegators :stack, :current_scope, :current_call, :current_failure_continuation
+    
+    def initialize
+      # When a new file is run it needs a new stack. But we need to be able to return to the 
+      # previous file once that file has been run. So for that we need a stack of stacks.
+      @stack_of_stacks = []
+      
+      # Constants are defined globally
+      @constants = {}
+      
+      # Keep track of which additional files have been loaded
+      @loaded_files = []
+      
+      # Load core classes
+      KernelLoader.new(self).run
+    end
+    
+    def stack
+      @stack_of_stacks.last
+    end
+    
+    def current_location
+      current_call && current_call.location
+    end
+    
+    def current_object
+      current_scope[:self]
+    end
+    
+    # Returns a list of calls from the stack. (Note that not all stack frames have a call associated
+    # with them.)
+    def call_stack
+      stack.to_a.map(&:call).compact
+    end
+    
+    def false
+      constants[:FalseClass].instance
+    end
+    
+    def true
+      constants[:TrueClass].instance
+    end
+    
+    def nil
+      constants[:NilClass].instance
+    end
+    
+    # This is similar to a 'foldl' or 'inject' function, but written for this specific context
+    # where we are using continuation passing style
+    def fold(current_answer, operation, items, start = 0, &continuation)
+      if start == items.length
+        # ** Base Case ** #
+        # There are no items to process because we have got to the end of the array, so yield the
+        # current answer to the continuation, taking us out of the fold operation
+        yield current_answer
+      else
+        # ** Inductive Case ** #
+        # Pass the first item in items[start...items.length], along with the current answer, to the
+        # operation. The operation should combine them in some way to form the next answer, before
+        # yielding to its continuation, which will then fold items[(start+1)...items.length].
+        operation.call(items[start], current_answer) do |next_answer|
+          lambda do
+            fold(next_answer, operation, items, start + 1, &continuation)
+          end
+        end
+      end
+    end
+    
+    # This is an 'each' function written in continuation passing style
+    def each(operation, items, final_answer = true, start = 0, &continuation)
+      if start == items.length
+        yield final_answer
+      else
+        operation.call(items[start]) do
+          lambda do
+            each(operation, items, final_answer, start + 1, &continuation)
+          end
+        end
+      end
+    end
+    
+    # Raises an exception in the object language
+    def raise(exception_name, message, location = current_location)
+      constants[exception_name].call(:new, [constants[:String].new(message)]) do |exception|
+        exception.generate_backtrace(location)
+        stack.unwind_to(:failure_continuation)
+        current_failure_continuation.call(exception)
+      end
+    end
+    
+    def default_failure_continuation
+      lambda do |exception|
+        exception.call(:to_s) do |exception_string|
+          puts "#{exception.real_klass.name}: #{exception_string}"
+          puts exception.backtrace.map { |line| "  " + line }.join("\n")
+          exit 1
+        end
+      end
+    end
+    
+    def identity_continuation
+      lambda { |x| x }
+    end
+    
+    def main_scope
+      Scope.new(constants[:Object].new)
+    end
+    
+    def call_main_method(contents, scope = nil)
+      call  = MainMethodCall.new(contents.location)
+      frame = Frame.new(scope || main_scope, call, default_failure_continuation)
+      
+      contents.runtime = self
+      contents.eval_in_frame(frame, &identity_continuation)
+    end
+    
+    # Normally, in Continuation Passing Style, a stack of continuations is built up right until the
+    # end of the program when they all collapse in to provide the result. In languages without tail
+    # call optimisation (such as Ruby 1.8), this quickly leads to an enormous stack, and it's not
+    # hard to create programs which cause the interpreter to run out of stack space.
+    # 
+    # Therefore, instead of waiting until right at the end of the program to return the answer,
+    # we can at any point return a "partial answer" which is just a lambda which can be called to
+    # continue the execution of the program. This collapses the call stack right back down, so
+    # solves the problem of tail call recursion. This is what the while loop is doing. This
+    # technique is called "trampolining".
+    def with_stack(&result)
+      @stack_of_stacks << Stack.new
+      result = result.call while result.is_a?(Proc)
+      @stack_of_stacks.pop
+      result
+    end
+    
+    # This is the starting point for executing an AST node. It places the node as the contents of
+    # a special "main" method and then evaluated that method.
+    def execute(root, scope = nil)
+      with_stack { call_main_method(root, scope) }
+    end
+    
+    # Parse some code and then execute its AST
+    def run(input, file_name = nil)
+      execute(Carat.parse(input, file_name))
+    rescue StandardError => e
+      handle_error(e)
+    end
+    
+    # Read the contents of a file and run it
+    def run_file(name)
+      run(File.read(name), name)
+    end
+    
+    private
+      
+      def handle_error(exception)
+        case exception
+          when SyntaxError
+            puts exception.full_message
+          else
+            puts "Error: #{exception.message}"
+            puts exception.backtrace[0..40].join("\n")
+            puts "[Backtrace truncated]" if exception.backtrace.length > 40
+            puts
+            puts "Call Stack"
+            puts "=========="
+            puts
+            puts call_stack.reverse.map(&:inspect).join("\n")
+        end
+        exit 1
+      end
+  end
+end
+
+\end{lstlisting}
+\begin{lstlisting}[title={\small\Helvetica runtime/scope.rb},language=Ruby]
+class Carat::Runtime
+  class Scope
+    attr_reader :symbols, :parent
+    attr_writer :block
+    
+    def initialize(self_object, parent = nil)
+      raise ArgumentError if self_object.nil?
+      
+      @symbols = { :self => self_object }
+      @parent  = parent
+    end
+    
+    # Get a symbol from this scope or parent scope. May return nil.
+    def [](symbol)
+      @symbols[symbol] || @parent && @parent[symbol]
+    end
+    
+    # Assign a value to a symbol
+    def []=(symbol, value)
+      if @symbols.has_key?(symbol)     # If it exists here, assign it here
+        @symbols[symbol] = value
+      elsif @parent && @parent[symbol] # If it exists in a parent, assign it there
+        @parent[symbol] = value
+      else                             # Otherwise initialise a fresh symbol here
+        @symbols[symbol] = value
+      end
+    end
+    
+    # Assign a hash of multiple symbol and value pairs
+    def merge!(items)
+      items.each do |symbol, value|
+        self[symbol] = value
+      end
+    end
+    
+    # Get the current block in this scope - this is inherited from parent scopes if there is no
+    # block set in this scope
+    def block
+      @block || @parent && @parent.block
+    end
+    
+    # Create a new scope using this one as the parent
+    def extend(self_object = nil)
+      self_object ||= self[:self]
+      Scope.new(self_object, self)
+    end
+    
+    def inspect
+      @symbols.inspect
+    end
+  end
+end
+
+\end{lstlisting}
+\begin{lstlisting}[title={\small\Helvetica runtime/stack.rb},language=Ruby]
+class Carat::Runtime
+  # A stack frame can contain a scope, a call, and a failure continuation. All are optional, but it
+  # is expected that a frame will contain at least one of these (otherwise it is pretty useless).
+  class Frame
+    attr_reader :scope, :call, :failure_continuation
+    
+    def initialize(scope = nil, call = nil, failure_continuation = nil)
+      @scope, @call, @failure_continuation = scope, call, failure_continuation
+    end
+  end
+  
+  # The stack contains a number of stack frames. It has a current scope, current call and current
+  # failure continuation, which is taken from the frame nearest the top of the stack which has
+  # the desired attribute.
+  class Stack
+    def initialize
+      @items = []
+    end
+    
+    def <<(item)
+      @items << item
+      invalidate_cache
+      self
+    end
+    
+    def current_scope
+      @current_scope ||= find_last(:scope)
+    end
+    
+    def current_call
+      @current_call ||= find_last(:call)
+    end
+    
+    def current_failure_continuation
+      @current_failure_continuation ||= find_last(:failure_continuation)
+    end
+    
+    def pop
+      item = @items.pop
+      invalidate_cache
+      item
+    end
+    
+    # Pop frames from the stack until we get to the first frame with the given attribute
+    def unwind_to(attribute)
+      frame = @items.last
+      while frame.send(attribute).nil?
+        @items.pop
+        frame = @items.last
+      end
+      invalidate_cache
+      frame
+    end
+    
+    def to_a
+      @items.clone
+    end
+    
+    private
+    
+      def invalidate_cache
+        @current_scope = nil
+        @current_call = nil
+        @current_failure_continuation = nil
+      end
+      
+      # Find the frame nearest to the top of the stack where the given attribute is non-nil
+      def find_last(attribute)
+        i = @items.length - 1
+        i -= 1 while i >= 0 && @items[i].send(attribute).nil?
+        @items[i].send(attribute) if i >= 0
+      end
+  end
+end
+
+\end{lstlisting}

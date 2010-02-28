@@ -1,7 +1,5 @@
 require "forwardable"
 
-Infinity = 1.0 / 0
-
 module Carat
   ROOT_PATH    = File.expand_path(File.dirname(__FILE__))
   RUNTIME_PATH = ROOT_PATH + "/runtime"

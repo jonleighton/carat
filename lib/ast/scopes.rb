@@ -128,7 +128,7 @@ module Carat::AST
       def maximum_arity
         case type
           when :splat
-            Infinity
+            (1.0/0) # Infinity
           when :block_pass
             0 # Block pass is not considered party of the arity
           else
