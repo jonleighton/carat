@@ -100,22 +100,182 @@ comment
 ##
 \end{lstlisting}
 
+\subsection{Core Modules}
+
+\subsubsection{\movingcode{Comparable}}
+
+\begin{tabular}{l p{10cm}}
+  \textbf{Method Signature} & \textbf{Description} \\ \hline
+  
+  \code{<=>(other)} & Raises an exception; \code{<=>} must be implemented by the class including \code{Comparable}. \code{<=>} should compare self to \code{other}, returning \code{-1} when self is less than \code{other}, \code{0} when they are equal, and \code{1} when self is greater than \code{other}. \\
+  \code{<(other)} & Returns \code{true} if self is less than \code{other}, \code{false} otherwise \\
+  \code{>(other)} & Returns \code{true} if self is greater than \code{other}, \code{false} otherwise \\
+  \code{<=(other)} & Returns \code{true} if self is less than or equal to \code{other}, \code{false} otherwise \\
+  \code{>=(other)} & Returns \code{true} if self is greater than or equal to \code{other}, \code{false} otherwise \\
+\end{tabular}
+
+\subsubsection{\movingcode{Kernel}}
+
+\begin{tabular}{l p{10cm}}
+  \textbf{Method Signature} & \textbf{Description} \\ \hline
+  
+  \code{raise(exception)} & Raises an exception \\
+  \code{puts(obj = "\n")} & Converts \code{obj} to a string using \code{to_s} and outputs it \\
+  \code{p(obj)} & Converts \code{obj} to a string using \code{inspect} and outputs it \\
+  \code{lambda(&block)} & Alias for \code{Lambda.new} \\
+  \code{yield(*args, &block)} & Calls the current block \\
+  \code{return(value = nil)} & Returns from the current call, passing \code{value} as the result \\
+  \code{require(file)} & Opens the \code{file}, executes its contents, and then returns to the execution of the current file \\
+\end{tabular}
+
 \subsection{Core Classes}
 
 \subsubsection{\movingcode{Array}}
 
-\begin{description}
-  \item[\code{length}] Length of the array
-  \item[\code{each(&block)}] Yields each item in the array to the block
-  \item[\code{<<(value)}] Pushes a value onto the end of the array
-  \item[\code{[i]}] Looks up the item \code{i}
-  \item[\code{[i] = value}] Assigns a value at index \code{i}
-  \item[\code{to_a}] Returns itself
-  \item[\code{to_s}] Returns a string with each item on a separate line
-  \item[\code{inspect}] Returns a string representation of the array contents
-  \item[\code{map(&block)}] Returns a new array with each item being the result of yielding that item to the block
-  \item[\code{join(joiner)}] Produces a string of each item joined with the \code{joiner} string
-\end{description}
+\textbf{Superclass}: \code{Object}
+
+\begin{tabular}{l p{10cm}}
+  \textbf{Method Signature} & \textbf{Description} \\ \hline
+  
+  \code{length} & Length of the array \\
+  \code{each(&block)} & Yields each item in the array to the block \\
+  \code{<<(value)} & Pushes a value onto the end of the array \\
+  \code{[i]} & Looks up the item \code{i} \\
+  \code{[i] = value} & Assigns a value at index \code{i} \\
+  \code{to_a} & Returns itself \\
+  \code{to_s} & Returns a string with each item on a separate line \\
+  \code{inspect} & Returns a string representation of the array contents \\
+  \code{map(&block)} & Returns a new array with each item being the result of yielding that item to the block \\
+  \code{join(joiner)} & Produces a string of each item joined with the \code{joiner} string \\
+\end{tabular}
 
 \subsubsection{\movingcode{Class}}
 
+\textbf{Superclass}: \code{Module}
+
+\begin{tabular}{l l}
+  \textbf{Method Signature} & \textbf{Description} \\ \hline
+  
+  \code{allocate} & Allocates space for a new instance and returns it \\
+  \code{superclass} & Returns the superclass \\
+  \code{include(module)} & Includes a module in the class \\
+  \code{new(*args, &block)} & Creates a new instance, runs its initialiser and returns it \\
+\end{tabular}
+
+\subsubsection{\movingcode{Exception}}
+
+\textbf{Superclass}: \code{Object}
+
+\begin{tabular}{l l}
+  \textbf{Method Signature} & \textbf{Description} \\ \hline
+  
+  \code{initialize(message = "(no message)")} & Initialises an instance \\
+  \code{to_s} & Returns the message string \\
+  \code{backtrace} & Returns an array of strings representing the backtrace \\
+\end{tabular}
+
+\code{Exception} is subclassed by \code{StandardError}. \code{StandardError} is subclassed by \code{NameError}, \code{ArgumentError} and \code{RuntimeError}. \code{NameError} is subclassed by \code{NoMethodError}.
+
+\subsubsection{\movingcode{FalseClass}}
+
+\textbf{Superclass}: \code{Object}
+
+\begin{tabular}{l l}
+  \textbf{Method Signature} & \textbf{Description} \\ \hline
+  
+  \code{to_s} & Returns the string ``false" \\
+  \code{inspect} & Alias of \code{to_s} \\
+\end{tabular}
+
+\subsubsection{\movingcode{Fixnum}}
+
+\textbf{Superclass}: \code{Object} \\
+\textbf{Includes}: \code{Comparable}
+
+\begin{tabular}{l p{10cm}}
+  \textbf{Method Signature} & \textbf{Description} \\ \hline
+  
+  \code{<=>(other)} & Compares self to \code{other}, return \code{-1}, \code{0}, \code{1} depending on whether \code{other} is greater than, equal to or less than self \\
+  \code{+(other)} & Adds \code{other} to self \\
+  \code{-(other)} & Subtracts \code{other} from self \\
+  \code{--} & Returns the negative value of self (unary -) \\
+  \code{++} & Returns the positive value of self (unary +) \\
+  \code{to_s} & Prints out the number represented \\
+  \code{inspect} & Alias of \code{to_s} \\
+\end{tabular}
+
+\subsubsection{\movingcode{Lambda}}
+
+\textbf{Superclass}: \code{Object}
+
+\begin{tabular}{l p{10cm}}
+  \textbf{Method Signature} & \textbf{Description} \\ \hline
+  
+  \code{call(*args, &block)} & Call the lambda \\
+\end{tabular}
+
+\subsubsection{\movingcode{Module}}
+
+\textbf{Superclass}: \code{Object}
+
+\begin{tabular}{l p{10cm}}
+  \textbf{Method Signature} & \textbf{Description} \\ \hline
+  
+  \code{name} & Returns the name of the module as a string \\
+  \code{inspect} & Alias for \code{name} \\
+  \code{to_s} & Alias for \code{to_s} \\
+\end{tabular}
+
+\subsubsection{\movingcode{NilClass}}
+
+\textbf{Superclass}: \code{Object}
+
+\begin{tabular}{l p{10cm}}
+  \textbf{Method Signature} & \textbf{Description} \\ \hline
+  
+  \code{inspect} & Returns ``nil" \\
+  \code{to_s} & Returns empty string \\
+\end{tabular}
+
+\subsubsection{\movingcode{Object}}
+
+\textbf{Superclass}: \code{nil} \\
+\textbf{Includes}: \code{Kernel}
+
+\begin{tabular}{l p{10cm}}
+  \textbf{Method Signature} & \textbf{Description} \\ \hline
+  
+  \code{initialize} & Does nothing (default behaviour for all objects) \\
+  \code{==(other)} & Returns \code{true} if self is the same object as \code{other}, \code{false} otherwise \\
+  \code{!=(other)} & Returns \code{true} if self is a different object to \code{other}, \code{false} otherwise \\
+  \code{!!} & Returns \code{true} if self is \code{nil} or \code{false}, \code{false} otherwise (unary negation) \\
+  \code{is_a?(test_class)} & Returns \code{true} if the class or a superclass of the class is the \code{test_class}, \code{false} otherwise \\
+  \code{object_id} & Returns a unique identifier (\code{Fixnum}) for this object \\
+  \code{class} & Returns the ``real" class of the object (i.e. \textit{not} a singleton class) \\
+  \code{inspect} & Returns a string in the form ``<\textit{class\_name}:\textit{object\_id}>" \\
+  \code{to_s} & Alias for \code{inspect} \\
+\end{tabular}
+
+\subsubsection{\movingcode{String}}
+
+\textbf{Superclass}: \code{Object}
+
+\begin{tabular}{l p{10cm}}
+  \textbf{Method Signature} & \textbf{Description} \\ \hline
+  
+  \code{+(other)} & Concatenates self with \code{other} \\
+  \code{<<(other)} & Appends \code{other} to self \\
+  \code{to_s} & Returns self \\
+  \code{inspect} & Returns a string containing itself inside quotation marks \\
+\end{tabular}
+
+\subsubsection{\movingcode{TrueClass}}
+
+\textbf{Superclass}: \code{Object}
+
+\begin{tabular}{l p{10cm}}
+  \textbf{Method Signature} & \textbf{Description} \\ \hline
+  
+  \code{to_s} & Returns ``true" \\
+  \code{inspect} & Alias for \code{to_s} \\
+\end{tabular}

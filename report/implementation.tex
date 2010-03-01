@@ -54,7 +54,7 @@ This is a simple example; more complex nodes may not map directly to an AST, and
 
 \subsection{Abstract Syntax Tree}
 
-Each AST node has a number of children (other nodes) and properties (static data). It also has an \code{eval} method which is discussed later. For example, the node for a method call is defined as:
+An AST node has a number of children (other nodes) and properties (static data). It also has an \code{eval} method which is discussed later. For example, the node for a method call is defined as:
 
 \begin{lstlisting}
 class MethodCall < Node
@@ -85,10 +85,10 @@ This can be read as an expression list with one item: a call to the method `puts
 \code{Carat::Runtime} is the starting point for running a program. When initialised it:
 
 \begin{enumerate}
-  \item Creates an empty \defn{stack of stacks}. When a program is being executed, its state is stored by a stack. But a program can load additional files which need to execute with their own stack, before returning to the previous stack. For this we need a stack of stacks.
+  \item Creates an empty \defn{stack of stacks}. When a program is being executed, its state is stored on a stack. But a program can load additional files which need to execute with their own stack before returning to the previous file. For this to happen, a ``stack of stacks" is needed.
   \item Creates an empty hash for \defn{constants}. Constants are globally defined, so are not stored on a stack.
   \item Creates an empty list of \defn{loaded files} to prevent the same file being loaded more than once.
-  \item Runs the \code{KernelLoader} which sets up the core classes in the target language (\code{Object}, \code{Class}, \code{Array}, \code{String}, ...). While some code is needed in the implementation language, most of this is done by interpreting class definitions written in the target language. To optimise this, the parsing is done ahead-of-time and the AST nodes are stored as binary data in files. These files are then loaded directly.
+  \item Runs the \code{KernelLoader} which sets up the core classes in the target language (\code{Object}, \code{Class}, \code{Array}, \code{String}, ...). While some code is needed in the implementation language, most of this is done by interpreting class definitions written in the target language. To optimise this, parsing is done ahead-of-time and the AST nodes are stored as binary data in files which are loaded directly.
 \end{enumerate}
 
 \subsection{The Stack}
@@ -108,7 +108,7 @@ The ``current scope", ``current call" or ``current failure continuation" refers 
 \subsection{The Object Model}
 \label{sec:object_model}
 
-Carat follows Ruby's object model closely. Everything is an object, and all objects are represented by the class \code{Carat::Data::ObjectInstance} in the implementation language. There are various other classes which implement behaviour for certain types of objects, but all are subclasses of \code{ObjectInstance}. Through this, the inheritance hierarchy of data objects in the implementation language mirrors that of objects in the target language (figure \ref{fig:data_object_hierarchy}).
+Carat follows Ruby's object model closely. Everything is an object, and all objects are represented by the class \code{Carat::Data::ObjectInstance} in the implementation language. There are various other classes which implement behaviour for certain types of objects, but all are subclasses of \code{ObjectInstance}. Through this, the inheritance hierarchy of \code{Carat::Data} objects in the implementation language mirrors that of objects in the target language (figure \ref{fig:data_object_hierarchy}).
 
 \begin{figure}
 \begin{center}
@@ -151,7 +151,7 @@ ObjectInstance.new(runtime, klass)
 
 All \code{Carat::Data} objects hold a reference to the runtime they exist in. The \code{klass} parameter is for an object representing the class of the instance (this spelling is used to avoid conflicts with the Ruby method \code{class}). When initialized, an \code{ObjectInstance} is assigned a unique numeric identifier.
 
-Each object has a hash of \defn{instance variables} mapping of their names to values.
+Each object has a table of \defn{instance variables} mapping names to values.
 
 Objects can have \defn{singleton methods}. These methods are specific to individual instances, so if there are two objects of the same class, \code{a} and \code{b}, and \code{a} defines a singleton method, \code{b} will not have that method.
 
@@ -193,19 +193,17 @@ Objects don't store their own singleton methods. Instead, a \defn{singleton clas
 \end{center}
 \end{figure}
 
-It is useful to be able to identify the class from which an object was created, but calling \code{klass} might return a singleton class instead. So objects have a \code{real_klass} method which returns the first \code{klass} or superclass of \code{klass} which is not a singleton class.
-
 \subsubsection{\movingcode{ModuleInstance}}
 
-A module is a container of methods. It cannot be instantiated, but it can be included within classes. A \code{ModuleInstance} is initialized with the following signature:
+A module is a container of methods. It cannot be instantiated, but it can be included into other classes. A \code{ModuleInstance} is initialized with the following signature:
 
 \begin{lstlisting}
 ModuleInstance.new(runtime, klass, name = nil)
 \end{lstlisting}
 
-A \code{ModuleInstance} has a \defn{method table}, which maps method names to \code{Method} objects.
+Modules have a \defn{method table}, which maps method names to \code{MethodInstance} objects.
 
-Being a type of object, a module can have singleton methods which are analogous to ``class methods" in other languages. Unlike normal objects, modules create their singleton class immediately rather than waiting for it to be needed.
+Being a type of object, a module can have singleton methods which are analogous to ``class methods" in other languages. Unlike normal objects, modules create their singleton class immediately rather than waiting for it to be needed; this prevents inconsistent or incorrect \code{klass} pointers from occurring.
 
 \subsubsection{\movingcode{ClassInstance}}
 
@@ -217,7 +215,7 @@ ClassInstance.new(runtime, klass, superclass, name = nil)
 
 Classes have a \defn{super} pointer, which is initially set to the \code{superclass} provided. But in general, the \code{super} may be either an include class or a normal class (see \ref{sec:module_inclusion}); the \code{superclass} method returns the first object in the \code{super} hierarchy which is a normal class.
 
-Singleton classes are created in a slightly different way than for normal objects because the inheritance hierarchy needs to be respected for ``class methods" as well as instance methods. When a class creates its singleton class, it uses the singleton class of its superclass as the superclass of its singleton class. In this way, classes and their singleton classes are positioned in parallel (figure \ref{fig:singleton_class_inheritance}).
+Singleton classes are created in a slightly different way than for other objects because the inheritance hierarchy needs to be respected for ``class methods" as well as instance methods. When a class creates its singleton class, it uses the singleton class of its superclass as the superclass of its singleton class. In this way, classes and their singleton classes are positioned in parallel (figure \ref{fig:singleton_class_inheritance}).
 
 \begin{figure}
 \begin{center}
@@ -355,7 +353,7 @@ The interpreter works out the result of a program by ``walking" the AST. An AST 
 
 This problem with this approach is it does not allow for ``jumps". Jumps occur when the program needs to move to a different node in the AST without first returning the answer of the current node. This can happen when a return call or an exception is encountered. The problem is that the execution of the AST is intrinsically linked to the stack of the implementation language, which can't be directly manipulated.
 
-To solve this, the interepreter is written in \defn{continuation passing style} (CPS). Any method involved in the evaluation of AST nodes expects to be called with a \defn{continuation}. Abstractly, this is an object which represents the computation still to be done once an answer has been found. In this implementation, continuations are represented as lambdas, which expect one argument: the current result.
+To solve this, the interpreter is written in \defn{continuation passing style} (CPS). Any method involved in the evaluation of AST nodes expects to be called with a \defn{continuation}. Abstractly, this is an object which represents the computation still to be done once an answer has been found. In this implementation, continuations are represented as lambdas, which expect one argument: the current result.
 
 Some AST nodes can return a result immediately, without further computation (such as the literal \code{Nil} node). In this case, the node should simply call the continuation, passing its immediate value as the argument.
 
@@ -363,18 +361,20 @@ Most nodes need to evaluate other nodes before they can produce an answer. In th
 
 \begin{lstlisting}[title={\textbf{Without CPS}}]
 def eval
-  child_value = eval(child_node)
+  child_value = eval_child(child_node)
   compute_value(child_value)
 end
 \end{lstlisting}
 
 \begin{lstlisting}[title={\textbf{With CPS}}]
 def eval(&continuation)
-  eval(child_node) do |child_value|
+  eval_child(child_node) do |child_value|
     yield compute_value(child_value)
   end
 end
 \end{lstlisting}
+
+In the first example, \code{eval_child} can't stop \code{compute_value} from being called when it returns; in the second it can, by not using the continuation.
 
 \subsection{Execution}
 
@@ -437,7 +437,7 @@ An initial frame is created using the scope, call and default failure continuati
 
 \subsection{Sequential evaluation}
 
-Returning to the example, the top node is an expression list. Expression list nodes contain an array of child nodes, which are evaluated in turn. The result of the last node is the result of the expression list.
+Returning to the example, the root node is an expression list. Expression list nodes contain an array of child nodes, which are evaluated in turn. The result of the last node is the result of the expression list.
 
 This presents a challenge, because whilst the natural inclination would be to loop over the child nodes, CPS requires that evaluation calls only appear in tail position. To solve this, \code{Runtime} provides two high-level operations, \code{each} (for iteration) and \code{fold} (for accumulation). These translate a sequential operation on an array into a recursive one using continuations. For AST nodes, there is also \code{eval_fold} which accumulates the result of evaluating each node in an array.
 
@@ -446,10 +446,10 @@ This presents a challenge, because whilst the natural inclination would be to lo
 The only item in the expression list is a \code{MethodCall[:puts]} with no receiver and an argument list containing ``Goodbye Cruel World". Method calls are evaluated as follows:
 
 \begin{enumerate}
-  \item Evaluate the receiver. If there is no explicit receiver, the \code{self} object in the current scope (the one at the top of the scope stack) is used.
-  \item Ask the receiver object for the instance method with the given name. The advantage of the object model discussed in section \ref{sec:object_model} is that method look-up is very simple. When an object looks for an instance method, it asks its \code{klass} to look up that method. If the class contains the method in its method table, it returns it. Otherwise, it asks its \code{super}. Eventually, when there is no \code{super} (i.e. for \code{Object}), no method has been found so \code{nil} is returned.
+  \item Evaluate the receiver. If there is no explicit receiver, the \code{self} object in the current scope is used.
+  \item Ask the receiver object for the instance method with the given name. The advantage of the object model discussed in section \ref{sec:object_model} is that method look-up is very simple. When an object looks for an instance method, it asks its \code{klass} to look up that method. If a class contains the requested method in its method table, it returns it. Otherwise, it asks its \code{super}. Eventually, when there is no \code{super} (i.e. for \code{Object}), no method has been found so \code{nil} is returned.
   \item If the method is found, call the receiver object's \code{call} method which creates a \code{Call} object and ``sends" it.
-  \item If the method is not found, raise an exception (see section ?)
+  \item If the method is not found, raise an exception (see section \ref{sec:exceptions})
 \end{enumerate}
 
 The following attributes of a \code{Call} object are worth explaining:
@@ -458,7 +458,7 @@ The following attributes of a \code{Call} object are worth explaining:
   \item The \defn{callable} is the method or lambda being called.
   \item The \defn{scope} is the scope which the callable should be evaluated within. For method calls, this starts as an empty scope where \code{self} is the receiver object.
   \item The \defn{caller scope} is the scope from which the call was made. (The current scope of the runtime when the \code{Call} was created.)
-  \item The \defn{argument list} is the \code{ArgumentList} AST node represting the arguments passed to the call. (It can also be an array of objects, for convenience when making calls within the implementation language.)
+  \item The \defn{argument list} is the \code{ArgumentList} AST node representing the arguments passed to the call. (It can also be an array of objects, for convenience when making calls within the implementation language.)
   \item The \defn{continuation} describes the computation to be done once the call has been sent.
 \end{enumerate}
 
@@ -466,8 +466,8 @@ The following happens when a call is sent:
 
 \begin{enumerate}
   \item A frame containing the call and its scope is pushed onto the stack
-  \item The argument list is evaluated to produce the argument values
-  \item The argument values are matched to the argument pattern of the callable and assigned (see section ? for a detailed explanation)
+  \item The argument list is evaluated in the context of the caller scope to produce an \code{Arguments} object
+  \item The \code{Arguments} are matched to the argument pattern of the callable and assigned (see section \ref{sec:arguments} for a detailed explanation)
   \item The callable's contents are evaluated
 \end{enumerate}
 
@@ -576,12 +576,12 @@ def puts(obj = "\n")
 end
 \end{lstlisting}
 
-This is a \defn{primitive method call}. Primitives are the eventual way that a program can actually ``do" something; everything else is just memory access and method calls. In this case, the \code{puts} method needs to output some text, so it uses the \code{puts} primitive.
+This is a \defn{primitive method call}. Primitives are the eventual way that a program can actually ``do" something; everything else is just memory access and program flow. In this case, the \code{puts} method needs to output some text, so it uses the \code{puts} primitive.
 
 The \code{Primitive} class is represented by \code{Carat::Data::PrimitiveClass} in the implementation language. The primitive syntax is parsed in exactly the same way as any other method call, but \code{Primitive}\-\code{Class} overrides two methods from \code{ObjectInstance}:
 
 \begin{enumerate}
-  \item \textbf{\code{lookup_instance_method}}: Instead of returning a \code{MethodInstance} found in the klass' method table, it prepends ``\code{primitive_}" to the method name and finds an implementation language method for the current object with that name
+  \item \textbf{\code{lookup_instance_method}}: Instead of returning a \code{MethodInstance} found in the klass' method table, it prepends ``\code{primitive_}" to the method name and finds an implementation language method in the current \code{self} object with that name
   
   \item \textbf{\code{create_call}}: Instead of returning a \code{Call}, it returns a \code{PrimitiveCall}
 \end{enumerate}

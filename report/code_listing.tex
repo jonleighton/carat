@@ -2,7 +2,7 @@
   language=Ruby,
   tabsize=2,
   rulesepcolor=\color{Gray},
-  basicstyle={\ttfamily \tiny},
+  basicstyle={\ttfamily\scriptsize},
   upquote=true,
   keywordstyle=\color{Mahogany}\bfseries,
   commentstyle=\color{MidnightBlue}\em,
@@ -23,7 +23,7 @@
 }
 
 \section{Code Listing}
-\begin{lstlisting}[title={\small\Helvetica ast/ast.rb},language=Ruby]
+\begin{lstlisting}[title={\small\ttfamily\bfseries ast/ast.rb},language=Ruby]
 module Carat
   module AST
     require AST_PATH + "/printer"
@@ -205,7 +205,7 @@ module Carat
 end
 
 \end{lstlisting}
-\begin{lstlisting}[title={\small\Helvetica ast/control.rb},language=Ruby]
+\begin{lstlisting}[title={\small\ttfamily\bfseries ast/control.rb},language=Ruby]
 module Carat::AST
   class If < Node
     child :condition
@@ -330,7 +330,7 @@ module Carat::AST
 end
 
 \end{lstlisting}
-\begin{lstlisting}[title={\small\Helvetica ast/literals.rb},language=Ruby]
+\begin{lstlisting}[title={\small\ttfamily\bfseries ast/literals.rb},language=Ruby]
 module Carat::AST
   class True < ValueNode
     def value_object
@@ -376,7 +376,7 @@ module Carat::AST
 end
 
 \end{lstlisting}
-\begin{lstlisting}[title={\small\Helvetica ast/messages.rb},language=Ruby]
+\begin{lstlisting}[title={\small\ttfamily\bfseries ast/messages.rb},language=Ruby]
 module Carat::AST
   class MethodCall < Node
     child :receiver
@@ -467,7 +467,7 @@ module Carat::AST
 end
 
 \end{lstlisting}
-\begin{lstlisting}[title={\small\Helvetica ast/printer.rb},language=Ruby]
+\begin{lstlisting}[title={\small\ttfamily\bfseries ast/printer.rb},language=Ruby]
 module Carat::AST
   class Printer
     def initialize
@@ -529,7 +529,7 @@ module Carat::AST
 end
 
 \end{lstlisting}
-\begin{lstlisting}[title={\small\Helvetica ast/scopes.rb},language=Ruby]
+\begin{lstlisting}[title={\small\ttfamily\bfseries ast/scopes.rb},language=Ruby]
 module Carat::AST
   class ExpressionList < NodeList
     def eval(&continuation)
@@ -735,7 +735,7 @@ module Carat::AST
 end
 
 \end{lstlisting}
-\begin{lstlisting}[title={\small\Helvetica ast/variables.rb},language=Ruby]
+\begin{lstlisting}[title={\small\ttfamily\bfseries ast/variables.rb},language=Ruby]
 module Carat::AST
   class Assignment < Node
     child :receiver
@@ -807,7 +807,7 @@ module Carat::AST
 end
 
 \end{lstlisting}
-\begin{lstlisting}[title={\small\Helvetica carat.rb},language=Ruby]
+\begin{lstlisting}[title={\small\ttfamily\bfseries carat.rb},language=Ruby]
 require "forwardable"
 
 module Carat
@@ -851,7 +851,7 @@ module Carat
 end
 
 \end{lstlisting}
-\begin{lstlisting}[title={\small\Helvetica data/array.rb},language=Ruby]
+\begin{lstlisting}[title={\small\ttfamily\bfseries data/array.rb},language=Ruby]
 module Carat::Data
   class ArrayClass < ClassInstance
     def new(items)
@@ -900,7 +900,7 @@ module Carat::Data
 end
 
 \end{lstlisting}
-\begin{lstlisting}[title={\small\Helvetica data/class.rb},language=Ruby]
+\begin{lstlisting}[title={\small\ttfamily\bfseries data/class.rb},language=Ruby]
 module Carat::Data
   class ClassClass < ModuleClass
     def new(superclass, name = nil)
@@ -1002,7 +1002,7 @@ module Carat::Data
 end
 
 \end{lstlisting}
-\begin{lstlisting}[title={\small\Helvetica data/data.rb},language=Ruby]
+\begin{lstlisting}[title={\small\ttfamily\bfseries data/data.rb},language=Ruby]
 module Carat
   module Data
     # First, very clearly specify the basic hierarchy of data classes. This mirrors the inheritance
@@ -1046,7 +1046,7 @@ module Carat
 end
 
 \end{lstlisting}
-\begin{lstlisting}[title={\small\Helvetica data/exception.rb},language=Ruby]
+\begin{lstlisting}[title={\small\ttfamily\bfseries data/exception.rb},language=Ruby]
 module Carat::Data
   class ExceptionClass < ClassInstance
   end
@@ -1072,7 +1072,7 @@ module Carat::Data
 end
 
 \end{lstlisting}
-\begin{lstlisting}[title={\small\Helvetica data/fixnum.rb},language=Ruby]
+\begin{lstlisting}[title={\small\ttfamily\bfseries data/fixnum.rb},language=Ruby]
 module Carat::Data
   class FixnumClass < ClassInstance
     def instances
@@ -1117,7 +1117,7 @@ module Carat::Data
 end
 
 \end{lstlisting}
-\begin{lstlisting}[title={\small\Helvetica data/include\_class.rb},language=Ruby]
+\begin{lstlisting}[title={\small\ttfamily\bfseries data/include\_class.rb},language=Ruby]
 module Carat::Data
   class IncludeClassInstance < ClassInstance
     attr_reader :module
@@ -1142,7 +1142,7 @@ module Carat::Data
 end
 
 \end{lstlisting}
-\begin{lstlisting}[title={\small\Helvetica data/kernel.rb},language=Ruby]
+\begin{lstlisting}[title={\small\ttfamily\bfseries data/kernel.rb},language=Ruby]
 module Carat::Data
   module KernelModule
     def primitive_puts(object)
@@ -1215,7 +1215,7 @@ module Carat::Data
 end
 
 \end{lstlisting}
-\begin{lstlisting}[title={\small\Helvetica data/lambda.rb},language=Ruby]
+\begin{lstlisting}[title={\small\ttfamily\bfseries data/lambda.rb},language=Ruby]
 module Carat::Data
   class LambdaClass < ClassInstance
     def new(argument_pattern, contents, scope)
@@ -1259,7 +1259,7 @@ module Carat::Data
 end
 
 \end{lstlisting}
-\begin{lstlisting}[title={\small\Helvetica data/method.rb},language=Ruby]
+\begin{lstlisting}[title={\small\ttfamily\bfseries data/method.rb},language=Ruby]
 module Carat::Data
   class MethodClass < ClassInstance
     def new(name, argument_pattern, contents)
@@ -1282,7 +1282,7 @@ module Carat::Data
 end
 
 \end{lstlisting}
-\begin{lstlisting}[title={\small\Helvetica data/module.rb},language=Ruby]
+\begin{lstlisting}[title={\small\ttfamily\bfseries data/module.rb},language=Ruby]
 module Carat::Data
   class ModuleClass < ObjectClass
     def new(name)
@@ -1347,7 +1347,7 @@ module Carat::Data
 end
 
 \end{lstlisting}
-\begin{lstlisting}[title={\small\Helvetica data/object.rb},language=Ruby]
+\begin{lstlisting}[title={\small\ttfamily\bfseries data/object.rb},language=Ruby]
 module Carat::Data
   class ObjectClass < ClassInstance
     def new
@@ -1476,7 +1476,7 @@ module Carat::Data
 end
 
 \end{lstlisting}
-\begin{lstlisting}[title={\small\Helvetica data/primitive.rb},language=Ruby]
+\begin{lstlisting}[title={\small\ttfamily\bfseries data/primitive.rb},language=Ruby]
 module Carat::Data
   class PrimitiveClass < ClassInstance
     def lookup_instance_method(name)
@@ -1493,7 +1493,7 @@ module Carat::Data
 end
 
 \end{lstlisting}
-\begin{lstlisting}[title={\small\Helvetica data/singleton\_class.rb},language=Ruby]
+\begin{lstlisting}[title={\small\ttfamily\bfseries data/singleton\_class.rb},language=Ruby]
 module Carat::Data
   class SingletonClassClass < ClassClass
     def new(owner, superclass)
@@ -1516,7 +1516,7 @@ module Carat::Data
 end
 
 \end{lstlisting}
-\begin{lstlisting}[title={\small\Helvetica data/singletons.rb},language=Ruby]
+\begin{lstlisting}[title={\small\ttfamily\bfseries data/singletons.rb},language=Ruby]
 module Carat::Data
   class SingletonObjectClass < ClassInstance
     def instance
@@ -1533,7 +1533,7 @@ module Carat::Data
 end
 
 \end{lstlisting}
-\begin{lstlisting}[title={\small\Helvetica data/string.rb},language=Ruby]
+\begin{lstlisting}[title={\small\ttfamily\bfseries data/string.rb},language=Ruby]
 module Carat::Data
   class StringClass < ClassInstance
     def new(contents = "")
@@ -1587,7 +1587,7 @@ module Carat::Data
 end
 
 \end{lstlisting}
-\begin{lstlisting}[title={\small\Helvetica kernel/array.carat},language=Ruby]
+\begin{lstlisting}[title={\small\ttfamily\bfseries kernel/array.carat},language=Ruby]
 class Array
   def initialize(*contents)
     Primitive.initialize(*contents)
@@ -1664,7 +1664,7 @@ class Array
 end
 
 \end{lstlisting}
-\begin{lstlisting}[title={\small\Helvetica kernel/class.carat},language=Ruby]
+\begin{lstlisting}[title={\small\ttfamily\bfseries kernel/class.carat},language=Ruby]
 class Class < Module
   def allocate
     Primitive.allocate
@@ -1686,7 +1686,7 @@ class Class < Module
 end
 
 \end{lstlisting}
-\begin{lstlisting}[title={\small\Helvetica kernel/comparable.carat},language=Ruby]
+\begin{lstlisting}[title={\small\ttfamily\bfseries kernel/comparable.carat},language=Ruby]
 module Comparable
   def <=>(other)
     raise NotImplementedError
@@ -1710,7 +1710,7 @@ module Comparable
 end
 
 \end{lstlisting}
-\begin{lstlisting}[title={\small\Helvetica kernel/exception.carat},language=Ruby]
+\begin{lstlisting}[title={\small\ttfamily\bfseries kernel/exception.carat},language=Ruby]
 class Exception
   def initialize(message = "(no message)")
     @message = message
@@ -1732,7 +1732,7 @@ class ArgumentError < StandardError; end
 class RuntimeError < StandardError; end
 
 \end{lstlisting}
-\begin{lstlisting}[title={\small\Helvetica kernel/false\_class.carat},language=Ruby]
+\begin{lstlisting}[title={\small\ttfamily\bfseries kernel/false\_class.carat},language=Ruby]
 class FalseClass
   def to_s
     "false"
@@ -1744,7 +1744,7 @@ class FalseClass
 end
 
 \end{lstlisting}
-\begin{lstlisting}[title={\small\Helvetica kernel/fixnum.carat},language=Ruby]
+\begin{lstlisting}[title={\small\ttfamily\bfseries kernel/fixnum.carat},language=Ruby]
 class Fixnum
   include Comparable
   
@@ -1780,7 +1780,7 @@ class Fixnum
 end
 
 \end{lstlisting}
-\begin{lstlisting}[title={\small\Helvetica kernel/kernel.carat},language=Ruby]
+\begin{lstlisting}[title={\small\ttfamily\bfseries kernel/kernel.carat},language=Ruby]
 module Kernel
   def raise(exception_or_string = nil, message = "(no message)")
     if exception_or_string.is_a?(Exception)
@@ -1820,7 +1820,7 @@ module Kernel
 end
 
 \end{lstlisting}
-\begin{lstlisting}[title={\small\Helvetica kernel/lambda.carat},language=Ruby]
+\begin{lstlisting}[title={\small\ttfamily\bfseries kernel/lambda.carat},language=Ruby]
 class Lambda
   # This is necessary because Object#new is implemented purely in the object language
   def self.new(&block)
@@ -1833,7 +1833,7 @@ class Lambda
 end
 
 \end{lstlisting}
-\begin{lstlisting}[title={\small\Helvetica kernel/module.carat},language=Ruby]
+\begin{lstlisting}[title={\small\ttfamily\bfseries kernel/module.carat},language=Ruby]
 class Module
   def name
     Primitive.name
@@ -1849,7 +1849,7 @@ class Module
 end
 
 \end{lstlisting}
-\begin{lstlisting}[title={\small\Helvetica kernel/nil\_class.carat},language=Ruby]
+\begin{lstlisting}[title={\small\ttfamily\bfseries kernel/nil\_class.carat},language=Ruby]
 class NilClass
   def to_s
     ""
@@ -1861,7 +1861,7 @@ class NilClass
 end
 
 \end{lstlisting}
-\begin{lstlisting}[title={\small\Helvetica kernel/object.carat},language=Ruby]
+\begin{lstlisting}[title={\small\ttfamily\bfseries kernel/object.carat},language=Ruby]
 class Object
   include Kernel
   
@@ -1921,7 +1921,7 @@ class Object
 end
 
 \end{lstlisting}
-\begin{lstlisting}[title={\small\Helvetica kernel/string.carat},language=Ruby]
+\begin{lstlisting}[title={\small\ttfamily\bfseries kernel/string.carat},language=Ruby]
 class String
   def inspect
     Primitive.inspect
@@ -1941,7 +1941,7 @@ class String
 end
 
 \end{lstlisting}
-\begin{lstlisting}[title={\small\Helvetica kernel/true\_class.carat},language=Ruby]
+\begin{lstlisting}[title={\small\ttfamily\bfseries kernel/true\_class.carat},language=Ruby]
 class TrueClass
   def to_s
     "true"
@@ -1953,7 +1953,7 @@ class TrueClass
 end
 
 \end{lstlisting}
-\begin{lstlisting}[title={\small\Helvetica parser/comment.treetop},language=treetop]
+\begin{lstlisting}[title={\small\ttfamily\bfseries parser/comment.treetop},language=treetop]
 module Carat
   # This is a simple parser which strips comments from the source code before that code is actually
   # parsed. It is simpler to keep this step separate.
@@ -2030,7 +2030,7 @@ module Carat
 end
 
 \end{lstlisting}
-\begin{lstlisting}[title={\small\Helvetica parser/language.treetop},language=treetop]
+\begin{lstlisting}[title={\small\ttfamily\bfseries parser/language.treetop},language=treetop]
 module Carat
   grammar Language
     # A program is the top-level node, containing just a list of expressions
@@ -2514,7 +2514,7 @@ module Carat
 end
 
 \end{lstlisting}
-\begin{lstlisting}[title={\small\Helvetica parser/nodes.rb},language=Ruby]
+\begin{lstlisting}[title={\small\ttfamily\bfseries parser/nodes.rb},language=Ruby]
 module Carat
   module Language
     module NodeHelper
@@ -3088,7 +3088,7 @@ module Carat
 end
 
 \end{lstlisting}
-\begin{lstlisting}[title={\small\Helvetica parser/parser.rb},language=Ruby]
+\begin{lstlisting}[title={\small\ttfamily\bfseries parser/parser.rb},language=Ruby]
 module Carat
   require "rubygems" rescue LoadError
   require "treetop"
@@ -3184,7 +3184,7 @@ module Carat
 end
 
 \end{lstlisting}
-\begin{lstlisting}[title={\small\Helvetica repl.rb},language=Ruby]
+\begin{lstlisting}[title={\small\ttfamily\bfseries repl.rb},language=Ruby]
 require 'readline'
 
 module Carat
@@ -3242,7 +3242,7 @@ module Carat
 end
 
 \end{lstlisting}
-\begin{lstlisting}[title={\small\Helvetica runtime/call.rb},language=Ruby]
+\begin{lstlisting}[title={\small\ttfamily\bfseries runtime/call.rb},language=Ruby]
 class Carat::Runtime
   class Arguments
     attr_accessor :values, :block
@@ -3401,7 +3401,7 @@ class Carat::Runtime
 end
 
 \end{lstlisting}
-\begin{lstlisting}[title={\small\Helvetica runtime/kernel\_loader.rb},language=Ruby]
+\begin{lstlisting}[title={\small\ttfamily\bfseries runtime/kernel\_loader.rb},language=Ruby]
 class Carat::Runtime
   class KernelLoader
     attr_reader :runtime
@@ -3461,7 +3461,7 @@ class Carat::Runtime
 end
 
 \end{lstlisting}
-\begin{lstlisting}[title={\small\Helvetica runtime/runtime.rb},language=Ruby]
+\begin{lstlisting}[title={\small\ttfamily\bfseries runtime/runtime.rb},language=Ruby]
 module Carat
   class Runtime
     require RUNTIME_PATH + "/kernel_loader"
@@ -3645,7 +3645,7 @@ module Carat
 end
 
 \end{lstlisting}
-\begin{lstlisting}[title={\small\Helvetica runtime/scope.rb},language=Ruby]
+\begin{lstlisting}[title={\small\ttfamily\bfseries runtime/scope.rb},language=Ruby]
 class Carat::Runtime
   class Scope
     attr_reader :symbols, :parent
@@ -3700,7 +3700,7 @@ class Carat::Runtime
 end
 
 \end{lstlisting}
-\begin{lstlisting}[title={\small\Helvetica runtime/stack.rb},language=Ruby]
+\begin{lstlisting}[title={\small\ttfamily\bfseries runtime/stack.rb},language=Ruby]
 class Carat::Runtime
   # A stack frame can contain a scope, a call, and a failure continuation. All are optional, but it
   # is expected that a frame will contain at least one of these (otherwise it is pretty useless).

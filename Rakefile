@@ -39,7 +39,7 @@ task :generate_code_listing do
     title = file.gsub("_", '\_').sub("lib/", "")
     language = (file =~ /\.treetop/) ? "treetop" : "Ruby"
     listing << <<-TEX
-\\begin{lstlisting}[title={\\small\\Helvetica #{title}},language=#{language}]
+\\begin{lstlisting}[title={\\small\\ttfamily\\bfseries #{title}},language=#{language}]
 #{File.read(file)}
 \\end{lstlisting}
 TEX

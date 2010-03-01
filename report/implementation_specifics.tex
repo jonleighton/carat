@@ -23,6 +23,7 @@ end
 The \code{allocate} method calls use a primitive to create an \code{ObjectInstance} in the implementation language. By default, \code{Object#initialize} does nothing, but this can obviously be changed in other classes.
 
 \subsection{Method argument patterns and argument lists}
+\label{sec:arguments}
 
 An \defn{argument pattern} is used when defining a method; it specifies what assignments should be made from the arguments when the method is called. A \defn{argument list} is used when calling a method; it specifies the arguments which should be passed to the call.
 
@@ -72,7 +73,7 @@ foo("Goodbye", "Cruel") { |world| world + world }
 
 Argument lists are represented by the \code{ArgumentList} AST node which contains a number of \code{Argument}\-\code{List}\-\code{::}\-\code{Item} nodes. When evaluated, the argument list builds up a \code{Call::Arguments} object which contains a number of values and optionally a block.
 
-Argument patterns are represented by the \code{ArgumentPattern} AST node which contains a number of \code{ArgumentPattern::Item} nodes. \code{ArgumentPattern} has an \code{assign} method which is used to assign a list of arguments according to the pattern.
+Argument patterns are represented by the \code{ArgumentPattern} AST node which contains a number of \code{Argument}\-\code{Pattern::}\-\code{Item} nodes. \code{ArgumentPattern} has an \code{assign} method which is used to assign a list of arguments according to the pattern.
 
 The argument pattern first checks whether it has been provided with a suitable number of arguments. To do this, it calculates an \defn{arity}, which is a range from the minimum arity to the maximum arity. It then checks whether the argument length is within this range.
 
@@ -114,9 +115,9 @@ b # => undefined variable or method
 
 \subsubsection{Yield}
 
-Scopes can optionally have a \defn{current block}. If a block is given in the argument list of a method call, it is assigned as the block of the scope within which the call is evaluated.
+Scopes can have a \defn{block} attribute. If a block is given in the argument list of a method call, it is assigned as the block of the scope within which the call is evaluated.
 
-Within methods, \code{Kernel#yield} can be used to call the current block. For example:
+\code{Kernel#yield} can then be used to call the block. For example:
 
 \begin{lstlisting}
 def foo
@@ -146,6 +147,7 @@ Usually the return continuation runs after the body of the call has been evaluat
 \end{enumerate}
 
 \subsection{Exceptions}
+\label{sec:exceptions}
 
 \subsubsection{Raising exceptions}
 
