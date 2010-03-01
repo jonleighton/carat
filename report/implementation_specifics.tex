@@ -71,7 +71,7 @@ foo("Goodbye", "Cruel") { |world| world + world }
 
 \subsubsection{Argument evaluation and assignment}
 
-Argument lists are represented by the \code{ArgumentList} AST node which contains a number of \code{Argument}\-\code{List}\-\code{::}\-\code{Item} nodes. When evaluated, the argument list builds up a \code{Call::Arguments} object which contains a number of values and optionally a block.
+Argument lists are represented by the \code{ArgumentList} AST node which contains a number of \code{Argument}\-\code{List::}\-\code{Item} nodes. When evaluated, the argument list builds up a \code{Call::Arguments} object which contains a number of values and optionally a block.
 
 Argument patterns are represented by the \code{ArgumentPattern} AST node which contains a number of \code{Argument}\-\code{Pattern::}\-\code{Item} nodes. \code{ArgumentPattern} has an \code{assign} method which is used to assign a list of arguments according to the pattern.
 
