@@ -35,6 +35,14 @@ module Carat::Data
       yield klass.get(value - other.value)
     end
     
+    def primitive_multiply(other)
+      yield klass.get(value * other.value)
+    end
+    
+    def primitive_divide(other)
+      yield klass.get(value / other.value)
+    end
+    
     def primitive_to_s
       yield constants[:String].new(value.to_s)
     end

@@ -21,6 +21,15 @@ describe "Fixnum" do
     (7 - 2).should == 5
   end
   
+  it "should multiply two numbers" do
+    (2 * 13).should == 26
+  end
+  
+  it "should divide two numbers (with integer division)" do
+    (14 / 2).should == 7
+    (11 / 2).should == 5
+  end
+  
   it "should return its value as a string with to_s" do
     52.to_s.should == "52"
     -52.to_s.should == "-52"
