@@ -2,16 +2,13 @@
 
 \subsection{Objectives}
 
-Broadly, this project was to write a language implementation. Two key objectives were identified:
+My basic project idea was to produce some sort of programming language implementation. I didn't think it would be practical or useful to attempt to design a language from scratch; this can take years of careful thought in order to produce interesting results.
 
-\begin{enumerate}
-  \item The code should be concise and elegant, focusing on the essence of a language rather than the full set of useful features which are desirable in a ``serious" implementation;
-  \item Despite the above, the language should not be a basic one. Interesting and powerful language features should be explored and implemented.
-\end{enumerate}
+I was already very familiar with Ruby\footnote{\url{http://www.ruby-lang.org/en/}}, which is a dynamic, high-level, object oriented programming language. So I decided to implement a language similar to Ruby, using Ruby to write the implementation itself.
 
-On this basis, Ruby was chosen at a very early stage as a desirable language for the implementation. This was because I was already very familiar with Ruby, and it is a high level, powerful and dynamic language which would facilitate the objective of concise, elegant code.
+My language would seek to ask the question: \textit{what is the essence of Ruby?} I aimed to implement only the features which I considered essential to the nature of Ruby. In doing so, I would also carefully consider whether there were any changes or improvements which could be made to increase or refine its expressive power. I would do this through manipulating both the syntax and semantics of the language.
 
-Initially I set out to implement a subset of the Ruby language, using a readily available parser. This quickly proved too restrictive given objective number 2. Instead, I wrote my own parser which allowed a lot more flexibility to change the syntax and semantics of the language. Whilst still being heavily inspired by Ruby, my language has deviated in certain areas or deliberately left certain features out. A comparison between my language and Ruby is given in section \ref{sec:ruby_comparison}.
+Many real-world language implementations are very complex due to heavy optimisation and the necessity of dealing with the myriad practical problems a production-quality programming language requires. They also tend to be written in lower level languages such as C or C++, for reasons of speed. Unfortunately this can make them difficult to read and understand. Without the burden of these requirements, my second objective was to produce a clean, well-written, concise implementation which neatly expressed the semantics of the language.
 
 \subsection{Overview of Report}
 
