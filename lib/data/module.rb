@@ -27,7 +27,7 @@ module Carat::Data
     end
     
     # If this is actually a module (as opposed to a class or whatever) then we can have a module
-    # in the implementation language containing primitives for this specific module in the target
+    # in the implementation language containing primitives for this specific module in the source
     # language.
     # 
     # For instance, if we create a +ModuleInstance+ with name "Kernel", then the module named

@@ -1,7 +1,7 @@
 module Carat
   module Data
     # First, very clearly specify the basic hierarchy of data classes. This mirrors the inheritance
-    # hierarchy in the target language:
+    # hierarchy in the source language:
     # 
     #   class Object         < nil;    end
     #   class Module         < Object; end

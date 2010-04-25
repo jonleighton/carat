@@ -1,34 +1,24 @@
 \section{Implementation Overview}
 
-In this section, I consider the execution of the following program:
+In this section, I consider the following simple Carat program:
 
 \begin{lstlisting}
-puts "Goodbye Cruel World"
+def goodbye(x)
+  puts "Goodbye " + x
+end
+
+goodbye("Cruel World")
 \end{lstlisting}
 
-This example is deliberately minimal. In explaining it, I will focus on the overall design of the interpreter, rather than the implementation of specific language features.
-
-\subsection{Code layout}
-
-The interpreter code is organised into the following directory structure:
-
-\begin{dirlist}
-  \item \textbf{lib/}
-    \begin{dirlist}
-      \item \textbf{ast/} - AST nodes
-      \item \textbf{data/} - Classes representing objects in the target language
-      \item \textbf{kernel/} - Core classes in the target language
-      \item \textbf{parser/} - The parser and associated code
-      \item \textbf{runtime/} - Classes representing run time state and behaviour
-      \item \textbf{carat.rb} - Responsible for loading the interpreter
-    \end{dirlist}
-\end{dirlist}
+A \code{goodbye} method is defined and then called, causing `Goodbye Cruel World'\footnote{I find `Hello World' rather boring and thought it would be more fun to pay homage to Pink Floyd} to be printed as the output. I will explain how the program is executed, focussing on the overall design of the interpreter (therefore avoiding some of the finer details). Certain specific details will be covered in greater depth in section \ref{sec:implementation_specifics}.
 
 \subsection{Parsing}
 
-The first step is to parse the source code and convert it into an AST. This is done by the \code{Carat::}\-\code{Language}\-\code{Parser} class, which is largely produced by the parser generator, Treetop\footnote{\url{http://treetop.rubyforge.org/}}.
+The first step is to parse the source code and convert it to an AST. This is done by the \code{Carat::}\-\code{Language}\-\code{Parser} class, which is largely produced by the parser generator, Treetop\footnote{\url{http://treetop.rubyforge.org/}}.
 
-I chose Treetop because its grammar format is intuitive. It uses Parsing Expression Grammars\footnote{\url{http://pdos.csail.mit.edu/~baford/packrat/}} which avoid the need to write a separate tokeniser. Here is an excerpt from the grammar (in \path{parser/language.treetop}), defining the syntax for a while loop:
+I chose Treetop because its grammer syntax is simple and readable. It uses Parsing Expression Grammars\footnote{\url{http://pdos.csail.mit.edu/~baford/packrat/}} which avoid the need to write a separate tokeniser. Whilst Treetop is not very efficient, it allowed me to quickly and easily develop and modify my parser. Given speed was not a goal of my implementation, I considered this a sensible trade-off.
+
+Here is an excerpt from the grammar, which defines the syntax for a while loop:
 
 \begin{lstlisting}[language=treetop]
 rule while_expression
@@ -38,9 +28,9 @@ rule while_expression
 end
 \end{lstlisting}
 
-Characters in single quotes are matched literally. The other items are references to rules. Names before a colon apply a label. The question mark in ``\code{space?}" makes that rule optional.
+Characters in quotes are matched literally. The other items are references to other rules. Names before a colon apply a label to that part of the node. The question mark in `\code{space?}' makes the rule optional.
 
-The parser produces a parse tree. Each node has a \code{to_ast} method, which recursively converts it to an AST. In the above example, \code{<WhileExpression>} specifies the name of a class for the node, which is defined in \path{parser/nodes.rb}:
+The parser produces a parse tree which consists of \code{Treetop::Runtime::SyntaxNode} objects. The class to be used is specified by `\code{<WhileExpression>}' at the end. Each different type of node has a \code{to_ast} method, which is used to recursively convert the parse tree to an AST made up of \code{Carat::AST::Node} objects. \code{WhileExpression} is coverted like so:
 
 \begin{lstlisting}
 class WhileExpression < Treetop::Runtime::SyntaxNode
@@ -50,7 +40,7 @@ class WhileExpression < Treetop::Runtime::SyntaxNode
 end
 \end{lstlisting}
 
-This is a simple example; more complex nodes may not map directly to an AST, and may need to do additional syntax checking.
+In this simple example a \code{WhileExpression} parse tree nodes maps directly to a \code{While} AST node. This is not always the case, however -- some parse tree nodes perform additional syntax checks, or transform the data in some way. (For example \code{2 + 4} and \code{foo.bar} will be different types of parse tree nodes, but will both become \code{MethodCall} nodes in the AST.)
 
 \subsection{Abstract Syntax Tree}
 
@@ -64,23 +54,22 @@ class MethodCall < Node
 end
 \end{lstlisting}
 
-These attributes can be used to print an AST as text. The example program's AST is printed as:
+These attributes can be used to print an AST as text. The method call in the example program is printed as:
 
 \begin{lstlisting}[language=]
-ExpressionList:
-  MethodCall[:puts]:
-    receiver:
-      nil
-    arguments:
-      ArgumentList:
-        ArgumentList::Item[:normal]:
-          expression:
-            String["Goodbye Cruel World"]
+MethodCall[:goodbye]:
+  receiver:
+    nil
+  arguments:
+    ArgumentList:
+      ArgumentList::Item[:normal]:
+        expression:
+          String["Cruel World"]
 \end{lstlisting}
 
-This can be read as an expression list with one item: a call to the method `puts'. The object receiving the call is not explicitly given. The argument list contains one item, which is the literal string ``Goodbye Cruel World".
+This can be read as a call to the method `goodbye'; the object receiving the call is not explicitly given and the argument list contains one item, which is the literal string ``Cruel World".
 
-\subsection{The Runtime}
+\subsection{The Runtime System}
 
 \code{Carat::Runtime} is the starting point for running a program. When initialised it:
 
@@ -88,7 +77,7 @@ This can be read as an expression list with one item: a call to the method `puts
   \item Creates an empty \defn{stack of stacks}. When a program is being executed, its state is stored on a stack. But a program can load additional files which need to execute with their own stack before returning to the previous file. For this to happen, a ``stack of stacks" is needed.
   \item Creates an empty hash for \defn{constants}. Constants are globally defined, so are not stored on a stack.
   \item Creates an empty list of \defn{loaded files} to prevent the same file being loaded more than once.
-  \item Runs the \code{KernelLoader} which sets up the core classes in the target language (\code{Object}, \code{Class}, \code{Array}, \code{String}, ...). While some code is needed in the implementation language, most of this is done by interpreting class definitions written in the target language. To optimise this, parsing is done ahead-of-time and the AST nodes are stored as binary data in files which are loaded directly.
+  \item Runs the \code{KernelLoader} which sets up the core classes in the source language (\code{Object}, \code{Class}, \code{Array}, \code{String}, ...). While some code is needed in the implementation language, most of this is done by interpreting class definitions written in the source language. To optimise this, parsing is done ahead-of-time and the AST nodes are stored as binary data in files which are loaded directly.
 \end{enumerate}
 
 \subsection{The Stack}
@@ -108,7 +97,7 @@ The ``current scope", ``current call" or ``current failure continuation" refers 
 \subsection{The Object Model}
 \label{sec:object_model}
 
-Carat follows Ruby's object model closely. Everything is an object, and all objects are represented by the class \code{Carat::Data::ObjectInstance} in the implementation language. There are various other classes which implement behaviour for certain types of objects, but all are subclasses of \code{ObjectInstance}. Through this, the inheritance hierarchy of \code{Carat::Data} objects in the implementation language mirrors that of objects in the target language (figure \ref{fig:data_object_hierarchy}).
+Carat follows Ruby's object model closely. Everything is an object, and all objects are represented by the class \code{Carat::Data::ObjectInstance} in the implementation language. There are various other classes which implement behaviour for certain types of objects, but all are subclasses of \code{ObjectInstance}. Through this, the inheritance hierarchy of \code{Carat::Data} objects in the implementation language mirrors that of objects in the source language (figure \ref{fig:data_object_hierarchy}).
 
 \begin{figure}
 \begin{center}
@@ -588,6 +577,6 @@ The \code{Primitive} class is represented by \code{Carat::Data::PrimitiveClass} 
 
 \code{PrimitiveCall#send} then evaluates the arguments in the standard way, and calls the implementation language method which provides the primitive behaviour.
 
-For the example, \code{self} is an \code{Object}, but the method is in \code{Kernel}. The \code{primitive_puts} method is actually defined the \code{Carat::Data::KernelModule} module. When a module inclusion happens in the target language, the primitive checks whether there is a corresponding module in the implementation language. If so, that module is included in the implementation language. For example, when \code{Object} includes \code{Kernel} in the target language, \code{ObjectInstance} includes \code{KernelModule} in the implementation language.
+For the example, \code{self} is an \code{Object}, but the method is in \code{Kernel}. The \code{primitive_puts} method is actually defined the \code{Carat::Data::KernelModule} module. When a module inclusion happens in the source language, the primitive checks whether there is a corresponding module in the implementation language. If so, that module is included in the implementation language. For example, when \code{Object} includes \code{Kernel} in the source language, \code{ObjectInstance} includes \code{KernelModule} in the implementation language.
 
 When \code{KernelModule#primitive_puts} is finally called, it converts the object given as an argument to a Ruby string and uses Ruby's \code{Kernel.puts} method to output it.

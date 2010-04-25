@@ -10,10 +10,11 @@
 \usepackage[obeyspaces,spaces]{url}
 \usepackage[breaklinks=true,colorlinks=true,linkcolor=MidnightBlue,urlcolor=OliveGreen]{hyperref}
 \usepackage{listings}
-\usepackage[a4paper]{geometry}
+\usepackage[a4paper,footnotesep=20pt]{geometry}
 \usepackage{textcomp}
 \usepackage{setspace}
 \usepackage{amsmath}
+\usepackage[bottom]{footmisc}
 
 \usepackage{tikz}
 \usetikzlibrary{trees,chains,backgrounds,fit,calc,shapes.multipart}
@@ -85,13 +86,11 @@
   showstringspaces=false,       % underline spaces within strings
   tabsize=2,	                  % sets default tabsize to 2 spaces
   rulesepcolor=\color{Gray},
-  basicstyle={\ttfamily\small},
+  basicstyle={\ttfamily\small\singlespacing},
   upquote=true,
   keywordstyle=\color{Mahogany}\bfseries,
   commentstyle=\color{MidnightBlue}\em,
   stringstyle=\color{RedOrange},
-  aboveskip=\bigskipamount,
-  belowskip=0pt,
   backgroundcolor=\color{verylightgrey},
   frame=single,
   frameround=tttt,
@@ -113,7 +112,7 @@
 
 \numberwithin{figure}{section}
 
-\def\gettitle{Carat: An interpreter written in Ruby}
+\def\gettitle{Carat: Seeking the essence of Ruby}
 \def\getauthor{Jonathan Leighton}
 \def\getdate{\today}
 
@@ -167,6 +166,6 @@
 	
 	\appendix
 	\include{language_overview}
-	\include{code_listing}
+	%\include{code_listing}
 \end{document}
 
