@@ -32,6 +32,7 @@ An \defn{argument pattern} is used when defining a method; it specifies what ass
 
 An argument pattern is made up of a number of items separated by commas. Each item contains an \defn{assignee} which receives the argument value. An assignee can be a local variable, instance variable, or an \defn{assignment method name}. If the class has a method \code{colour=}, then another of its methods could have \code{self.colour} as an assignee in the argument pattern; this would cause the \code{colour=} method to be used when assigning the arguments.
 
+\newpage
 There are three types of argument pattern item:
 
 \begin{enumerate}
@@ -63,6 +64,7 @@ An argument list is also made up of a number of items separated by commas. There
 
 There can only be one block in a method call, so the `block pass' and `block' types cannot both be used in the same argument list.
 
+\newpage
 These are some example argument lists:
 
 \begin{lstlisting}
@@ -124,7 +126,9 @@ b # => undefined variable or method
   \item Runs the call's continuation, passing the result of the call
 \end{enumerate}
 
-Usually the return continuation runs after the body of the call has been evaluated completely. However, if \code{Kernel#return} is called within the method body, the return continuation is run immediately (passing the argument of \code{return} as the result, or \code{nil}). The \code{return} primitive:
+Usually the return continuation runs after the body of the call has been evaluated completely. However, if \code{Kernel#return} is called within the method body, the return continuation is run immediately (passing the argument of \code{return} as the result, or \code{nil}).
+
+The \code{return} primitive:
 
 \begin{enumerate}
   \item Pops the top frame from the stack, which contains the call to \code{Kernel#return}

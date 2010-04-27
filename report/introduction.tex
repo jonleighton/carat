@@ -14,7 +14,13 @@ Many real-world language implementations are very complex due to heavy optimisat
 
 It's fun to think up quirky names for projects, so I have chosen to name my language ``Carat" (the carat is a measure of purity in gold alloys).
 
-This report starts by presenting a very basic example program and giving a detailed overview of how it is executed. Many of the key language features are discussed through this, but some which deserve further explanation are presented in the following section. The testing strategy is then explained, before a concluding section which compares Carat to Ruby and presents further ideas for the project.
+This report starts by presenting a very basic example program and giving a detailed overview of how it is executed. This is used as a vehicle to explain how programs are parsed, how the runtime system is constructed, what object model is used, and how programs are executed. Method definitions and calls are described, as are `modules' and primitive calls.
+
+Next, some features are discussed in more detail. It is shown how objects are created and how method arguments work. `Blocks' and lambda expressions are presented. The concluding part of this section explains how jumps in the control flow work, which are implemented as return calls and exceptions.
+
+A short section then describes the testing strategy for the system.
+
+The concluding section attempts to answer the original question about the `essence of Ruby', before highlighting areas where Carat differs from Ruby. Ideas for possible extensions to the project are given, before a final conclusion.
 
 \subsection{Definitions}
 

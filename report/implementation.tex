@@ -30,7 +30,9 @@ end
 
 Characters in quotes are matched literally. The other items are references to other rules. Names before a colon apply a label to that part of the node. The question mark in `\code{space?}' makes the rule optional.
 
-The parser produces a parse tree which consists of \code{Treetop::Runtime::SyntaxNode} objects. The class to be used is specified by `\code{<WhileExpression>}' at the end. Each different type of node has a \code{to_ast} method, which is used to recursively convert the parse tree to an AST made up of \code{Carat::AST::Node} objects. \code{WhileExpression} is coverted like so:
+The parser produces a parse tree which consists of \code{Treetop::Runtime::SyntaxNode} objects. The class to be used is specified by `\code{<WhileExpression>}' at the end. Each different type of node has a \code{to_ast} method, which is used to recursively convert the parse tree to an AST made up of \code{Carat::AST::Node} objects.
+
+\code{WhileExpression} is coverted like so:
 
 \begin{lstlisting}
 class WhileExpression < Treetop::Runtime::SyntaxNode
@@ -69,6 +71,7 @@ MethodCall[:goodbye]:
 
 This can be read as a call to the method `goodbye'; the object receiving the call is not explicitly given and the argument list contains one item, which is the literal string ``Cruel World".
 
+\newpage
 \subsection{The Runtime System}
 
 \code{Carat::Runtime} is the starting point for running a program. When initialised it:
@@ -136,6 +139,7 @@ This can be confusing, but the basic principle is simple: the \code{Module} clas
 \end{center}
 \end{figure}
 
+\newpage
 \subsubsection{\movingcode{ObjectInstance}}
 
 \code{ObjectInstance} is the implementation language class which represents a source language \textit{object}. Instances are created with the following signature:
@@ -188,6 +192,7 @@ Objects don't store their own singleton methods. Instead, these are stored in th
 \end{center}
 \end{figure}
 
+\newpage
 \subsubsection{\movingcode{ModuleInstance}}
 
 \code{ModuleInstance} is the implementation language class which represents a source language \textit{module}. Instances are created with the following signature:
@@ -472,6 +477,7 @@ The second expression is a \code{MethodCall}. Method calls have a name and two c
 
 So in the example, \code{self} is used as the receiver, which is an \code{Object} instance. The instance asks its class, which is therefore \code{Object}, to look up the method. The method was added to \code{Object} in the previous expression, so this is successful and a \code{Call} is created.
 
+\newpage
 The following attributes of a \code{Call} object are worth explaining:
 
 \begin{enumerate}
