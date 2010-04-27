@@ -7,20 +7,8 @@ class KernelSpecA < Exception
 end
 
 describe "Kernel#raise" do
-  it "should raise a RuntimeError when called with no arguments" do
-    lambda { raise }.should.raise_error(RuntimeError)
-  end
-  
-  it "should raise the exception if one is given directly" do
+  it "should raise the exception given" do
     lambda { raise KernelSpecA.new }.should.raise_error(KernelSpecA)
-  end
-  
-  it "should raise a RuntimeError with the string provided if a string is the first argument" do
-    lambda { raise "ERROR" }.should.raise_error(RuntimeError, "ERROR")
-  end
-  
-  it "should raise a new instance if an exception class is given" do
-    lambda { raise KernelSpecA }.should.raise_error(KernelSpecA)
   end
 end
 

@@ -1,6 +1,6 @@
 module Comparable
   def <=>(other)
-    raise RuntimeError, "<=> not implemented"
+    raise RuntimeError.new("<=> not implemented")
   end
   
   def <(other)

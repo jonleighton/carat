@@ -1229,10 +1229,6 @@ module Carat::Data
     def new(argument_pattern, contents, scope)
       LambdaInstance.new(runtime, self, argument_pattern, contents, scope)
     end
-    
-    def primitive_new(block)
-      yield block
-    end
   end
   
   class LambdaInstance < ObjectInstance
@@ -1574,9 +1570,7 @@ module Carat::Data
     end
     
     def primitive_plus(other)
-      other.call(:to_s) do |other_as_string|
-        yield real_klass.new(contents + other_as_string.contents)
-      end
+      yield real_klass.new(contents + other.contents)
     end
     
     def primitive_push(other)
@@ -1697,7 +1691,7 @@ end
 \begin{lstlisting}[title={\small\ttfamily\bfseries kernel/comparable.carat},language=Ruby]
 module Comparable
   def <=>(other)
-    raise RuntimeError, "<=> not implemented"
+    raise RuntimeError.new("<=> not implemented")
   end
   
   def <(other)
@@ -1798,16 +1792,8 @@ end
 \end{lstlisting}
 \begin{lstlisting}[title={\small\ttfamily\bfseries kernel/kernel.carat},language=Ruby]
 module Kernel
-  def raise(exception_or_string = nil, message = "(no message)")
-    if exception_or_string.is_a?(Exception)
-      Primitive.raise exception_or_string
-    elsif exception_or_string.is_a?(String)
-      Primitive.raise RuntimeError.new(exception_or_string)
-    elsif exception_or_string == nil
-      Primitive.raise RuntimeError.new(message)
-    else
-      Primitive.raise exception_or_string.new(message)
-    end
+  def raise(exception)
+    Primitive.raise(exception)
   end
   
   def puts(obj = "\n")
@@ -1838,9 +1824,8 @@ end
 \end{lstlisting}
 \begin{lstlisting}[title={\small\ttfamily\bfseries kernel/lambda.carat},language=Ruby]
 class Lambda
-  # This is necessary because Object#new is implemented purely in the object language
   def self.new(&block)
-    Primitive.new(&block)
+    block
   end
   
   def call(*args, &block)
@@ -1940,11 +1925,11 @@ end
 \begin{lstlisting}[title={\small\ttfamily\bfseries kernel/string.carat},language=Ruby]
 class String
   def +(other)
-    Primitive.plus(other)
+    Primitive.plus(other.to_s)
   end
   
   def <<(other)
-    Primitive.push(other)
+    Primitive.push(other.to_s)
   end
   
   def to_s
@@ -3616,7 +3601,9 @@ module Carat
     # technique is called "trampolining".
     def with_stack(&result)
       @stack_of_stacks << Stack.new
-      result = result.call while result.is_a?(Proc)
+      while result.is_a?(Proc)
+        result = result.call
+      end
       @stack_of_stacks.pop
       result
     end

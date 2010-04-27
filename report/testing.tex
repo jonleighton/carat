@@ -7,8 +7,6 @@ Once the implementation had become mature enough, I was able to write a very sim
 I then systematically worked through all the different objects and methods in the implementation, writing tests for them. I also tested various syntax features. Below is part of the specification for \code{Fixnum}:
 
 \begin{lstlisting}
-require 'cspec'
-
 describe "Fixnum" do
   it "should use the same object for two instances of the same number" do
     24.object_id.should == 24.object_id
@@ -83,4 +81,26 @@ spec/cspec.carat at line 37, col 5 in <method:run>
 ...
 \end{lstlisting}
 
-In total there are 134 examples, comprising 175 separate assertions. It would be bold to claim that this means absolutely all functionality is tested and working, but given the experimental nature of this project I think it demonstrates an acceptable level of stability.
+There are also tests for semantic features, such as the following for an \code{if} expression:
+
+\begin{lstlisting}
+describe "An if expression" do
+  it "should run the first branch and not the second branch if the condition is true" do
+    if true
+      a = "PASS"
+    else
+      flunk
+    end
+    a.should == "PASS"
+    
+    if true
+      b = "PASS"
+    end
+    b.should == "PASS"
+  end
+  
+  ...
+end
+\end{lstlisting}
+
+In total there are 131 examples, comprising 172 separate assertions. It would be bold to claim that this means absolutely all functionality is tested and working, but given the experimental nature of this project I think it demonstrates an acceptable level of stability. The full output can be found in \autoref{sec:test_output}.

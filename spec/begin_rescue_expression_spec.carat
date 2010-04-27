@@ -17,7 +17,7 @@ describe "A begin ... rescue ... end expression" do
   it "should run the rescue block if an exception is raised" do
     begin
       a = 1
-      raise
+      raise RuntimeError.new
     rescue
       a = 2
     end
@@ -28,7 +28,7 @@ describe "A begin ... rescue ... end expression" do
   it "should only rescue from exceptions which match the type given, if one is given" do
     begin
       a = 1
-      raise BeginRescueExpressionSpecA
+      raise BeginRescueExpressionSpecA.new
     rescue BeginRescueExpressionSpecA
       a = 2
     end
@@ -38,7 +38,7 @@ describe "A begin ... rescue ... end expression" do
     begin
       begin
         a = 1
-        raise RuntimeError
+        raise RuntimeError.new
       rescue BeginRescueExpressionSpecA
         a = 2
       end
@@ -50,7 +50,7 @@ describe "A begin ... rescue ... end expression" do
   
   it "should assign the exception raised to a variable, if one is given" do
     begin
-      raise "test"
+      raise RuntimeError.new("test")
     rescue RuntimeError => e
     end
     e.class.should == RuntimeError

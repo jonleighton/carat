@@ -16,6 +16,7 @@
 \usepackage{amsmath}
 \usepackage[bottom]{footmisc}
 \usepackage[bf]{caption}
+\usepackage{verbatim}
 
 \usepackage{tikz}
 \usetikzlibrary{trees,chains,backgrounds,fit,calc,shapes.multipart}
@@ -150,6 +151,8 @@
   \end{itemize}
 }
 
+\def\subsectionautorefname{section}
+
 \begin{document}
   \include{titlepage}
 	
@@ -167,7 +170,9 @@
 	\include{references}
 	
 	\appendix
-	\include{language_overview}
+	%\include{language_overview}
+	%\singlespacing
+	%\include{test_output}
 	%\include{code_listing}
 \end{document}
 

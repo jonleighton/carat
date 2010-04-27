@@ -1,17 +1,17 @@
 \section{Implementation Specifics}
 \label{sec:implementation_specifics}
 
-In this section I give further explanation of various specific details in the interpreter.
+In this section I further explain some specific details of the interpreter.
 
 \subsection{Object creation}
 
-Objects are created from classes. When a class is defined, it is added to the \code{constants} hash. Suppose we have a class \code{Candle}. An instance is created by looking up the \code{Candle} constant and calling its \code{new} method:
+Objects are created from classes. When a class is defined, it is added to the \code{constants} table. Suppose we have a class \code{Candle}. An instance is created by looking up the \code{Candle} constant and calling its \code{new} method:
 
 \begin{lstlisting}
 candle = Candle.new
 \end{lstlisting}
 
-The \code{new} method (in \path{kernel/class.carat}) allocates space for the object, runs its \code{initialize} method and then returns it:
+The \code{new} method allocates space for the object, runs its \code{initialize} method and then returns it:
 
 \begin{lstlisting}
 def new(*args, &block)
@@ -21,7 +21,7 @@ def new(*args, &block)
 end
 \end{lstlisting}
 
-The \code{allocate} method calls use a primitive to create an \code{ObjectInstance} in the implementation language. By default, \code{Object#initialize} does nothing, but this can obviously be changed in other classes.
+The \code{allocate} method call uses a primitive to create an \code{ObjectInstance} in the implementation language. By default, \code{Object#initialize} does nothing, but this can obviously be changed in subclasses.
 
 \subsection{Method argument patterns and argument lists}
 \label{sec:arguments}
@@ -30,7 +30,7 @@ An \defn{argument pattern} is used when defining a method; it specifies what ass
 
 \subsubsection{Argument pattern syntax}
 
-An argument pattern is made up of a number of items separated by a comma. Each item contains an \defn{assignee} which receives the argument value. An assignee can be a local variable, instance variable, or an \defn{assignment method name}. If the class has a method \code{colour=}, then another of its methods could have \code{self.colour} as an assignee in the argument pattern; this would cause the \code{colour=} method to be used when assigning the arguments.
+An argument pattern is made up of a number of items separated by commas. Each item contains an \defn{assignee} which receives the argument value. An assignee can be a local variable, instance variable, or an \defn{assignment method name}. If the class has a method \code{colour=}, then another of its methods could have \code{self.colour} as an assignee in the argument pattern; this would cause the \code{colour=} method to be used when assigning the arguments.
 
 There are three types of argument pattern item:
 
@@ -52,16 +52,16 @@ def foo(*a, b = 2, &c) ...
 
 \subsubsection{Argument list syntax}
 
-An argument list is also made up of a number of items separated by a comma. There are four types:
+An argument list is also made up of a number of items separated by commas. There are four types:
 
 \begin{enumerate}
   \item The \defn{normal} type is just an expression which gives a single value
   \item The \defn{splat} type is signified by an `*' before an expression. The expression is evaluated and converted to an array. Each value of the array becomes a separate argument value. There can be any number of splats in an argument list.
-  \item The \defn{block pass} type is signified by an `\&' before an expression. The expression is evaluated and converted to a lambda, which is then used as the block in the method call. There can only be one block pass item and it must be at the end.
-  \item The \defn{block} type is signified by a literal block using either braces or \code{do} \code{...} \code{end}. The block is used to create a lambda, which is then used as the block in the method call. There can only be one block item and it must be at the end.
+  \item The \defn{block pass} type is signified by an `\&' before an expression. The expression is evaluated and converted to a lambda object, which is then used as the block in the method call. There can only be one block pass item and it must be at the end.
+  \item The \defn{block} type is signified by a literal block using either braces or \code{do} \code{...} \code{end}. The block is used to create a lambda object, which is then used as the block in the method call. There can only be one block item and it must be at the end.
 \end{enumerate}
 
-There can only be one block in a method call, so the block pass and block item types cannot both be used in the same argument list.
+There can only be one block in a method call, so the `block pass' and `block' types cannot both be used in the same argument list.
 
 These are some example argument lists:
 
@@ -76,33 +76,34 @@ Argument lists are represented by the \code{ArgumentList} AST node which contain
 
 Argument patterns are represented by the \code{ArgumentPattern} AST node which contains a number of \code{Argument}\-\code{Pattern::}\-\code{Item} nodes. \code{ArgumentPattern} has an \code{assign} method which is used to assign a list of arguments according to the pattern.
 
-The argument pattern first checks whether it has been provided with a suitable number of arguments. To do this, it calculates an \defn{arity}, which is a range from the minimum arity to the maximum arity. It then checks whether the argument length is within this range.
+The \code{assign} method first checks whether it has been provided with a suitable number of arguments. To do this, it calculates an \defn{arity}, which is a range specifying the minimum and maximum number of arguments which would satisfy the pattern. It then checks whether the argument length is within the arity range.
 
-Each argument pattern item also has a minimum arity and maximum arity. For splat and block pass items, the minimum is 0. For normal items, the minimum is 0 if there is a default value and 1 otherwise. The maximum arity is ∞ for a splat, 0 for a block pass and 1 otherwise. (Block passes are not considered part of the arity because they are not assigned `normal' argument values.)
+Each individual item in the argument pattern also has its own arity, which makes up part of the overall arity. The different types have different rules:
+
+\begin{enumerate}
+  \item \textit{Normal} items allow exactly one value if there is no default. Otherwise they allow either one or no values.
+  \item \textit{Splat} items allow any number of values, so the arity is 0 to ∞.
+  \item \textit{Block pass} items are not assigned `normal' argument values, so are not considered in the arity calculation. Therefore their arity is a range from 0 to 0.
+  \item \textit{Block} items allow either one or no values.
+\end{enumerate}
 
 The minimum and maximum arities for the whole argument pattern are just the sums of the minimum and maximum arities of each of the items.
 
 Once the arity has been checked, the \code{assign} operation just works along the list of argument pattern items from left to right, taking the relevant number of values from the front of the list of argument values and making the assignment.
 
-\subsection{Blocks, lambdas and yield}
+\subsection{Blocks and Lambdas}
 
-\subsubsection{Lambda creation}
-
-Lambdas are returned by the \code{Kernel#lambda} method (which is an alias for \code{Lambda.new}):
+Lambdas are anonymous function objects which are created when a block given to a method call. (A block is \textit{not} an object, but a syntactic way of using a lambda in a method call.) The \code{Kernel#lambda} method just returns the lambda created from its block, allowing lambda objects to be used in isolation:
 
 \begin{lstlisting}
 lambda { |x| x + x }.call(2) # => 4
 \end{lstlisting}
 
-The literal block is parsed as an item in the argument list and the item's expression is a \code{Block} AST node. When a \code{Block} node is a evalauted, it returns a \code{Lambda} object. So \code{lambda} does not actually \textit{create} the lambda; it is created when the arguments are evaluated, and then just returned.
-
-\subsubsection{Calling lambdas}
-
 Lambdas are called using their \code{call} method (which uses a primitive), as seen above. A \code{Call} object is created and then sent, in a similar way to method calls. The main difference is the scope used. Lambdas act as \defn{closures}, which means that the variables defined in the scope where the lambda was created are available and can be changed when it is called.
 
 To support this, scopes can have a \defn{parent}, and can be \defn{extended} to create a new scope with the previous scope as the parent. When a symbol is looked up, the symbol tables of the scope and all ancestor scopes are searched in bottom up order.
 
-When a lambda is created, the current scope is stored. When called, the lambda will extend the stored scope and use that as the scope of the call. This means that any \textit{new} variables inside the lambda remain local, but any variables referenced which were defined outside the lambda are changed in the relevant parent scope, and so their values remain different after the call has finished. For example:
+When a lambda is created, the current scope is stored. When called, the lambda will extend the stored scope and use that as the scope of the call. This means that any \textit{fresh} variables inside the lambda remain local, but any variables referenced which were defined outside the lambda are changed in the relevant parent scope, and so their values remain different after the call has finished. For example:
 
 \begin{lstlisting}
 a = 4
@@ -113,22 +114,6 @@ end.call
 a # => 5
 b # => undefined variable or method
 \end{lstlisting}
-
-\subsubsection{Yield}
-
-Scopes can have a \defn{block} attribute. If a block is given in the argument list of a method call, it is assigned as the block of the scope within which the call is evaluated.
-
-\code{Kernel#yield} can then be used to call the block. For example:
-
-\begin{lstlisting}
-def foo
-  yield 8
-end
-
-foo { |i| i + 1 } # => 9
-\end{lstlisting}
-
-The \code{yield} primitive does this by getting the block in the caller scope of the call to yield and then calling it, passing on any arguments.
 
 \subsection{Return}
 
@@ -152,27 +137,13 @@ Usually the return continuation runs after the body of the call has been evaluat
 
 \subsubsection{Raising exceptions}
 
-All exception are instances of the \code{Exception} class or a subclass. Exceptions have a \defn{message} which describes the problem. They are raised by a call to \code{Kernel#raise}, which can take various forms:
+All exceptions are instances of the \code{Exception} class or a subclass. Exceptions have a \defn{message} which describes the problem. They are raised using \code{Kernel#raise}, like so:
 
-\begin{lstlisting}[numbers=left]
+\begin{lstlisting}
 raise SomeException.new("there's a problem")
-raise SomeException, "there's a problem"
-raise SomeException
-raise "there's a problem"
-raise
 \end{lstlisting}
 
-They do the following:
-
-\begin{enumerate}
-  \item Raises a \code{SomeException} exception with the message ``there's a problem"
-  \item Ditto
-  \item Raises a \code{SomeException} exception with the message ``(no message)"
-  \item Raises a \code{RuntimeError} exception with the message ``there's a problem"
-  \item Raises a \code{RuntimeError} exception with the message ``(no message)"
-\end{enumerate}
-
-The \code{Kernel#raise} method standardises the various different argument forms and then passes the exception object to the \code{raise} primitive, which:
+The \code{raise} primitive:
 
 \begin{enumerate}
   \item Stores the \defn{current location}. Every AST node stores its \defn{location}, which is the file, line and column where it is defined. When a \code{Call} object is created, it stores the location at which the call happened (from the AST node which makes the call). The current location is then the stored location of the current call.
@@ -186,28 +157,7 @@ The \code{Kernel#raise} method standardises the various different argument forms
   \item Runs the failure continuation, passing it the exception object.
 \end{enumerate}
 
-The \defn{default failure continuation} is at the very bottom of the stack. It prints out the exception class name, message, and the backtrace. For example, the program:
-
-\begin{lstlisting}
-def a
-  b
-end
-
-def b
-  raise "oh no!"
-end
-
-a
-\end{lstlisting}
-
-Results in the following output:
-
-\begin{lstlisting}[language=]
-RuntimeError: oh no!
-  test.carat at line 6, col 3 in <method:b>
-  test.carat at line 2, col 3 in <method:a>
-  test.carat at line 9, col 1 in main
-\end{lstlisting}
+The \defn{default failure continuation} is at the very bottom of the stack and provides fallback behaviour which prints out the exception and a debugging backtrace.
 
 \subsubsection{Rescuing exceptions}
 
@@ -216,7 +166,7 @@ Exceptions can be prevented from causing the program to exit by \defn{rescuing} 
 \begin{lstlisting}
 begin
   puts "raise..."
-  raise
+  raise RuntimeError.new("fail!")
 rescue RuntimeError => e
   puts "saved!"
 end
@@ -231,11 +181,13 @@ saved!
 
 The part before the `\code{=>}' specifies the type of exception to rescue, and the part after it specifies a variable to assign the exception object to. Both are optional (the default exception type is \code{RuntimeError}).
 
-When a \code{Begin} node is evaluated, it puts a new failure continuation in a frame on the stack. Then, when the failure continuation is called, it:
+When a \code{Begin} node is evaluated, it puts a new failure continuation in a frame on the stack. Then, when this continuation is called, it:
 
 \begin{enumerate}
   \item Pops its frame from the top of the stack
   \item Checks whether the exception raised matches the exception type it is allowed to rescue from
   \item If so, it assigns the exception to the exception variable and evaluates the contents of the rescue block
-  \item Otherwise, it unwinds the stack to the next failure continuation and calls that
+  \item Otherwise, it unwinds the stack to the next failure continuation and calls it.
 \end{enumerate}
+
+If no \code{rescue} block matches an exception, the stack will eventually unwind right back to the default failure continuation, which accepts anything.

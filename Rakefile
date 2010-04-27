@@ -20,6 +20,8 @@ code_files = Rake::FileList['lib/**/*.rb', 'lib/**/*.treetop', 'lib/**/*.carat']
                exclude('lib/parser/language.rb',
                        'lib/parser/comment.rb').to_a.sort!
 
+spec_files = Rake::FileList['spec/*.carat'].to_a.sort!
+
 task :sloccount do
   count = 0
   code_files.each do |file_name|

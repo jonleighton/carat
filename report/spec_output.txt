@@ -1,0 +1,217 @@
+(in /home/turnip/Projects/carat)
+Fixnum
+ - should use the same object for two instances of the same number
+ - should support the negative unary prefix
+ - should support the positive unary prefix
+ - should add two numbers
+ - should subtract two numbers
+ - should multiply two numbers
+ - should divide two numbers (with integer division)
+ - should return its value as a string with to_s
+ - should return its value as a string with inspect
+
+Fixnum#<=>
+ - should return -1 for 1 <=> 2
+ - should return 1 for 2 <=> 1
+ - should return 0 for 1 <=> 1
+
+String#new
+ - should return an empty string
+
+A string
+ - should support concatenation to form a new string
+ - should support pushing a string onto the end of an existing string
+ - should return its literal representation with inspect
+ - should return itself with to_s
+ - should support equality between two non-identical strings with the same contents
+
+Array
+ - should support initialisation through the literal syntax
+ - should support initialisation through Array.new
+ - should return individual elements when they are accessed
+ - should allow individual elements to be assigned
+ - should return nil for elements which don't exist
+ - should return its length
+ - should support pushing elements onto the end of an existing array
+ - should return itself with to_a
+ - should return a string representing the array literally with inspect
+ - should return each element separated by a newline with to_s
+ - should support iterating over each element
+ - should support mapping the array to a new array
+ - should support joining all the elements into a string with a given separator
+
+NilClass
+ - should have a single instance
+ - should have true as its negation
+
+TrueClass
+ - should have a single instance
+ - should have false as its negation
+
+FalseClass
+ - should have a single instance
+ - should have true as its negation
+
+Object
+ - should have a superclass of nil
+ - should have a class of Class
+
+An instance of Object
+ - should be equal to itself
+ - should not be equal to another object
+ - should have a numeric object id
+ - should have a class of Object
+ - should return '<Object:[object id]>' for inspect
+ - should return the same as inspect for to_s
+ - should return true for is_a?(Object)
+ - should return false for is_a?(Class)
+ - should have false as its negation
+
+An instance of a subclass
+ - should return true for is_a?(<class>)
+ - should return true for is_a?(<superclass>)
+ - should return true for is_a?(Object)
+
+An instance of a class
+ - should return nil as the value of an uninitialised instance variable
+ - should allow an instance variable to be set and then retrieved
+
+Module
+ - should have a superclass of Object
+ - should have a class of Class
+
+A module
+ - should respond to singleton method calls
+ - should return its name
+ - should return its name with to_s
+ - should return its name with inspect
+
+Class
+ - should have a class of Class
+ - should have a superclass of Module
+
+A class (in general)
+ - should return Object as the superclass
+ - should pass the args and block to the initialize method when a new instance is created
+ - should respond to singleton methods
+
+A class which subclasses another class
+ - should return its superclass
+
+A class which includes a module
+ - should respond to the module's singleton methods
+
+An instance of a class which includes a module
+ - should respond to the module's instance methods
+
+A class which has been re-opened
+ - should not lose the methods defined in its original definition unless they are redefined
+
+A lambda
+ - should not create any variables in its enclosing scope
+ - should change variables in the enclosing scope if they are already defined
+ - should be able to access variables in the enclosing scope
+ - should be created by Lambda.new or Kernel#lambda
+ - should take an argument list and a block when called
+
+Kernel#raise
+ - should raise the exception given
+
+Kernel#lambda
+ - should return a lambda
+
+Kernel#yield
+ - should call the current block with the arguments provided
+
+Kernel#return
+ - should halt the execution of the current call and return the value
+
+Comparable
+ - should support less than
+ - should support greater than
+ - should support less than or equal to
+ - should support greater than or equal to
+
+An exception with no message specified
+ - should return '(no message)' from to_s
+
+StandardError
+ - should subclass Exception
+
+NameError
+ - should subclass StandardError
+
+NoMethodError
+ - should subclass NameError
+
+ArgumentError
+ - should subclass StandardError
+
+RuntimeError
+ - should subclass StandardError
+
+Method definition
+ - should allow names ending in '?'
+ - should allow names ending in '!'
+ - should allow assignment methods
+
+An if expression
+ - should run the first branch and not the second branch if the condition is true
+ - should run the second branch and not the first branch if the condition is false
+ - run an elsif branch if the first condition is false but the elseif condition is true
+ - should not run an elsif branch if that condition is also false
+
+A while expression
+ - should repeatedly run its contents until the condition becomes false
+
+An '&&' expression
+ - should be true if the left and right are true
+ - should be false if either the left or the right or both is false
+ - should short-circuit if the left is false
+
+An '||' expression
+ - should be true if either left or the right or both are true
+ - should be false if both the left and the right are false
+ - should short-circuit if the left is true
+
+A begin ... rescue ... end expression
+ - should not run the rescue block if no exception is raised
+ - should run the rescue block if an exception is raised
+ - should only rescue from exceptions which match the type given, if one is given
+ - should assign the exception raised to a variable, if one is given
+
+Precedence
+ - '||' should bind tighter than '='
+ - '&&' should bind tighter than '||'
+ - '==' should bind tighter than '&&'
+ - '<' should bind tighter than '=='
+ - '<<' should bind tighter than '<'
+ - '+' should bind tighter than '<<'
+ - '*' should bind tighter than '+'
+ - '!!' should bind tighter than '*'
+ - '.' should bind tighter than '!!'
+ - '++' should bind tighter than '.'
+
+Binary assignment
+ - should support <<=
+ - should support +=
+ - should support -=
+ - should support &&=
+ - should support ||=
+
+Argument patterns
+ - should support mandatory normal items
+ - should support optional items
+ - should support splats (in any position)
+ - should support block passes (which are always optional)
+ - should support splats with block passes
+ - should support assigning to instance variables
+ - should support assigning to methods
+
+Argument lists
+ - should support normal args
+ - should support any number of splats
+ - should support block passes
+ - should support literal blocks
+
+131 examples, 172 assertions

@@ -1,13 +1,33 @@
 \section{Conclusions}
 
-\subsection{Comparison to Ruby}
+\subsection{The Essence of Ruby}
+
+Writing Carat has made me think carefully about the syntax and semantics of Ruby, considering which parts of the language are crucial, defining features, and which parts are simply additional extras. Here are some of the things I think make up `the essence of Ruby':
+
+\begin{enumerate}
+  \item \textbf{Absolutely everything is an object}, unlike many other `object oriented' languages. This seems almost so obvious to be not worth mentioning, but a lot of the expressive power of Ruby is derived from this property.
+  
+  \item \textbf{Operators are (usually) method calls}. Operators are generally used because they are a concise way of expressing some concept. For example, it is much more concise to write `+' than `plus'. Therefore, implementing operators as methods is very useful because it allows any number of different classes to implement the concept of addition in a way which is natural in that context.
+  
+  \item \textbf{The syntax is complicated}. This is in contrast to otherwise similar languages like Smalltalk. Smalltalk has a very simple syntax, defining basic types and a syntax for method calls. It then implements absolutely everything else as a method call. This results in code which has a very consistent format, but comes at the expense of the human beings who will be reading it.
+  
+  Ruby implements lots of small syntactic devices, such as the different types of items in argument patterns and argument lists. Looking at them in isolation, one could easily argue that they are unnecessary and do not add anything significant. But as a whole, these small features come together to greatly enhance code readability.
+  
+  In this context, ``complicated" does not mean ``ugly". A lot of these syntactic options serve to \emph{reduce} the amount of punctuation littering the code. For example, Ruby permits the omission of parentheses in method calls when the meaning is unambiguous. Through blocks, it also has a specific syntax for passing lambda objects to method calls. These things, and others, prevent the \emph{meaning} of code becoming obscured by strict punctuation rules.
+  
+  \item \textbf{Metaprogramming and Reflection}. This is something which \emph{isn't} actually implemented by Carat. Ruby has the ability to dynamically add, change or remove pretty much \emph{anything} -- methods, classes, modules, the lot. One can evaluate arbitrary strings or blocks of code in different execution contexts. Or inspect any object to find out about its class and its class' superclasses and modules, and find out what methods are defined where, and then dynamically call them.
+  
+  This is certainly a defining feature of Ruby, and is often used to create ``Domain Specific Languages" which adapt Ruby's syntax to better suit a particular purpose.
+  
+  Implementing these features in Carat would be fairly straightforward, but would require writing a lot of new primitives. I didn't consider them essential to my minimal language so they were left out.
+  
+  \item \textbf{Freedom of Choice}. It has been said that ``Ruby gives you enough rope to hang yourself". I think this epitomises a philosophy that there are many ways to achieve the same thing, but the programmer should be responsible for making a sensible choice. This contrasts with a language like Java which, in the absence of flexible syntax and metaprogramming features, provides very few options -- and then tries to ensure the programmer does the `right' thing through type checking and rigorous design patterns, interfaces, abstract classes, etc. There is nothing wrong with these things \emph{per se}, but they can be very constraining in general.
+\end{enumerate}
+
+\subsection{Changes from Ruby}
 \label{sec:ruby_comparison}
 
-Ruby has been around since 1995, and has been in widespread use for many years. It is clearly far more mature and feature-complete than Carat, and much more suited to ``real world" programming tasks. The current most popular release, 1.8, is considered slow compared to other similar languages. Given that Carat is written in Ruby, it is obviously several times slower still.
-
-Another point worth noting is that Carat does very little in terms of error checking. Many methods will produce unexpected results if called with invalid arguments.
-
-However, the aim of Carat was not to produce a replacement to Ruby, but to produce a minimal language similar to it. There are a number of areas in particular where Carat differs to Ruby, in my view in a positive way.
+There are a few features which I deliberately implemented differently to Ruby because I thought they took a `purer' view of the language.
 
 \subsubsection{Lambdas}
 
@@ -38,28 +58,36 @@ end
 
 In Ruby, including a module only makes its instance methods available, which often leads to confusion. I like Carat's approach of making both instance and singleton (class) methods available.
 
-On the other hand, Ruby supports inclusion of modules inside other modules, which Carat does not. It may be that there are additional complexities in this which I have not considered.
+On the other hand, Ruby supports inclusion of modules inside other modules, which Carat does not. It may be that this introduces additional complexities which I have not considered.
 
 \subsection{Possible project extensions}
 
 \subsubsection{A virtual machine}
 
-At the moment Carat is purely an interpreter. It would be interesting to turn it into a bytecode compiler and interpreter, exploring how that changes the architecture and what the implementation challenges are. There would certainly be efficiency gains, particularly as continuation passing style is quite a slow strategy.
+At the moment Carat is purely an interpreter. It would be interesting to turn it into a bytecode compiler and interpreter, exploring how that changes the architecture and what the implementation challenges are.
 
 \subsubsection{Unicode syntax}
 
-Pretty much every programming language in use today restricts its syntax to the ASCII character set. It would be interesting to see what gains could be made by allowing a wider set of characters. This would make programs more concise and readable, but would require special keyboards in order to write code quickly.
+I think a lot of the expressive power of Ruby comes from its use of syntax. Pretty much every programming language in use today restricts its syntax to the ASCII character set. It would be interesting to see what gains could be made by employing a wider set of characters. This would potentially make programs more concise and readable, but would probably require special keyboards in order to write code quickly.
 
-But I think the gains could be worth it. For example, \code{lambda} could be replaced with $\color{Mahogany} \lambda$, \code{!} (negation) could be replaced with $\color{Mahogany} \neg$ and \code{=} (assignment) could be replaced with $\color{Mahogany} \leftarrow$ (leaving \code{=} free for equality testing). Mathematicians employ a wide variety of symbols in order to express themselves; it would be good to give programmers the same opportunity.
+However, I think the gains could be worth it. For example, \code{lambda} could be replaced with $\color{Mahogany} \lambda$, \code{!} (negation) could be replaced with $\color{Mahogany} \neg$ and \code{=} (assignment) could be replaced with $\color{Mahogany} \leftarrow$ (leaving \code{=} free for equality testing). Mathematicians express themselves with a wide variety of symbols; I think it would be good to give programmers the same opportunity.
 
 \subsubsection{Lazy evaluation}
 
 Most operators in Carat (and Ruby) are implemented as method calls. However, \code{&&} and \code{||} in particular cannot be implemented as method calls because they need to `short circuit' depending on the value of the expression on the left of the operator. This could not be achieved through a method call as arguments are always evaluated before the call is made.
 
-I don't think it would be a good idea to make the entire language use lazy evaluation, but it might be possible to implement a feature where argument patterns can use some sort of syntactic notation to specify that an argument should not be evaluated immediately. This would allow \code{&&} and \code{||} to be defined as methods. On the other hand, it may be that such a feature would easily lead to confusion, so it might not be a good idea.
+Smalltalk allows the right hand side of `and' to be a block, which could be done in Carat like so:
+
+\begin{lstlisting}
+x && { y }
+\end{lstlisting}
+
+In this implementation, the \code{&&} method of \code{x} would only run the block argument if \code{x} is true. The downside approach of this is that the syntax is awful. Passing a block to a method makes a lot of sense when the intention is to encapsulate some code to be passed around, or executed later, or repeatedly. But here the block is really only being used as an inelegant solution to a problem.
+
+A different solution might be to implement lazy evaluation. I don't think it would be a good idea to make the entire language lazy, but it might be possible to implement a feature where argument patterns can use some sort of syntactic notation to specify that an argument should not be evaluated immediately. This would allow \code{&&} and \code{||} to be defined as methods. On the other hand, it may be that such a feature would easily lead to confusion, so I am not convinced that it is a good idea.
 
 \subsection{Overall Conclusions}
 
-On the whole, I think this project has been successful in reaching its objectives. It has taught me a lot about programming languages. The implementation is concise and easy to follow; it weighs in at only just over 3000 lines of code. Writing this report has been useful because it forced me to think explicitly about design decisions, which has lead to several good refactorings.
+Although the project objectives were fairly broad and hard to quantify, I am pleased with the result. Writing the code and the report has caused me to think carefully about the features of Ruby and how they are implemented, whether they are necessary and if there is a simpler way to do things. A number of times while writing the report, I found myself reconsidering design decisions, which then lead to useful refactorings.
 
-It's a shame that it's unrealistic to produce serious language implementations in a language as expressive and powerful as Ruby, although Rubinius\footnote{\url{http://rubini.us/}} (a C++/Ruby implementation of Ruby) comes close.
+I have learnt a lot about programming languages in the process and feel that I now have a better grasp of what the similarities and differences are between Ruby and other languages.

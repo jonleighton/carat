@@ -10,7 +10,7 @@ end
 goodbye("Cruel World")
 \end{lstlisting}
 
-A \code{goodbye} method is defined and then called, causing `Goodbye Cruel World'\footnote{I find `Hello World' rather boring and thought it would be more fun to pay homage to Pink Floyd} to be printed as the output. I will explain how the program is executed, focussing on the overall design of the interpreter (therefore avoiding some of the finer details). Certain specific details will be covered in greater depth in section \ref{sec:implementation_specifics}.
+A \code{goodbye} method is defined and then called, causing `Goodbye Cruel World'\footnote{I find `Hello World' rather boring and thought it would be more fun to pay homage to Pink Floyd} to be printed as the output. I will explain how the program is executed, focussing on the overall design of the interpreter (therefore avoiding some of the finer details). Certain specific details will be covered in greater depth in \autoref{sec:implementation_specifics}.
 
 \subsection{Parsing}
 
@@ -99,7 +99,7 @@ The ``current scope", ``current call" or ``current failure continuation" refers 
 \subsection{The Object Model}
 \label{sec:object_model}
 
-Carat follows Ruby's object model closely. Everything is an object, and all objects are represented by the class \code{Carat::Data::ObjectInstance} in the implementation language. There are various other classes which implement behaviour for specific types of object, but all are subclasses of \code{ObjectInstance}. Figure \ref{fig:data_object_hierarchy} shows the inheritance hierarchy.
+Carat follows Ruby's object model closely. Everything is an object, and all objects are represented by the class \code{Carat::Data::ObjectInstance} in the implementation language. There are various other classes which implement behaviour for specific types of object, but all are subclasses of \code{ObjectInstance}. \autoref{fig:data_object_hierarchy} shows the inheritance hierarchy.
 
 For example, the class \code{Module} in the source language is represented by a \code{ModuleClass} instance in the implementation language. \code{ModuleClass} implements some specific behaviour which relates to the \code{Module} class. In the source language, \code{Module} is a subclass of \code{Object}, so in the implementation language, \code{ModuleClass} is a subclass of \code{ObjectClass}. \code{Object} is a type of class, so \code{ObjectClass} is a subclass of \code{ClassInstance}. All classes are a type of module, and all modules are a type of object, so \code{ClassInstance} subclasses \code{ModuleInstance} which then finally subclasses \code{ObjectInstance}.
 
@@ -150,7 +150,7 @@ Each object has a table of \defn{instance variables} mapping names to values.
 
 Objects can have \defn{singleton methods}. These methods are specific to individual instances, so if there are two objects of the same class, \code{a} and \code{b}, and \code{a} defines a singleton method, \code{b} will not have that method.
 
-Objects don't store their own singleton methods. Instead, these are stored in the method table of a \defn{singleton class}. This special class doesn't exist by default, but the first time a singleton method is defined, it will be created. The object's original class (also called the `real class') then becomes the superclass of its singleton class (figure \ref{fig:singleton_class_creation}). This ensures the object can still access methods defined by its original class.
+Objects don't store their own singleton methods. Instead, these are stored in the method table of a \defn{singleton class}. This special class doesn't exist by default, but the first time a singleton method is defined, it will be created. The object's original class (also called the `real class') then becomes the superclass of its singleton class (\autoref{fig:singleton_class_creation}). This ensures the object can still access methods defined by its original class.
 
 \begin{figure}
 \begin{center}
@@ -208,11 +208,11 @@ Modules are themselves objects, so they can have singleton methods, which are an
 ClassInstance.new(runtime, klass, superclass, name = nil)
 \end{lstlisting}
 
-Classes are like a modules, except that they \textit{can} be instantiated. They have a \defn{super} pointer, which is initially set to the value of the \code{superclass} argument. In general, however, the super pointer may be either a normal class or an `include class' (explained in section \ref{sec:module_inclusion}). The \code{superclass} \textit{method} returns the first normal class in the hierarchy of super pointers.
+Classes are like a modules, except that they \textit{can} be instantiated. They have a \defn{super} pointer, which is initially set to the value of the \code{superclass} argument. In general, however, the super pointer may be either a normal class or an `include class' (explained in \autoref{sec:module_inclusion}). The \code{superclass} \textit{method} returns the first normal class in the hierarchy of super pointers.
 
 Just like modules, classes can have singleton (or `class') methods and the singleton class is created immediately. However, if a class \code{Square} is a subclass of \code{Shape}, we would expect \code{Square} to respond to any of the singleton methods which \code{Shape} responds to. The standard method for creating a singleton class would not allow this, so a slightly different strategy is used.
 
-When a class creates its singleton class, it uses the singleton class of its superclass as the superclass of its singleton class. In this way, classes and their singleton classes are positioned in parallel (figure \ref{fig:singleton_class_inheritance}) and inheritance of `class methods' works as expected.
+When a class creates its singleton class, it uses the singleton class of its superclass as the superclass of its singleton class. In this way, classes and their singleton classes are positioned in parallel (\autoref{fig:singleton_class_inheritance}) and inheritance of `class methods' works as expected.
 
 In some contexts the word `metaclass' is used to refer to the class of a class. In Carat a `metaclass' would be the singleton class of a class, but I do not distinguish this: all objects \textit{can} have a singleton class, and all objects which are a module or a class \textit{do} in fact have a singleton class. A `class method' is nothing special; it is just a short way of saying `a singleton method of an object which is a class'.
 
@@ -256,7 +256,7 @@ The most important four classes in the language are \code{Object}, \code{Module}
   \item The class of \textit{any} singleton class is \code{SingletonClass}.
 \end{enumerate}
 
-The core classes and their relationships are constructed by \code{KernelLoader}. They are shown in figure \ref{fig:core_relationships}.
+The core classes and their relationships are constructed by \code{KernelLoader}. They are shown in \autoref{fig:core_relationships}.
 
 This object model is quite similar to that of Smalltalk-80, which has certainly been an influence on Ruby. Some slightly terrifying diagrams of this can be found in Chapter 16 of \textit{Smalltalk-80: The Language and its Implementation}.
 
@@ -455,7 +455,7 @@ The first expression in the example is a \code{MethodDefinition}. Method definit
 
 The receiver can be used to define a singleton method. For example, \code{a} is the receiver in `\code{def a.foo}', and the singleton class of \code{a} will be where the \code{foo} method is defined. However, if no receiver is given explicitly the method is defined in the real class of the current \code{self}. In the example, this means that the \code{goodbye} method is added to the method table of the \code{Object} class.
 
-The argument pattern specifies the format of the method's arguments, but this is discussed in detail in section \ref{sec:arguments}. The contents is an expression list containing the code `inside' the method.
+The argument pattern specifies the format of the method's arguments, but this is discussed in detail in \autoref{sec:arguments}. The contents is an expression list containing the code `inside' the method.
 
 A \code{MethodInstance} object is created from the name, argument pattern and contents, and then it is added to the method table of the relevant class.
 
@@ -465,9 +465,9 @@ The second expression is a \code{MethodCall}. Method calls have a name and two c
 
 \begin{enumerate}
   \item Evaluate the receiver. If there is no explicit receiver, the \code{self} object in the current scope is used.
-  \item Ask the receiver object for the instance method with the given name. The advantage of the object model discussed in section \ref{sec:object_model} is that method look-up is very simple. When an object looks for an instance method, it asks its \code{klass} to look up that method. If a class contains the requested method in its method table, it returns it. Otherwise, it asks its \code{super}. Eventually, when there is no \code{super} (i.e. for \code{Object}), no method has been found so \code{nil} is returned.
+  \item Ask the receiver object for the instance method with the given name. The advantage of the object model discussed in \autoref{sec:object_model} is that method look-up is very simple. When an object looks for an instance method, it asks its \code{klass} to look up that method. If a class contains the requested method in its method table, it returns it. Otherwise, it asks its \code{super}. Eventually, when there is no \code{super} (i.e. for \code{Object}), no method has been found so \code{nil} is returned.
   \item If the method is found, call the receiver object's \code{call} method which creates a \code{Call} object and \linebreak ``sends" it.
-  \item If the method is not found, raise an exception (see section \ref{sec:exceptions})
+  \item If the method is not found, raise an exception (see \autoref{sec:exceptions})
 \end{enumerate}
 
 So in the example, \code{self} is used as the receiver, which is an \code{Object} instance. The instance asks its class, which is therefore \code{Object}, to look up the method. The method was added to \code{Object} in the previous expression, so this is successful and a \code{Call} is created.
@@ -487,7 +487,7 @@ The following happens when a call is sent:
 \begin{enumerate}
   \item A frame containing the call and its scope is pushed onto the stack
   \item The argument list is evaluated in the context of the caller scope to produce an \code{Arguments} object
-  \item The \code{Arguments} are matched to the argument pattern of the callable and assigned (see section \ref{sec:arguments} for a detailed explanation)
+  \item The \code{Arguments} are matched to the argument pattern of the callable and assigned (see \autoref{sec:arguments} for a detailed explanation)
   \item The callable's contents are evaluated
 \end{enumerate}
 
@@ -504,7 +504,7 @@ As explained above, the only way methods are found is by walking up the \code{su
 
 However, now suppose a \code{Square} class, which is a subclass of \code{Shape}, includes \code{Quackable}. \code{Square} would want to set \code{Quackable}'s \code{super} to \code{Shape}, but \code{Duck} would want it to be \code{Object}.
 
-To solve this problem, modules are not directly inserted into the \code{super} chain. Instead, an \defn{include class} is created and the actual module's \code{super} is unchanged. The method table of an include class is a direct pointer to the method table of the module it represents. Similarly, another include class becomes the \code{super} of the singleton class, linking to the module's singleton class. This is shown in figure \ref{fig:module_inclusion}.
+To solve this problem, modules are not directly inserted into the \code{super} chain. Instead, an \defn{include class} is created and the actual module's \code{super} is unchanged. The method table of an include class is a direct pointer to the method table of the module it represents. Similarly, another include class becomes the \code{super} of the singleton class, linking to the module's singleton class. This is shown in \autoref{fig:module_inclusion}.
 
 \begin{figure}
 \begin{center}

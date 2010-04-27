@@ -3,10 +3,6 @@ module Carat::Data
     def new(argument_pattern, contents, scope)
       LambdaInstance.new(runtime, self, argument_pattern, contents, scope)
     end
-    
-    def primitive_new(block)
-      yield block
-    end
   end
   
   class LambdaInstance < ObjectInstance
