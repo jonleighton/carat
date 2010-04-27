@@ -1,10 +1,10 @@
 class String
   def +(other)
-    Primitive.plus(other)
+    Primitive.plus(other.to_s)
   end
   
   def <<(other)
-    Primitive.push(other)
+    Primitive.push(other.to_s)
   end
   
   def to_s

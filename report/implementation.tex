@@ -80,6 +80,8 @@ This can be read as a call to the method `goodbye'; the object receiving the cal
   \item Runs the \code{KernelLoader} which sets up the core classes in the source language (\code{Object}, \code{Class}, \code{Array}, \code{String}, ...). While some code is needed in the implementation language, most of this is done by interpreting class definitions written in the source language. To optimise this, parsing is done ahead-of-time and the AST nodes are stored as binary data in files which are loaded directly.
 \end{enumerate}
 
+Another approach might be to have separate `environment' objects, which would independently represent the execution context for each different stack. I tried this, but it turned out to be far more practical to have an explicit, stored representation of the current execution state. Otherwise, the current `environment' would need to be passed around a lot, which would make the code significantly more verbose. The stack of stacks simply makes explicit what would be implicitly stored on the implementation language's stack anyway. This seems acceptable to me.
+
 \subsection{The Stack}
 
 Whenever the \defn{stack} is referred to, this is the stack at the top of the stack of stacks. The stack contains one or more \defn{frames}. Frames can contain:
@@ -97,16 +99,20 @@ The ``current scope", ``current call" or ``current failure continuation" refers 
 \subsection{The Object Model}
 \label{sec:object_model}
 
-Carat follows Ruby's object model closely. Everything is an object, and all objects are represented by the class \code{Carat::Data::ObjectInstance} in the implementation language. There are various other classes which implement behaviour for certain types of objects, but all are subclasses of \code{ObjectInstance}. Through this, the inheritance hierarchy of \code{Carat::Data} objects in the implementation language mirrors that of objects in the source language (figure \ref{fig:data_object_hierarchy}).
+Carat follows Ruby's object model closely. Everything is an object, and all objects are represented by the class \code{Carat::Data::ObjectInstance} in the implementation language. There are various other classes which implement behaviour for specific types of object, but all are subclasses of \code{ObjectInstance}. Figure \ref{fig:data_object_hierarchy} shows the inheritance hierarchy.
+
+For example, the class \code{Module} in the source language is represented by a \code{ModuleClass} instance in the implementation language. \code{ModuleClass} implements some specific behaviour which relates to the \code{Module} class. In the source language, \code{Module} is a subclass of \code{Object}, so in the implementation language, \code{ModuleClass} is a subclass of \code{ObjectClass}. \code{Object} is a type of class, so \code{ObjectClass} is a subclass of \code{ClassInstance}. All classes are a type of module, and all modules are a type of object, so \code{ClassInstance} subclasses \code{ModuleInstance} which then finally subclasses \code{ObjectInstance}.
+
+This can be confusing, but the basic principle is simple: the \code{Module} class should have any behaviour which is given to the \code{Object} class, or any general class, or any general module, or any general object.
 
 \begin{figure}
 \begin{center}
 \begin{tikzpicture}
 [
-  every node/.style={class},
+  level distance=10mm,
+  every node/.style={class,anchor=north},
   level 1/.style={sibling distance=40mm},
-  level 3/.style={sibling distance=30mm},
-  level 4/.style={level distance=10mm}
+  level 3/.style={sibling distance=30mm}
 ]
 \node {ObjectInstance}
   child { node {ModuleInstance}
@@ -125,26 +131,26 @@ Carat follows Ruby's object model closely. Everything is an object, and all obje
   }
   child { node [multiline node] {ArrayInstance, \\ StringInstance, \\ FixnumInstance, \\ ...} };
 \end{tikzpicture}
-\caption{Inheritance hierarchy of \movingcode{Carat::Data} classes}
+\caption{Implementation language inheritance hierarchy of \movingcode{Carat::Data} classes}
 \label{fig:data_object_hierarchy}
 \end{center}
 \end{figure}
 
 \subsubsection{\movingcode{ObjectInstance}}
 
-An \code{ObjectInstance} is initialized with the following signature:
+\code{ObjectInstance} is the implementation language class which represents a source language \textit{object}. Instances are created with the following signature:
 
 \begin{lstlisting}
 ObjectInstance.new(runtime, klass)
 \end{lstlisting}
 
-All \code{Carat::Data} objects hold a reference to the runtime they exist in. The \code{klass} parameter is for an object representing the class of the instance (this spelling is used to avoid conflicts with the Ruby method \code{class}). When initialized, an \code{ObjectInstance} is assigned a unique numeric identifier.
+All \code{Carat::Data} objects hold a reference to the runtime they exist in. This allows them to perform operations which depend on the current execution state. The \code{klass} parameter is for an object representing the class of the instance (this spelling is used to avoid conflicts with the Ruby keyword \code{class}). When initialised, an \code{ObjectInstance} is assigned a unique numeric identifier.
 
 Each object has a table of \defn{instance variables} mapping names to values.
 
 Objects can have \defn{singleton methods}. These methods are specific to individual instances, so if there are two objects of the same class, \code{a} and \code{b}, and \code{a} defines a singleton method, \code{b} will not have that method.
 
-Objects don't store their own singleton methods. Instead, a \defn{singleton class} is created when first required, and the object's original class becomes the superclass of the singleton class (figure \ref{fig:singleton_class_creation}). This ensures the object can still access methods defined by its original class.
+Objects don't store their own singleton methods. Instead, these are stored in the method table of a \defn{singleton class}. This special class doesn't exist by default, but the first time a singleton method is defined, it will be created. The object's original class (also called the `real class') then becomes the superclass of its singleton class (figure \ref{fig:singleton_class_creation}). This ensures the object can still access methods defined by its original class.
 
 \begin{figure}
 \begin{center}
@@ -177,34 +183,38 @@ Objects don't store their own singleton methods. Instead, a \defn{singleton clas
 
 \draw [diagram transition] (r1) -- (r2) node {Singleton class created};
 \end{tikzpicture}
-\caption{Singleton class creation}
+\caption{Singleton class creation. Instances are shown in blue, classes in grey, and singleton classes in red with a prime (') appended.}
 \label{fig:singleton_class_creation}
 \end{center}
 \end{figure}
 
 \subsubsection{\movingcode{ModuleInstance}}
 
-A module is a container of methods. It cannot be instantiated, but it can be included into other classes. A \code{ModuleInstance} is initialized with the following signature:
+\code{ModuleInstance} is the implementation language class which represents a source language \textit{module}. Instances are created with the following signature:
 
 \begin{lstlisting}
 ModuleInstance.new(runtime, klass, name = nil)
 \end{lstlisting}
 
-Modules have a \defn{method table}, which maps method names to \code{MethodInstance} objects.
+Modules are containers for methods. They cannot be instantiated, but can be included into other classes. They have a \defn{method table}, which maps method names to \code{MethodInstance} objects.
 
-Being a type of object, a module can have singleton methods which are analogous to ``class methods" in other languages. Unlike normal objects, modules create their singleton class immediately rather than waiting for it to be needed; this prevents inconsistent or incorrect \code{klass} pointers from occurring.
+Modules are themselves objects, so they can have singleton methods, which are analogous to what would be called `static' or `class' methods in other languages. Unlike a normal objects, modules create their singleton class immediately rather than waiting until it is needed; this prevents inconsistent or incorrect class pointers from occurring.
 
 \subsubsection{\movingcode{ClassInstance}}
 
-A class is like a module, but can be instantiated. A \code{ClassInstance} is initialized with the following signature:
+\code{ClassInstance} is the implementation language class which represents a source language \textit{class}. Instances are created with the following signature:
 
 \begin{lstlisting}
 ClassInstance.new(runtime, klass, superclass, name = nil)
 \end{lstlisting}
 
-Classes have a \defn{super} pointer, which is initially set to the \code{superclass} provided. But in general, the \code{super} may be either an include class or a normal class (see \ref{sec:module_inclusion}); the \code{superclass} method returns the first object in the \code{super} hierarchy which is a normal class.
+Classes are like a modules, except that they \textit{can} be instantiated. They have a \defn{super} pointer, which is initially set to the value of the \code{superclass} argument. In general, however, the super pointer may be either a normal class or an `include class' (explained in section \ref{sec:module_inclusion}). The \code{superclass} \textit{method} returns the first normal class in the hierarchy of super pointers.
 
-Singleton classes are created in a slightly different way than for other objects because the inheritance hierarchy needs to be respected for ``class methods" as well as instance methods. When a class creates its singleton class, it uses the singleton class of its superclass as the superclass of its singleton class. In this way, classes and their singleton classes are positioned in parallel (figure \ref{fig:singleton_class_inheritance}).
+Just like modules, classes can have singleton (or `class') methods and the singleton class is created immediately. However, if a class \code{Square} is a subclass of \code{Shape}, we would expect \code{Square} to respond to any of the singleton methods which \code{Shape} responds to. The standard method for creating a singleton class would not allow this, so a slightly different strategy is used.
+
+When a class creates its singleton class, it uses the singleton class of its superclass as the superclass of its singleton class. In this way, classes and their singleton classes are positioned in parallel (figure \ref{fig:singleton_class_inheritance}) and inheritance of `class methods' works as expected.
+
+In some contexts the word `metaclass' is used to refer to the class of a class. In Carat a `metaclass' would be the singleton class of a class, but I do not distinguish this: all objects \textit{can} have a singleton class, and all objects which are a module or a class \textit{do} in fact have a singleton class. A `class method' is nothing special; it is just a short way of saying `a singleton method of an object which is a class'.
 
 \begin{figure}
 \begin{center}
@@ -231,14 +241,14 @@ Singleton classes are created in a slightly different way than for other objects
 \end{pgfonlayer}
 
 \end{tikzpicture}
-\caption{Singleton classes reflecting inheritance hierarchy}
+\caption{Singleton classes reflecting the inheritance hierarchy. Classes are shown in grey, and singleton classes are shown in red with a prime (') appended.}
 \label{fig:singleton_class_inheritance}
 \end{center}
 \end{figure}
 
 \subsubsection{Four Core Classes}
 
-The most important four classes in the language are \code{Object}, \code{Module}, \code{Class} and \code{SingletonClass}. Their relationships are somewhat complex, but can be summarised by some basic rules:
+The most important four classes in the language are \code{Object}, \code{Module}, \code{Class} and \code{SingletonClass}. Their relationships are somewhat complex, but can be summarised by some basic rules (which apply to all objects):
 
 \begin{enumerate}
   \item For \textit{all classes except \code{Object}}, the superclass of the singleton class is the singleton class of the superclass (as explained above)
@@ -247,6 +257,8 @@ The most important four classes in the language are \code{Object}, \code{Module}
 \end{enumerate}
 
 The core classes and their relationships are constructed by \code{KernelLoader}. They are shown in figure \ref{fig:core_relationships}.
+
+This object model is quite similar to that of Smalltalk-80, which has certainly been an influence on Ruby. Some slightly terrifying diagrams of this can be found in Chapter 16 of \textit{Smalltalk-80: The Language and its Implementation}.
 
 \begin{figure}
 \begin{center}
@@ -331,7 +343,7 @@ The core classes and their relationships are constructed by \code{KernelLoader}.
 \end{pgfonlayer}
 
 \end{tikzpicture}
-\caption{Class and superclass relationships between the four core classes and their singleton classes}
+\caption{Class and superclass relationships between the four core classes and their singleton classes. Classes are shown in grey, and singleton classes are shown in red with a prime (') appended.}
 \label{fig:core_relationships}
 \end{center}
 \end{figure}
@@ -340,11 +352,11 @@ The core classes and their relationships are constructed by \code{KernelLoader}.
 
 The interpreter works out the result of a program by ``walking" the AST. An AST node with children probably needs to evaluate its child nodes before it can return its own answer. The obvious way to do this is to literally evaluate the children by calling the relevant evaluation methods, and then compute the answer to return.
 
-This problem with this approach is it does not allow for ``jumps". Jumps occur when the program needs to move to a different node in the AST without first returning the answer of the current node. This can happen when a return call or an exception is encountered. The problem is that the execution of the AST is intrinsically linked to the stack of the implementation language, which can't be directly manipulated.
+This problem with this approach is that it does not allow for ``jumps". Jumps occur when the program needs to move to a different node in the AST without first returning the answer of the current node. This can happen when a return call or an exception is encountered. The problem is that the execution of the AST is intrinsically linked to the stack of the implementation language, which can't be directly manipulated.
 
-To solve this, the interpreter is written in \defn{continuation passing style} (CPS). Any method involved in the evaluation of AST nodes expects to be called with a \defn{continuation}. Abstractly, this is an object which represents the computation still to be done once an answer has been found. In this implementation, continuations are represented as lambdas, which expect one argument: the current result.
+To solve this, the interpreter is written in \defn{continuation passing style} (CPS). Any method involved in the evaluation of AST nodes expects to be called with a \defn{continuation}. Abstractly, this is an object which represents the computation still to be done once an answer has been found. In this implementation, continuations are represented as closures which expect one argument: the current result.
 
-Some AST nodes can return a result immediately, without further computation (such as the literal \code{Nil} node). In this case, the node should simply call the continuation, passing its immediate value as the argument.
+Some AST nodes can return a result immediately, without further computation (such as the literal \code{Nil} node). In this case, the node will simply call the continuation, passing its immediate value as the argument.
 
 Most nodes need to evaluate other nodes before they can produce an answer. In this case, instead of evaluating a given child node and waiting for the answer, they evaluate the child node and pass a continuation which captures what needs to be done with the answer. This way, nodes have a choice about whether to continue a computation by calling the continuation, or by calling some other continuation which jumps to another part of the program. The difference is illustrated in the following psuedocode:
 
@@ -358,12 +370,15 @@ end
 \begin{lstlisting}[title={\textbf{With CPS}}]
 def eval(&continuation)
   eval_child(child_node) do |child_value|
-    yield compute_value(child_value)
+    value = compute_value(child_value)
+    continuation.call(value)
   end
 end
 \end{lstlisting}
 
-In the first example, \code{eval_child} can't stop \code{compute_value} from being called when it returns; in the second it can, by not using the continuation.
+In the first example, \code{eval_child} can't stop \code{compute_value} from being called when it returns.
+
+In the second example, the \code{do .. end} block is a continuation which is passed to \code{eval_child}, containing the code to be executed once the answer of \code{eval_child} is available. Then \code{compute_value} is called with this child value, to produce the ultimate value of the \code{eval} method. The continuation of \code{eval} is finally called, passing that value as the answer. However, if \code{eval_child} wanted to prevent the program execution happening in this order, it could simply call a different continuation to the one it was given.
 
 \subsection{Execution}
 
@@ -379,7 +394,7 @@ Roughly speaking, the following happens:
 
 \begin{enumerate}
   \item A new stack is pushed onto the stack of stacks
-  \item The root node is wrapped in a special ``\code{main}" method, which is called
+  \item The root node is wrapped in a special ``main" method, which is called
   \item The stack is removed from the stack of stacks
 \end{enumerate}
 
@@ -391,16 +406,20 @@ Roughly speaking, the following happens:
 \begin{lstlisting}
 def with_stack(&result)
   @stack_of_stacks << Stack.new
-  result = result.call while result.is_a?(Proc)
+  while result.is_a?(Proc)
+    result = result.call
+  end
   @stack_of_stacks.pop
   result
 end
 \end{lstlisting}
 \end{minipage}
 
-One outcome of CPS is that all evaluation methods have calls to other evaluation methods in \defn{tail position}: the last line of the method. When a method call in tail position returns, no further computation is done before the method which made the call also returns. Languages with \defn{tail call optimisation} keep the stack size down by replacing the calling method on the stack with the method which is being called in tail position. Ruby does not implement tail call optimisation, so it is quite easy to write a Carat program which will exhaust the stack space. This is because in CPS, no evaluation method returns a result until the very last node is evaluated.
+One outcome of CPS is that all evaluation methods have calls to other evaluation methods in \defn{tail position}: the last line of the method. When a method call in tail position returns, no further computation is done before the method which made the call also returns. Language implementations with \defn{tail call optimisation} keep the stack size down by replacing the calling method on the stack with the method which is being called in tail position. Ruby does not implement tail call optimisation, so it is quite easy to write a Carat program which will exhaust the stack space. This is because in CPS, no evaluation method returns a result until the very last node is evaluated.
 
-To solve this, \code{with_stack} uses a \defn{trampoline}. In certain places where an evaluation method would usually call another evaluation method, it instead wraps that call in a lambda which is returned. This causes the stack in the implementation language to ``collapse" right back down to \code{with_stack}, which simply calls the lambda to resume execution. The \code{while} loop does this repeatedly until an answer which is not a lambda is returned.
+To solve this, \code{with_stack} uses a \defn{trampoline}. In certain places where an evaluation method would usually call another evaluation method, it instead wraps that call in a closure which is returned. This causes the stack in the implementation language to ``collapse" right back down to \code{with_stack}, which simply calls the lambda to resume execution. The \code{while} loop does this repeatedly until an answer which is not a closure is returned.
+
+Carat itself does not implement tail call optimisation.
 
 \subsubsection{The main method}
 
@@ -418,7 +437,7 @@ end
 \end{lstlisting}
 \end{minipage}
 
-If no scope is given, an initial one is created. Every \code{Scope} must have a value for \code{self}, which is used when looking up instance variables and evaluating method calls with no explicit receiver. In the main method, \code{self} is an instance of \code{Object} by default.
+If the \code{scope} argument is \code{nil}, then \code{scope || main_scope} causes the \code{main_scope} method to be called, which returns a default. Every scope must have a value for \code{self}, which is used when looking up instance variables and evaluating method calls with no explicit receiver. By default, \code{self} is an instance of \code{Object}.
 
 A special \code{MainMethodCall} object is also created. This is just so the main method call is present on the stack and can be used when exceptions generate a backtrace.
 
@@ -426,25 +445,37 @@ An initial frame is created using the scope, call and default failure continuati
 
 \subsection{Sequential evaluation}
 
-Returning to the example, the root node is an expression list. Expression list nodes contain an array of child nodes, which are evaluated in turn. The result of the last node is the result of the expression list.
+Returning to the example, the root node is an \code{ExpressionList} containing two items: a method definition and a method call. The items in an expression list are evaluated in turn, and the result of evaluating the last node becomes the result of the whole expression list.
 
 This presents a challenge, because whilst the natural inclination would be to loop over the child nodes, CPS requires that evaluation calls only appear in tail position. To solve this, \code{Runtime} provides two high-level operations, \code{each} (for iteration) and \code{fold} (for accumulation). These translate a sequential operation on an array into a recursive one using continuations. For AST nodes, there is also \code{eval_fold} which accumulates the result of evaluating each node in an array.
 
+\subsection{Method definition}
+
+The first expression in the example is a \code{MethodDefinition}. Method definitions have a name (i.e. `\code{goodbye}') and potentially three child nodes: a \defn{receiver}, an \defn{argument pattern} and the \defn{contents}.
+
+The receiver can be used to define a singleton method. For example, \code{a} is the receiver in `\code{def a.foo}', and the singleton class of \code{a} will be where the \code{foo} method is defined. However, if no receiver is given explicitly the method is defined in the real class of the current \code{self}. In the example, this means that the \code{goodbye} method is added to the method table of the \code{Object} class.
+
+The argument pattern specifies the format of the method's arguments, but this is discussed in detail in section \ref{sec:arguments}. The contents is an expression list containing the code `inside' the method.
+
+A \code{MethodInstance} object is created from the name, argument pattern and contents, and then it is added to the method table of the relevant class.
+
 \subsection{Method calls}
 
-The only item in the expression list is a \code{MethodCall[:puts]} with no receiver and an argument list containing ``Goodbye Cruel World". Method calls are evaluated as follows:
+The second expression is a \code{MethodCall}. Method calls have a name and two child nodes: the \defn{receiver} and the \defn{arguments}. In the example the name is \code{goodbye}, and the arguments have one item, which is the string `Cruel World'. There is no receiver. Method calls are evaluated as follows:
 
 \begin{enumerate}
   \item Evaluate the receiver. If there is no explicit receiver, the \code{self} object in the current scope is used.
   \item Ask the receiver object for the instance method with the given name. The advantage of the object model discussed in section \ref{sec:object_model} is that method look-up is very simple. When an object looks for an instance method, it asks its \code{klass} to look up that method. If a class contains the requested method in its method table, it returns it. Otherwise, it asks its \code{super}. Eventually, when there is no \code{super} (i.e. for \code{Object}), no method has been found so \code{nil} is returned.
-  \item If the method is found, call the receiver object's \code{call} method which creates a \code{Call} object and ``sends" it.
+  \item If the method is found, call the receiver object's \code{call} method which creates a \code{Call} object and \linebreak ``sends" it.
   \item If the method is not found, raise an exception (see section \ref{sec:exceptions})
 \end{enumerate}
+
+So in the example, \code{self} is used as the receiver, which is an \code{Object} instance. The instance asks its class, which is therefore \code{Object}, to look up the method. The method was added to \code{Object} in the previous expression, so this is successful and a \code{Call} is created.
 
 The following attributes of a \code{Call} object are worth explaining:
 
 \begin{enumerate}
-  \item The \defn{callable} is the method or lambda being called.
+  \item The \defn{callable} is the method or lambda object being called.
   \item The \defn{scope} is the scope which the callable should be evaluated within. For method calls, this starts as an empty scope where \code{self} is the receiver object.
   \item The \defn{caller scope} is the scope from which the call was made. (The current scope of the runtime when the \code{Call} was created.)
   \item The \defn{argument list} is the \code{ArgumentList} AST node representing the arguments passed to the call. (It can also be an array of objects, for convenience when making calls within the implementation language.)
@@ -460,16 +491,20 @@ The following happens when a call is sent:
   \item The callable's contents are evaluated
 \end{enumerate}
 
-This is one of the key places where a lambda is used to return to the trampoline method.
+This is one of the key places where a closure is used to return to the trampoline method.
 
 \subsection{Module inclusion}
 \label{sec:module_inclusion}
 
-In the example, \code{self} is an \code{Object} instance. \code{Object} does not have a \code{puts} method, but it includes the \code{Kernel} module, which does.
+When the \code{goodbye} method call is sent, the contents of the method are executed. This is an expression list with a single item: a method call to \code{puts}. The (implicit) receiver of the \code{goodbye} call was \code{self}, which was an \code{Object} instance. So the scope inside the method has that same \code{Object} instance as the \code{self}. The \code{puts} call also has no explicit receiver, so again the receiver will be \code{self}.
 
-As explained above, the only way methods are found is by walking up the \code{super} chain. So when a module is included within a class, it must be inserted somewhere in the \code{super} chain. If inserted directly, the module's \code{super} would need to take the original value of the \code{super} of the object including the module. This would be problematic if the module was included more than once.
+However, the \code{Object} class does not define a \code{puts} method -- instead, it \defn{includes} the \code{Kernel} module, which does.
 
-Instead, an \defn{include class} is created and the actual module's \code{super} is unchanged. The method table of an include class is a direct reference to the method table of the module it represents. Similarly, another include class becomes the \code{super} of the singleton class, linking to the module's singleton class. Module inclusion is shown in figure \ref{fig:module_inclusion}.
+As explained above, the only way methods are found is by walking up the \code{super} chain. So if a class \code{Duck} includes the module \code{Quackable}, then \code{Quackable} needs to be inserted into the \code{super} chain of \code{Duck}. Suppose the original \code{super} of \code{Duck} is \code{Object}. One approach would be to change the \code{super} of \code{Duck} to \code{Quackable}, and set the \code{super} of \code{Quackable} to \code{Object}.
+
+However, now suppose a \code{Square} class, which is a subclass of \code{Shape}, includes \code{Quackable}. \code{Square} would want to set \code{Quackable}'s \code{super} to \code{Shape}, but \code{Duck} would want it to be \code{Object}.
+
+To solve this problem, modules are not directly inserted into the \code{super} chain. Instead, an \defn{include class} is created and the actual module's \code{super} is unchanged. The method table of an include class is a direct pointer to the method table of the module it represents. Similarly, another include class becomes the \code{super} of the singleton class, linking to the module's singleton class. This is shown in figure \ref{fig:module_inclusion}.
 
 \begin{figure}
 \begin{center}
@@ -550,33 +585,45 @@ Instead, an \defn{include class} is created and the actual module's \code{super}
     node[near end,draw=black!15,solid,text width=2cm,fill=black!3,inner sep=2mm] {\code{Quackable} included in \code{Duck}};
 \end{tikzpicture}
 
-\caption{Module inclusion}
+\caption{Module inclusion. Classes are shown in grey, modules in green, and singleton classes are shown in red with a prime (') appended.}
 \label{fig:module_inclusion}
 \end{center}
 \end{figure}
 
 \subsection{Primitives}
 
-The method definition for \code{Kernel#puts} (in \path{kernel/kernel.carat}) is:
+The \code{puts} call has one argument: \code{"Cruel " + x}. This is actually a call to the \code{+} method of the string \code{"Cruel "}, with one argument, which is the variable \code{x}. Carat supports various special `operator' methods (\code{+}, \code{-}, \code{==}, \code{!=}, etc.), which are recognised by the parser and converted to standard \code{MethodCall} AST nodes. Unary operators are also supported; for example \code{-5} calls the \code{--} method on the receiver \code{5}.
+
+The source language definition of \code{String#+} is:
 
 \begin{lstlisting}
-def puts(obj = "\n")
-  Primitive.puts(obj)
+def +(other)
+  Primitive.plus(other.to_s)
 end
 \end{lstlisting}
 
-This is a \defn{primitive method call}. Primitives are the eventual way that a program can actually ``do" something; everything else is just memory access and program flow. In this case, the \code{puts} method needs to output some text, so it uses the \code{puts} primitive.
+This is a \defn{primitive method call}. Primitives are the eventual way that a program can actually `do' something; everything else is just memory access and program flow. The \code{+} method is called in the usual way, and then the \code{Primitive.plus} call is where the primitive operation actually happens.
 
-The \code{Primitive} class is represented by \code{Carat::Data::PrimitiveClass} in the implementation language. The primitive syntax is parsed in exactly the same way as any other method call, but \code{Primitive}\-\code{Class} overrides two methods from \code{ObjectInstance}:
+The source language \code{Primitive} class is represented by \code{Carat::Data::PrimitiveClass} in the implementation language. The primitive syntax is parsed in exactly the same way as any other method call, but \code{Primitive}\-\code{Class} overrides two methods from \code{ObjectInstance}:
 
 \begin{enumerate}
-  \item \textbf{\code{lookup_instance_method}}: Instead of returning a \code{MethodInstance} found in the klass' method table, it prepends ``\code{primitive_}" to the method name and finds an implementation language method in the current \code{self} object with that name
+  \item \textbf{\code{lookup_instance_method}}: Instead of returning a \code{MethodInstance} found in the method table of the class, it prepends `\code{primitive_}' to the method name and finds an implementation language method in the current \code{self} object with that name
   
   \item \textbf{\code{create_call}}: Instead of returning a \code{Call}, it returns a \code{PrimitiveCall}
 \end{enumerate}
 
 \code{PrimitiveCall#send} then evaluates the arguments in the standard way, and calls the implementation language method which provides the primitive behaviour.
 
-For the example, \code{self} is an \code{Object}, but the method is in \code{Kernel}. The \code{primitive_puts} method is actually defined the \code{Carat::Data::KernelModule} module. When a module inclusion happens in the source language, the primitive checks whether there is a corresponding module in the implementation language. If so, that module is included in the implementation language. For example, when \code{Object} includes \code{Kernel} in the source language, \code{ObjectInstance} includes \code{KernelModule} in the implementation language.
+Inside the \code{+} method, \code{self} is the \code{"Cruel "} string, which is a \code{StringInstance} in the implementation language. So the \code{StringInstance#primitive_plus} method is looked up and called with the evaluated argument \code{other.to_s}. The primitive is defined as follows:
 
-When \code{KernelModule#primitive_puts} is finally called, it converts the object given as an argument to a Ruby string and uses Ruby's \code{Kernel.puts} method to output it.
+\begin{lstlisting}
+def primitive_plus(other)
+  yield real_klass.new(contents + other.contents)
+end
+\end{lstlisting}
+
+The real (non-singleton) class of the string is found, and then a new instance is created, representing the concatenation. This new string is then passed to \code{yield}, which calls the continuation. (Note that \code{real_klass} is an \textit{instance} of \code{StringClass}, so \code{new} is an \textit{instance} method which creates a new instance of \code{StringInstance}.)
+
+In the example, \code{puts} also uses a primitive. Because \code{puts} is defined in the included module \code{Kernel}, there is not actually a \code{primitive_puts} method in the implementation language \code{ObjectInstance} class. Instead, \code{primitive_puts} is defined in the \code{Carat::Data::KernelModule} module. When a module inclusion happens in the source language, Carat checks whether there is a corresponding module in the implementation language. If so, that module is included in the implementation language. For example, when \code{Object} includes \code{Kernel} in the source language, \code{ObjectInstance} includes \code{KernelModule} in the implementation language.
+
+When \code{KernelModule#primitive_puts} is finally called, it outputs the string ``Goodbye Cruel World".

@@ -30,9 +30,7 @@ module Carat::Data
     end
     
     def primitive_plus(other)
-      other.call(:to_s) do |other_as_string|
-        yield real_klass.new(contents + other_as_string.contents)
-      end
+      yield real_klass.new(contents + other.contents)
     end
     
     def primitive_push(other)

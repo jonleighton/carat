@@ -24,29 +24,9 @@ This report starts by presenting a very basic example program and giving a detai
 	\item[AST] is an acronym for ``Abstract Syntax Tree"
 \end{description}
 
-\subsection{Notation and Ruby syntax}
+\subsection{Ruby syntax}
 
 \begin{itemize}
-  \item Classes have capitalised names and are shown by grey boxes in diagrams: \\
-    \begin{tikzpicture}
-    \node[class] {ExpressionList};
-    \end{tikzpicture}
-  
-  \item Modules have capitalised names and are shown by green boxes in diagrams: \\
-    \begin{tikzpicture}
-    \node[module] {Kernel};
-    \end{tikzpicture}
-  
-  \item Singleton classes have the name of their singleton with an apostrophe appended. They are shown by red boxes in digrams: \\
-    \begin{tikzpicture}
-    \node[sclass] {Apple'};
-    \end{tikzpicture}
-  
-  \item Other objects have lower case names and are shown by blue boxes in diagrams: \\
-    \begin{tikzpicture}
-    \node[object] {apple};
-    \end{tikzpicture}
-  
   \item \code{Foo#bar} refers to the instance method \code{bar} of the class \code{Foo}
   
   \item \code{Foo.baz} refers to the class method \code{baz} of the class \code{Foo}
@@ -55,7 +35,7 @@ This report starts by presenting a very basic example program and giving a detai
   
   \item \code{@foo} refers to an instance variable named \code{foo}
   
-  \item Blocks are specified in method calls either using two syntaxes:
+  \item Blocks are a kind of lambda expression which can be passed as an argument to a method call, using either of two syntaxes:
   \begin{lstlisting}
   foo do |arglist|
     ...
@@ -66,5 +46,19 @@ This report starts by presenting a very basic example program and giving a detai
   foo { |arglist| ... }
   \end{lstlisting}
   
-  \item \code{&foo} is used to pass a block to a method call, or receive one in a method definition
+  The former is generally used when there are multiple lines in the block, and the latter when there is only one.
+  
+  \item If \code{bar} is a variable containing a lambda object, \code{foo(&bar)} will pass \code{bar} as the block to \code{foo}. So the following are equivalent:
+  \begin{lstlisting}
+  bar = lambda { |arglist| ... }
+  foo(&bar)
+  
+  # and
+  
+  foo { |arglist| ... }
+  \end{lstlisting}
+  
+  \item If a method is defined as \code{def foo(..., &block)}, then when the method is called, the \code{block} variable will contain the lambda object for the block, if there is one.
+  
+  \item If a method call is given a block, then \code{yield(arglist)} inside the method will call it.
 \end{itemize}

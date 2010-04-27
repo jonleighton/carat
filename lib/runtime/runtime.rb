@@ -136,7 +136,9 @@ module Carat
     # technique is called "trampolining".
     def with_stack(&result)
       @stack_of_stacks << Stack.new
-      result = result.call while result.is_a?(Proc)
+      while result.is_a?(Proc)
+        result = result.call
+      end
       @stack_of_stacks.pop
       result
     end
