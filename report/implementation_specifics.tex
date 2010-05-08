@@ -5,7 +5,7 @@ In this section I further explain some specific details of the interpreter.
 
 \subsection{Object creation}
 
-Objects are created from classes. When a class is defined, it is added to the \code{constants} table. Suppose we have a class \code{Candle}. An instance is created by looking up the \code{Candle} constant and calling its \code{new} method:
+Objects are created from classes. When a class is defined, it is added to the global constants table. Suppose we have a class \code{Candle}. An instance is created by looking up the \code{Candle} constant and calling its \code{new} method:
 
 \begin{lstlisting}
 candle = Candle.new
@@ -57,7 +57,7 @@ An argument list is also made up of a number of items separated by commas. There
 
 \begin{enumerate}
   \item The \defn{normal} type is just an expression which gives a single value
-  \item The \defn{splat} type is signified by an `*' before an expression. The expression is evaluated and converted to an array. Each value of the array becomes a separate argument value. There can be any number of splats in an argument list.
+  \item The \defn{splat} type is signified by an `*' before an expression. The expression is evaluated and converted to an array. Each entry in the array becomes a separate argument value. There can be any number of splats in an argument list.
   \item The \defn{block pass} type is signified by an `\&' before an expression. The expression is evaluated and converted to a lambda object, which is then used as the block in the method call. There can only be one block pass item and it must be at the end.
   \item The \defn{block} type is signified by a literal block using either braces or \code{do} \code{...} \code{end}. The block is used to create a lambda object, which is then used as the block in the method call. There can only be one block item and it must be at the end.
 \end{enumerate}
@@ -95,7 +95,7 @@ Once the arity has been checked, the \code{assign} operation just works along th
 
 \subsection{Blocks and Lambdas}
 
-Lambdas are anonymous function objects which are created when a block given to a method call. (A block is \textit{not} an object, but a syntactic way of using a lambda in a method call.) The \code{Kernel#lambda} method just returns the lambda created from its block, allowing lambda objects to be used in isolation:
+Lambdas are anonymous function objects which are created when a block is given to a method call. (A block is \textit{not} an object, but a syntactic way of using a lambda in a method call.) The \code{Kernel#lambda} method just returns the lambda created from its block, allowing lambda objects to be used in isolation:
 
 \begin{lstlisting}
 lambda { |x| x + x }.call(2) # => 4
