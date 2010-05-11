@@ -1,9 +1,9 @@
-\section{Implementation Specifics}
+\chapter{Implementation Specifics}
 \label{sec:implementation_specifics}
 
-In this section I further explain some specific details of the interpreter.
+In this chapter I further explain some specific details of the interpreter.
 
-\subsection{Object creation}
+\section{Object creation}
 
 Objects are created from classes. When a class is defined, it is added to the global constants table. Suppose we have a class \code{Candle}. An instance is created by looking up the \code{Candle} constant and calling its \code{new} method:
 
@@ -23,16 +23,15 @@ end
 
 The \code{allocate} method call uses a primitive to create an \code{ObjectInstance} in the implementation language. By default, \code{Object#initialize} does nothing, but this can obviously be changed in subclasses.
 
-\subsection{Method argument patterns and argument lists}
+\section{Method argument patterns and argument lists}
 \label{sec:arguments}
 
 An \defn{argument pattern} is used when defining a method; it specifies what assignments should be made from the arguments when the method is called. A \defn{argument list} is used when calling a method; it specifies the arguments which should be passed to the call.
 
-\subsubsection{Argument pattern syntax}
+\subsection{Argument pattern syntax}
 
 An argument pattern is made up of a number of items separated by commas. Each item contains an \defn{assignee} which receives the argument value. An assignee can be a local variable, instance variable, or an \defn{assignment method name}. If the class has a method \code{colour=}, then another of its methods could have \code{self.colour} as an assignee in the argument pattern; this would cause the \code{colour=} method to be used when assigning the arguments.
 
-\newpage
 There are three types of argument pattern item:
 
 \begin{enumerate}
@@ -51,7 +50,7 @@ def foo(@a, *self.b) ...
 def foo(*a, b = 2, &c) ...
 \end{lstlisting}
 
-\subsubsection{Argument list syntax}
+\subsection{Argument list syntax}
 
 An argument list is also made up of a number of items separated by commas. There are four types:
 
@@ -64,7 +63,6 @@ An argument list is also made up of a number of items separated by commas. There
 
 There can only be one block in a method call, so the `block pass' and `block' types cannot both be used in the same argument list.
 
-\newpage
 These are some example argument lists:
 
 \begin{lstlisting}
@@ -72,7 +70,7 @@ foo(4 + 2, *x.y.z, &addfour)
 foo("Goodbye", "Cruel") { |world| world + world }
 \end{lstlisting}
 
-\subsubsection{Argument evaluation and assignment}
+\subsection{Argument evaluation and assignment}
 
 Argument lists are represented by the \code{ArgumentList} AST node which contains a number of \code{Argument}\-\code{List::}\-\code{Item} nodes. When evaluated, the argument list builds up a \code{Call::Arguments} object which contains a number of values and optionally a block.
 
@@ -93,7 +91,7 @@ The minimum and maximum arities for the whole argument pattern are just the sums
 
 Once the arity has been checked, the \code{assign} operation just works along the list of argument pattern items from left to right, taking the relevant number of values from the front of the list of argument values and making the assignment.
 
-\subsection{Blocks and Lambdas}
+\section{Blocks and Lambdas}
 
 Lambdas are anonymous function objects which are created when a block is given to a method call. (A block is \textit{not} an object, but a syntactic way of using a lambda in a method call.) The \code{Kernel#lambda} method just returns the lambda created from its block, allowing lambda objects to be used in isolation:
 
@@ -117,7 +115,7 @@ a # => 5
 b # => undefined variable or method
 \end{lstlisting}
 
-\subsection{Return}
+\section{Return}
 
 \code{Call} objects have a \defn{return continuation} which:
 
@@ -136,10 +134,10 @@ The \code{return} primitive:
   \item Runs the current call's continuation; the current call is now the call being returned from, and its return continuation will remove it from the stack
 \end{enumerate}
 
-\subsection{Exceptions}
+\section{Exceptions}
 \label{sec:exceptions}
 
-\subsubsection{Raising exceptions}
+\subsection{Raising exceptions}
 
 All exceptions are instances of the \code{Exception} class or a subclass. Exceptions have a \defn{message} which describes the problem. They are raised using \code{Kernel#raise}, like so:
 
@@ -163,7 +161,7 @@ The \code{raise} primitive:
 
 The \defn{default failure continuation} is at the very bottom of the stack and provides fallback behaviour which prints out the exception and a debugging backtrace.
 
-\subsubsection{Rescuing exceptions}
+\subsection{Rescuing exceptions}
 
 Exceptions can be prevented from causing the program to exit by \defn{rescuing} them. For example, the program:
 

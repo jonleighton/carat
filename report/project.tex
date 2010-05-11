@@ -1,4 +1,4 @@
-\documentclass[10pt,a4paper]{article}
+\documentclass[10pt,a4paper,openright,twoside]{report}
 
 \usepackage[cm-default]{fontspec}
 \usepackage{xunicode}
@@ -8,15 +8,20 @@
 \usepackage[UKenglish]{babel}
 \usepackage[usenames,dvipsnames]{xcolor}
 \usepackage[obeyspaces,spaces]{url}
-\usepackage[breaklinks=true,colorlinks=true,linkcolor=MidnightBlue,urlcolor=OliveGreen]{hyperref}
+% Uncomment the next when generating not for print. The 'draft' option turns link colouring off.
+% \usepackage[breaklinks=true,colorlinks=true,linkcolor=MidnightBlue,urlcolor=OliveGreen]{hyperref}
+\usepackage[breaklinks=true,draft]{hyperref}
 \usepackage{listings}
-\usepackage[a4paper,footnotesep=20pt]{geometry}
+\usepackage[a4paper,footnotesep=20pt,asymmetric,hmarginratio=3:2]{geometry}
 \usepackage{textcomp}
 \usepackage{setspace}
 \usepackage{amsmath}
 \usepackage[bottom]{footmisc}
 \usepackage[bf]{caption}
 \usepackage{verbatim}
+\usepackage{titlesec}
+\usepackage{enumitem}
+\usepackage{tocloft}
 
 \usepackage{tikz}
 \usetikzlibrary{trees,chains,backgrounds,fit,calc,shapes.multipart}
@@ -82,6 +87,8 @@
 
 \definecolor{verylightgrey}{gray}{0.95}
 \definecolor{lightgrey}{gray}{0.85}
+\definecolor{code}{gray}{0.2}
+\definecolor{midgrey}{gray}{0.4}
 
 \lstset{
   language=Ruby,                % choose the language of the code
@@ -90,9 +97,9 @@
   rulesepcolor=\color{Gray},
   basicstyle={\ttfamily\small\singlespacing},
   upquote=true,
-  keywordstyle=\color{Mahogany}\bfseries,
-  commentstyle=\color{MidnightBlue}\em,
-  stringstyle=\color{RedOrange},
+  keywordstyle=\bfseries,
+  commentstyle=\color{midgrey}\em,
+  stringstyle=\color{midgrey},
   backgroundcolor=\color{verylightgrey},
   frame=single,
   frameround=tttt,
@@ -105,9 +112,8 @@
   comment=[l]{\#}
 }
 
-\setmainfont[Mapping=tex-text-with-ligs]{GaramondClassico}
+\setmainfont[Mapping=tex-text-with-ligs,SmallCapsFont={GaramondClassicoSC}]{GaramondClassico}
 \setmonofont[Scale=0.8]{Bitstream Vera Sans Mono}
-\newfontface\GaramondClassicoSC{GaramondClassicoSC}
 
 \onehalfspace
 \pagestyle{headings}
@@ -130,38 +136,41 @@
 }
 
 % Use the url package to define a command for typesetting inline code
-\DeclareUrlCommand\code{\def\UrlFont{\ttfamily \color{Mahogany}}}
+\DeclareUrlCommand\code{\def\UrlFont{\ttfamily \color{code}}}
 
 % \url commands don't work in "moving arguments" (captions, sections, etc), so this is a fallback
 % command which doesn't allow handle line breaks (but that shouldn't be a problem in these cases)
-\newcommand{\movingcode}[1]{\texttt{\textcolor{Mahogany}{#1}}}
+\newcommand{\movingcode}[1]{\texttt{\textcolor{code}{#1}}}
 
 \newcommand{\defn}[1]{\emph{{#1}}}
 
-\newenvironment{dirlist}{
-  \begin{itemize}
-  \setlength{\itemsep}{0pt}
-  \setlength{\parskip}{0pt}
-  \setlength{\parsep}{0pt}
-  \renewcommand{\labelitemi}{}
-  \renewcommand{\labelitemii}{}
-  \renewcommand{\labelitemiii}{}
-  \renewcommand{\labelitemiv}{}
-}{
-  \end{itemize}
-}
-
 \def\subsectionautorefname{section}
 
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{2ex}
+\setlength{\captionmargin}{50pt}
+
+\titleformat{\chapter}[block]{\bfseries}{\makebox[2cm][r]{\fontsize{50}{55}\selectfont\thechapter}}{0.5cm}{\Huge\scshape}
+\titlespacing{\chapter}{-2.5cm}{0pt}{3em}
+
+\titleformat{\section}[block]{\bfseries\Large}{\makebox[2cm][r]{\thesection}}{0.3cm}{}
+\titlespacing{\section}{-2.3cm}{1.5em}{0.5em}
+
+\titleformat{\subsection}[block]{\bfseries\large}{\makebox[2cm][r]{\thesubsection}}{0.3cm}{}
+\titlespacing{\subsection}{-2.3cm}{1.5em}{0.5em}
+
+\setlength{\cftbeforetoctitleskip}{1cm}
+\setlength{\cftaftertoctitleskip}{3em}
+\renewcommand{\cfttoctitlefont}{\Huge\scshape}
+
+\setlist{leftmargin=0cm,listparindent=0cm}
 \begin{document}
+  \pagenumbering{roman}
   \include{titlepage}
-	
 	\tableofcontents
 	
-	\setlength{\parindent}{0pt}
-  \setlength{\parskip}{2ex}
-  \setlength{\captionmargin}{50pt}
-	
+	\cleardoublepage
+	\pagenumbering{arabic}
 	\include{introduction}
 	\include{implementation}
 	\include{implementation_specifics}

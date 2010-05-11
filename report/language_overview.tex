@@ -1,6 +1,9 @@
-\section{Carat Language Overview}
+\chapter{Carat Language Overview}
 
-\subsection{Data types}
+\titlespacing{\section}{0cm}{0.5em}{0em}
+\titlespacing{\subsection}{0cm}{0.5em}{0em}
+
+\section*{Data types}
 
 \begin{description}
   \item[String:] \code{"double quoted"} or \code{'single quoted'}
@@ -10,7 +13,7 @@
   \item[Nil:] \code{nil}
 \end{description}
 
-\subsection{Method names}
+\section*{Method names}
 
 \begin{itemize}
   \item In general, method names have the pattern \code{[a-zA-Z_] [a-zA-Z0-9_]*}
@@ -18,7 +21,7 @@
   \item There are some special `operator' method names: \code{===}, \code{<=>}, \code{[]=}, \code{==}, \code{!=}, \code{<=}, \code{>=}, \code{<<}, \code{>>}, \code{--} (unary minus), \code{++} (unary plus), \code{!!} (unary negation), \code{[]}, \code{<}, \code{>}, \code{+}, \code{-}, \code{*}, \code{/}
 \end{itemize}
 
-\subsection{Other names}
+\section*{Other names}
 
 \begin{itemize}
   \item Class names (constants) begin with a capital letter
@@ -26,7 +29,7 @@
   \item Local variables begin with a lowercase letter
 \end{itemize}
 
-\subsection{Module definition}
+\section*{Module definition}
 
 \begin{lstlisting}
 module ModuleName
@@ -34,7 +37,7 @@ module ModuleName
 end
 \end{lstlisting}
 
-\subsection{Class definition}
+\section*{Class definition}
 
 \begin{lstlisting}
 class ClassName [< SuperClassName]
@@ -42,7 +45,7 @@ class ClassName [< SuperClassName]
 end
 \end{lstlisting}
 
-\subsection{Method definition}
+\section*{Method definition}
 
 \begin{lstlisting}
 def method_name(argument_pattern)
@@ -50,7 +53,7 @@ def method_name(argument_pattern)
 end
 \end{lstlisting}
 
-\subsection{Blocks}
+\section*{Blocks}
 
 \begin{lstlisting}
 foo { |argument_pattern| ... }
@@ -62,7 +65,7 @@ foo do |argument_pattern|
 end
 \end{lstlisting}
 
-\subsection{Control structures}
+\section*{Control structures}
 
 \begin{lstlisting}
 if condition
@@ -72,23 +75,28 @@ elsif condition
 else
   ...
 end
+\end{lstlisting}
 
+\begin{lstlisting}
 while condition
   ...
 end
+\end{lstlisting}
 
+\begin{lstlisting}
 begin
   ...
 rescue [[ExceptionType] => [variable_name]]
   ...
 end
+\end{lstlisting}
 
+\begin{lstlisting}
 first && second
-
 first || second
 \end{lstlisting}
 
-\subsection{Comments}
+\section*{Comments}
 
 \begin{lstlisting}
 # Single line comment
@@ -100,9 +108,9 @@ comment
 ##
 \end{lstlisting}
 
-\subsection{Core Modules}
+\section*{Core Modules}
 
-\subsubsection*{\movingcode{Comparable}}
+\subsection*{\movingcode{Comparable}}
 
 \begin{tabular}{l p{10cm}}
   \textbf{Method Signature} & \textbf{Description} \\ \hline
@@ -114,7 +122,7 @@ comment
   \code{>=(other)} & Returns \code{true} if self is greater than or equal to \code{other}, \code{false} otherwise \\
 \end{tabular}
 
-\subsubsection*{\movingcode{Kernel}}
+\subsection*{\movingcode{Kernel}}
 
 \begin{tabular}{l p{10cm}}
   \textbf{Method Signature} & \textbf{Description} \\ \hline
@@ -128,9 +136,9 @@ comment
   \code{require(file)} & Opens the \code{file}, executes its contents, and then returns to the execution of the current file \\
 \end{tabular}
 
-\subsection{Core Classes}
+\section*{Core Classes}
 
-\subsubsection*{\movingcode{Array}}
+\subsection*{\movingcode{Array}}
 
 \textbf{Superclass}: \code{Object}
 
@@ -149,7 +157,7 @@ comment
   \code{join(joiner)} & Produces a string of each item joined with the \code{joiner} string \\
 \end{tabular}
 
-\subsubsection*{\movingcode{Class}}
+\subsection*{\movingcode{Class}}
 
 \textbf{Superclass}: \code{Module}
 
@@ -162,7 +170,7 @@ comment
   \code{new(*args, &block)} & Creates a new instance, runs its initialiser and returns it \\
 \end{tabular}
 
-\subsubsection*{\movingcode{Exception}}
+\subsection*{\movingcode{Exception}}
 
 \textbf{Superclass}: \code{Object}
 
@@ -176,7 +184,7 @@ comment
 
 \code{Exception} is subclassed by \code{StandardError}. \code{StandardError} is subclassed by \code{NameError}, \code{ArgumentError} and \code{RuntimeError}. \code{NameError} is subclassed by \code{NoMethodError}.
 
-\subsubsection*{\movingcode{FalseClass}}
+\subsection*{\movingcode{FalseClass}}
 
 \textbf{Superclass}: \code{Object}
 
@@ -187,7 +195,7 @@ comment
   \code{inspect} & Alias of \code{to_s} \\
 \end{tabular}
 
-\subsubsection*{\movingcode{Fixnum}}
+\subsection*{\movingcode{Fixnum}}
 
 \textbf{Superclass}: \code{Object} \\
 \textbf{Includes}: \code{Comparable}
@@ -204,7 +212,7 @@ comment
   \code{inspect} & Alias of \code{to_s} \\
 \end{tabular}
 
-\subsubsection*{\movingcode{Lambda}}
+\subsection*{\movingcode{Lambda}}
 
 \textbf{Superclass}: \code{Object}
 
@@ -214,7 +222,7 @@ comment
   \code{call(*args, &block)} & Call the lambda \\
 \end{tabular}
 
-\subsubsection*{\movingcode{Module}}
+\subsection*{\movingcode{Module}}
 
 \textbf{Superclass}: \code{Object}
 
@@ -226,7 +234,7 @@ comment
   \code{to_s} & Alias for \code{to_s} \\
 \end{tabular}
 
-\subsubsection*{\movingcode{NilClass}}
+\subsection*{\movingcode{NilClass}}
 
 \textbf{Superclass}: \code{Object}
 
@@ -237,7 +245,7 @@ comment
   \code{to_s} & Returns empty string \\
 \end{tabular}
 
-\subsubsection*{\movingcode{Object}}
+\subsection*{\movingcode{Object}}
 
 \textbf{Superclass}: \code{nil} \\
 \textbf{Includes}: \code{Kernel}
@@ -256,7 +264,7 @@ comment
   \code{to_s} & Alias for \code{inspect} \\
 \end{tabular}
 
-\subsubsection*{\movingcode{String}}
+\subsection*{\movingcode{String}}
 
 \textbf{Superclass}: \code{Object}
 
@@ -269,7 +277,7 @@ comment
   \code{inspect} & Returns a string containing itself inside quotation marks \\
 \end{tabular}
 
-\subsubsection*{\movingcode{TrueClass}}
+\subsection*{\movingcode{TrueClass}}
 
 \textbf{Superclass}: \code{Object}
 

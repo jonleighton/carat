@@ -1,6 +1,6 @@
-\section{Introduction}
+\chapter{Introduction}
 
-\subsection{Objectives}
+\section{Objectives}
 
 My basic project idea was to produce some sort of programming language implementation. However, I didn't think it would be practical or useful to attempt to design a language from scratch; this can take years of careful thought in order to produce interesting results.
 
@@ -10,7 +10,7 @@ My language would seek to ask the question: \textit{what is the essence of Ruby?
 
 Many real-world language implementations are very complex due to heavy optimisation and the necessity of dealing with the myriad practical problems a production-quality programming language requires. They also tend to be written in lower level languages such as C or C++, for reasons of speed. Unfortunately this can make them difficult to study and understand. Without the burden of these requirements, my second objective was to produce a clean, well-written, concise implementation which neatly expressed the semantics of my language.
 
-\subsection{Overview of Report}
+\section{Overview of Report}
 
 It's fun to think up quirky names for projects, so I have chosen to name my language ``Carat" (the carat is a measure of purity in gold alloys).
 
@@ -22,7 +22,7 @@ A short section then describes the testing strategy for the system.
 
 The concluding section attempts to answer the original question about the `essence of Ruby', before highlighting areas where Carat differs from Ruby. Ideas for possible extensions to the project are given, before a final conclusion.
 
-\subsection{Definitions}
+\section{Definitions}
 
 \begin{description}
 	\item[Implementation language] refers to the environment in which the implementation is written: the collection of Ruby code which forms the project
@@ -30,7 +30,7 @@ The concluding section attempts to answer the original question about the `essen
 	\item[AST] is an acronym for ``Abstract Syntax Tree"
 \end{description}
 
-\subsection{Ruby syntax}
+\section{Ruby syntax}
 
 \begin{itemize}
   \item \code{Foo#bar} refers to the instance method \code{bar} of the class \code{Foo}
@@ -42,28 +42,26 @@ The concluding section attempts to answer the original question about the `essen
   \item \code{@foo} refers to an instance variable named \code{foo}
   
   \item Blocks are a kind of lambda expression which can be passed as an argument to a method call, using either of two syntaxes:
-  \begin{lstlisting}
-  foo do |arglist|
-    ...
-  end
-  
-  # or
-  
-  foo { |arglist| ... }
-  \end{lstlisting}
+\begin{lstlisting}
+foo do |arglist|
+  ...
+end
+
+# or
+
+foo { |arglist| ... }
+\end{lstlisting}
   
   The former is generally used when there are multiple lines in the block, and the latter when there is only one.
-  
   \item If \code{bar} is a variable containing a lambda object, \code{foo(&bar)} will pass \code{bar} as the block to \code{foo}. So the following are equivalent:
-  \begin{lstlisting}
-  bar = lambda { |arglist| ... }
-  foo(&bar)
-  
-  # and
-  
-  foo { |arglist| ... }
-  \end{lstlisting}
-  
+\begin{lstlisting}
+bar = lambda { |arglist| ... }
+foo(&bar)
+
+# and
+
+foo { |arglist| ... }
+\end{lstlisting}
   \item If a method is defined as \code{def foo(..., &block)}, then when the method is called, the \code{block} variable will contain the lambda object for the block, if there is one.
   
   \item If a method call is given a block, then \code{yield(arglist)} inside the method will call it.

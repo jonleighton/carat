@@ -1,6 +1,6 @@
-\section{Conclusions}
+\chapter{Conclusions}
 
-\subsection{The Essence of Ruby}
+\section{The Essence of Ruby}
 
 Writing Carat has made me think carefully about the syntax and semantics of Ruby, considering which parts of the language are crucial, defining features, and which parts are simply additional extras. Here are some of the things I think make up `the essence of Ruby':
 
@@ -24,12 +24,12 @@ Writing Carat has made me think carefully about the syntax and semantics of Ruby
   \item \textbf{Freedom of Choice}. It has been said that ``Ruby gives you enough rope to hang yourself". I think this epitomises a philosophy that there are many ways to achieve the same thing, but the programmer should be responsible for making a sensible choice. This contrasts with a language like Java which, in the absence of flexible syntax and metaprogramming features, provides very few options -- and then tries to ensure the programmer does the `right' thing through type checking and rigorous design patterns, interfaces, abstract classes, etc. There is nothing wrong with these things \emph{per se}, but their rigidity can be constraining.
 \end{enumerate}
 
-\subsection{Changes from Ruby}
+\section{Changes from Ruby}
 \label{sec:ruby_comparison}
 
 There are a few features which I deliberately implemented differently to Ruby because I thought they took a `purer' view of the language.
 
-\subsubsection{Lambdas}
+\subsection{Lambdas}
 
 Ruby has two different kinds of `lambda'. They are both instances of the \code{Proc} class, but depending on how the object is created, passing the wrong number of arguments when calling may or may not cause an error.
 
@@ -37,7 +37,7 @@ Additionally, without going into too much detail, argument assignment for blocks
 
 In Carat, the \textit{only} difference between lambdas and methods is scoping, and there is only one type of lambda. I think this consistency is valuable, and it certainly makes the implementation simpler as code can be shared.
 
-\subsubsection{Argument patterns}
+\subsection{Argument patterns}
 
 In Ruby, argument patterns can only contain local variables. This often leads to object initialisers which look like this:
 
@@ -54,25 +54,25 @@ def initialize(@a, @b, @c = nil)
 end
 \end{lstlisting}
 
-\subsubsection{Module inclusion}
+\subsection{Module inclusion}
 
 In Ruby, including a module only makes its instance methods available, which often leads to confusion. I like Carat's approach of making both instance and singleton (class) methods available.
 
 On the other hand, Ruby supports inclusion of modules inside other modules, which Carat does not. It may be that this introduces additional complexities which I have not considered.
 
-\subsection{Possible project extensions}
+\section{Possible project extensions}
 
-\subsubsection{A virtual machine}
+\subsection{A virtual machine}
 
 At the moment Carat is purely an interpreter. It would be interesting to turn it into a bytecode compiler and interpreter, exploring how that changes the architecture and what the implementation challenges are.
 
-\subsubsection{Unicode syntax}
+\subsection{Unicode syntax}
 
 I think a lot of the expressive power of Ruby comes from its use of syntax. Pretty much every programming language in use today restricts its syntax to the ASCII character set. It would be interesting to see what gains could be made by employing a wider set of characters. This would potentially make programs more concise and readable, but would probably require special keyboards in order to write code quickly.
 
 However, I think the gains could be worth it. For example, \code{lambda} could be replaced with $\color{Mahogany} \lambda$, \code{!} (negation) could be replaced with $\color{Mahogany} \neg$ and \code{=} (assignment) could be replaced with $\color{Mahogany} \leftarrow$ (leaving \code{=} free for equality testing). Mathematicians express themselves with a wide variety of symbols; I think it would be good to give programmers the same opportunity.
 
-\subsubsection{Lazy evaluation}
+\subsection{Lazy evaluation}
 
 Most operators in Carat (and Ruby) are implemented as method calls. However, \code{&&} and \code{||} in particular cannot be implemented as method calls because they need to `short circuit' depending on the value of the expression on the left of the operator. This could not be achieved through a method call as arguments are always evaluated before the call is made.
 
@@ -86,7 +86,7 @@ In this implementation, the \code{&&} method of \code{x} would only run the bloc
 
 A different solution might be to implement lazy evaluation. I don't think it would be a good idea to make the entire language lazy, but it might be possible to implement a feature where argument patterns can use some sort of syntactic notation to specify that an argument should not be evaluated immediately. This would allow \code{&&} and \code{||} to be defined as methods. On the other hand, it may be that such a feature would easily lead to confusion, so I am not convinced that it is a good idea.
 
-\subsection{Overall Conclusions}
+\section{Overall Conclusions}
 
 Although the project objectives were fairly broad and hard to quantify, I am pleased with the result. Writing the code and the report has caused me to think carefully about the features of Ruby and how they are implemented, whether they are necessary and if there is a simpler way to do things. A number of times while writing the report, I found myself reconsidering design decisions, which then lead to useful refactorings.
 

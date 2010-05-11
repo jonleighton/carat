@@ -1,6 +1,6 @@
-\section{Implementation Overview}
+\chapter{Implementation Overview}
 
-In this section, I consider the following simple Carat program:
+In this chapter, I consider the following simple Carat program:
 
 \begin{lstlisting}
 def goodbye(x)
@@ -12,7 +12,7 @@ goodbye("Cruel World")
 
 A \code{goodbye} method is defined and then called, causing `Goodbye Cruel World'\footnote{I find `Hello World' rather boring and thought it would be more fun to pay homage to Pink Floyd instead} to be printed as the output. I will explain how the program is executed, focussing on the overall design of the interpreter (therefore avoiding some of the finer details). Certain specific details will be covered in greater depth in \autoref{sec:implementation_specifics}.
 
-\subsection{Parsing}
+\section{Parsing}
 
 The first step is to parse the source code and convert it to an AST. This is done by the \code{Carat::}\-\code{Language}\-\code{Parser} class, which is largely produced by the parser generator, Treetop\footnote{\url{http://treetop.rubyforge.org/}}.
 
@@ -44,7 +44,7 @@ end
 
 In this simple example a \code{WhileExpression} parse tree nodes maps directly to a \code{While} AST node. This is not always the case, however -- some parse tree nodes perform additional syntax checks, or transform the data in some way. (For example \code{2 + 4} and \code{foo.bar} will be different types of parse tree nodes, but will both become \code{MethodCall} nodes in the AST.)
 
-\subsection{Abstract Syntax Tree}
+\section{Abstract Syntax Tree}
 
 An AST node has a number of children (other nodes) and properties (static data). It also has an \code{eval} method which is discussed later. For example, the node for a method call is defined as:
 
@@ -71,8 +71,7 @@ MethodCall[:goodbye]:
 
 This can be read as a call to the method `goodbye'; the object receiving the call is not explicitly given and the argument list contains one item, which is the literal string ``Cruel World".
 
-\newpage
-\subsection{The Runtime System}
+\section{The Runtime System}
 
 \code{Carat::Runtime} is the starting point for running a program. When initialised it:
 
@@ -85,7 +84,7 @@ This can be read as a call to the method `goodbye'; the object receiving the cal
 
 Another approach might be to have separate `environment' objects, which would independently represent the execution context for each different stack. I tried this, but it turned out to be far more practical to have an explicit, stored representation of the current execution state. This allows all the objects which need to access the execution state to simply hold a reference to the runtime. Otherwise, the current `environment' would need to be passed around a lot, which would make the code significantly more verbose. The stack of stacks simply makes explicit what would be implicitly stored on the implementation language's stack anyway. This seems acceptable to me.
 
-\subsection{The Stack}
+\section{The Stack}
 
 Whenever the \defn{stack} is referred to, this is the stack at the top of the stack of stacks. The stack contains one or more \defn{frames}. Frames can contain:
 
@@ -99,7 +98,7 @@ All of these values are optional because they can all change independently of ea
 
 The ``current scope", ``current call" or ``current failure continuation" refers to whichever value is in a frame closest to the top of the stack.
 
-\subsection{The Object Model}
+\section{The Object Model}
 \label{sec:object_model}
 
 Carat follows Ruby's object model closely. Everything is an object, and all objects are represented by the class \code{Carat::Data::ObjectInstance} in the implementation language. There are various other classes which implement behaviour for specific types of object, but all are subclasses of \code{ObjectInstance}. \autoref{fig:data_object_hierarchy} shows the inheritance hierarchy.
@@ -139,8 +138,7 @@ This can be confusing, but the basic principle is simple: the \code{Module} clas
 \end{center}
 \end{figure}
 
-\newpage
-\subsubsection{\movingcode{ObjectInstance}}
+\subsection{\movingcode{ObjectInstance}}
 
 \code{ObjectInstance} is the implementation language class which represents a source language \textit{object}. Instances are created with the following signature:
 
@@ -192,8 +190,7 @@ Objects don't store their own singleton methods. Instead, these are stored in th
 \end{center}
 \end{figure}
 
-\newpage
-\subsubsection{\movingcode{ModuleInstance}}
+\subsection{\movingcode{ModuleInstance}}
 
 \code{ModuleInstance} is the implementation language class which represents a source language \textit{module}. Instances are created with the following signature:
 
@@ -205,7 +202,7 @@ Modules are containers for methods. They cannot be instantiated, but can be incl
 
 Modules are themselves objects, so they can have singleton methods, which are analogous to what would be called `static' or `class' methods in other languages. Unlike normal objects, modules create their singleton class immediately rather than waiting until it is needed; this prevents inconsistent or incorrect class pointers from occurring.
 
-\subsubsection{\movingcode{ClassInstance}}
+\subsection{\movingcode{ClassInstance}}
 
 \code{ClassInstance} is the implementation language class which represents a source language \textit{class}. Instances are created with the following signature:
 
@@ -251,7 +248,7 @@ In some contexts the word `metaclass' is used to refer to the class of a class. 
 \end{center}
 \end{figure}
 
-\subsubsection{Four Core Classes}
+\subsection{Four Core Classes}
 
 The most important four classes in the language are \code{Object}, \code{Module}, \code{Class} and \code{SingletonClass}. Their relationships are somewhat complex, but can be summarised by some basic rules (which apply to all objects):
 
@@ -353,7 +350,7 @@ This object model is quite similar to that of Smalltalk-80, which has certainly 
 \end{center}
 \end{figure}
 
-\subsection{Continuation Passing Style}
+\section{Continuation Passing Style}
 
 The interpreter works out the result of a program by ``walking" the AST. An AST node with children probably needs to evaluate its child nodes before it can return its own answer. The obvious way to do this is to literally evaluate the children by calling the relevant evaluation methods, and then compute the answer to return.
 
@@ -385,7 +382,7 @@ In the first example, \code{eval_child} can't stop \code{compute_value} from bei
 
 In the second example, the \code{do .. end} block is a continuation which is passed to \code{eval_child}, containing the code to be executed once the answer of \code{eval_child} is available. Then \code{compute_value} is called with this child value, to produce the ultimate value of the \code{eval} method. The continuation of \code{eval} is finally called, passing the computed value as the answer. However, if \code{eval_child} wanted to prevent the program execution happening in this order, it could simply call a different continuation to the one it was given.
 
-\subsection{Execution}
+\section{Execution}
 
 An AST is executed by passing its root node to \code{Runtime#execute}:
 
@@ -403,7 +400,7 @@ Roughly speaking, the following happens:
   \item The stack is removed from the stack of stacks
 \end{enumerate}
 
-\subsubsection{Trampoline}
+\subsection{Trampoline}
 
 \code{Runtime#with_stack} is defined as follows:
 
@@ -426,7 +423,7 @@ To solve this, \code{with_stack} uses a \defn{trampoline}. In certain places whe
 
 Carat itself does not implement tail call optimisation.
 
-\subsubsection{The main method}
+\subsection{The main method}
 
 The main method call is constructed like so:
 
@@ -448,13 +445,13 @@ A special \code{MainMethodCall} object is also created. This is just so the main
 
 An initial frame is created using the scope, call and default failure continuation. The AST node's \code{eval_in_frame} method is called, which adds the frame to the stack, evaluates the node, and then ensures the frame is subsequently removed from the stack. The continuation given does nothing with the final answer, because the end of the program has been reached.
 
-\subsection{Sequential evaluation}
+\section{Sequential evaluation}
 
 Returning to the example, the root node is an \code{ExpressionList} containing two items: a method definition and a method call. The items in an expression list are evaluated in turn, and the result of evaluating the last node becomes the result of the whole expression list.
 
 This presents a challenge, because whilst the natural inclination would be to loop over the child nodes, CPS requires that evaluation calls only appear in tail position. To solve this, \code{Runtime} provides two high-level operations, \code{each} (for iteration) and \code{fold} (for accumulation). These translate a sequential operation on an array into a recursive one using continuations. For AST nodes, there is also \code{eval_fold} which accumulates the result of evaluating each node in an array.
 
-\subsection{Method definition}
+\section{Method definition}
 
 The first expression in the example is a \code{MethodDefinition}. Method definitions have a name (i.e. `\code{goodbye}') and potentially three child nodes: a \defn{receiver}, an \defn{argument pattern} and the \defn{contents}.
 
@@ -464,7 +461,7 @@ The argument pattern specifies the format of the method's arguments, but this is
 
 A \code{MethodInstance} object is created from the name, argument pattern and contents, and then it is added to the method table of the relevant class.
 
-\subsection{Method calls}
+\section{Method calls}
 
 The second expression in the example is a \code{MethodCall}. Method calls have a name and two child nodes: the \defn{receiver} and the \defn{arguments}. Method calls are evaluated as follows:
 
@@ -477,7 +474,6 @@ The second expression in the example is a \code{MethodCall}. Method calls have a
 
 In the example there is no explicit receiver, so \code{self} is used, which is an \code{Object} instance. The instance asks its class (which is \code{Object}) to look up a method named `\code{goodbye}'. That method was added to \code{Object} in the previous expression, so this is successful and a \code{Call} is created.
 
-\newpage
 The following attributes of a \code{Call} object are worth explaining:
 
 \begin{enumerate}
@@ -499,7 +495,7 @@ The following happens when a call is sent:
 
 This is one of the key places where a closure is used to return to the trampoline method.
 
-\subsection{Module inclusion}
+\section{Module inclusion}
 \label{sec:module_inclusion}
 
 When the \code{goodbye} call is sent, the contents of the \code{goodbye} method are executed. This is an expression list with a single item: a method call to \code{puts}. The (implicit) receiver of the \code{goodbye} call was \code{self}, which was an \code{Object} instance. So the scope inside the method has that same \code{Object} instance as the \code{self}. The \code{puts} call also has no explicit receiver, so again the receiver will be \code{self}.
@@ -596,7 +592,7 @@ To solve this problem, modules are not directly inserted into the super chain. I
 \end{center}
 \end{figure}
 
-\subsection{Primitives}
+\section{Primitives}
 
 The \code{puts} call has one argument: \code{"Cruel " + x}. This is actually a call to the \code{+} method of the string \code{"Cruel "}, with one argument, which is the variable \code{x}. Carat supports various special `operator' methods (\code{+}, \code{-}, \code{==}, \code{!=}, etc.), which are recognised by the parser and converted to standard \code{MethodCall} AST nodes. Unary operators are also supported; for example \code{-5} calls the \code{--} method on the receiver \code{5}.
 
@@ -622,11 +618,13 @@ The source language \code{Primitive} class is represented by \code{Carat::Data::
 
 Inside the \code{+} method, \code{self} is the \code{"Goodbye "} string, which is a \code{StringInstance} in the implementation language. So the \code{StringInstance#primitive_plus} method is looked up and called with the evaluated argument \code{other.to_s}. The primitive is defined as follows:
 
+\begin{minipage}{\textwidth}
 \begin{lstlisting}
 def primitive_plus(other)
   yield real_klass.new(contents + other.contents)
 end
 \end{lstlisting}
+\end{minipage}
 
 The real (non-singleton) class of the string is found, and then a new instance is created, representing the concatenation. This new string is then passed to \code{yield}, which calls the continuation. (Note that \code{real_klass} will return an \textit{instance} of \code{StringClass}, so in this context \code{new} is an \textit{instance} method which creates a new instance of \code{StringInstance}.)
 
