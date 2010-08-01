@@ -1,10 +1,6 @@
 Carat
------
+=====
 
-Carat is a Ruby-like programming language written in Ruby.
+Carat is a Ruby-like programming language written in Ruby. It was written for the third year project as part of my Computer Science degree. You can download the write-up here if you like: http://dump.jonathanleighton.com/project.pdf
 
-Its goal is to be very simple language with a straightforward, understandable implementation. I intend to use it to explore different ideas for syntax and semantics.
-
-Carat is currently written as an interpreter, but I may implement it as a virtual machine and compiler in the future.
-
-I'm working on this as an academic project during the 3rd year of my degree at Oxford University. It will be under heavy development until about March 2010.
+I gave a talk to the London Ruby User Group about it, on July 12th 2010. They have put the slide up here: http://skillsmatter.com/podcast/ajax-ria/carat-an-interpreted-language-written-in-ruby. They also filmed it, but unfortunately don't seem to have uploaded that (the slide don't make a lot of sense on their own).
